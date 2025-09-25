@@ -1,4 +1,5 @@
 import React from 'react';
+import { FaBrain } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import './landingPage.css';
 import Navbar from '../components/Navbar';
@@ -23,34 +24,125 @@ const LandingPage = () => {
       {/* Hero Section */}
       <section className="hero">
         <div className="hero-content">
-          <h1 className="hero-title">Next-Gen Recruitment Made Simple</h1>
+          <h1 className="hero-title">
+            Next-Gen Recruitment
+            <span className="highlight"> Made Simple</span>
+          </h1>
           <p className="hero-subtitle">
-            Transform your hiring process with cutting-edge AI technology. Find the perfect candidates faster, smarter, and more efficiently than ever before.
+            Revolutionize your recruitment process with cutting-edge AI technology. 
+            Find, evaluate, and hire top talent 10x faster while reducing bias and improving candidate quality.
           </p>
-          <div className="hero-buttons">
-            <button className="btn-primary" onClick={handleGetStarted}>Get Started</button>
-            <button className="btn-secondary" onClick={handleTryDemo}>Try Demo</button>
+          
+          {/* Trust Indicators */}
+          <div className="trust-indicators">
+            <div className="trust-item">
+              <div className="trust-number">95%</div>
+              <div className="trust-label">Match Accuracy</div>
+            </div>
+            <div className="trust-item">
+              <div className="trust-number">50K+</div>
+              <div className="trust-label">Candidates Processed</div>
+            </div>
+            <div className="trust-item">
+              <div className="trust-number">4.9★</div>
+              <div className="trust-label">User Rating</div>
+            </div>
           </div>
+          
+          <div className="hero-buttons">
+            <button className="btn-primary" onClick={handleGetStarted}>
+              <span className="btn-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </span>
+              Get Started Free
+            </button>
+            <button className="btn-secondary" onClick={handleTryDemo}>
+              <span className="btn-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+              </span>
+              Watch Demo
+            </button>
+          </div>
+          
         </div>
         <div className="hero-visual">
           <div className="hero-graphic">
-            {/* Connection lines */}
+            {/* Enhanced AI Brain Center */}
+            <div className="ai-brain">
+              <div className="brain-core">
+                <FaBrain className="brain-icon" />
+              </div>
+              <div className="brain-pulse"></div>
+              <div className="brain-ring"></div>
+            </div>
+            
+            {/* Enhanced connection lines */}
             <div className="connection-line connection-line-1"></div>
             <div className="connection-line connection-line-2"></div>
             <div className="connection-line connection-line-3"></div>
+            <div className="connection-line connection-line-4"></div>
+            <div className="connection-line connection-line-5"></div>
             
-            {/* Animated particles */}
-            <div className="particle"></div>
-            <div className="particle"></div>
-            <div className="particle"></div>
-            <div className="particle"></div>
-            <div className="particle"></div>
-            <div className="particle"></div>
+            {/* Enhanced animated particles */}
+            <div className="particle particle-1"></div>
+            <div className="particle particle-2"></div>
+            <div className="particle particle-3"></div>
+            <div className="particle particle-4"></div>
+            <div className="particle particle-5"></div>
+            <div className="particle particle-6"></div>
+            <div className="particle particle-7"></div>
+            <div className="particle particle-8"></div>
             
-            {/* Enhanced floating cards */}
-            <div className="floating-card card-1">CV Analysis</div>
-            <div className="floating-card card-2">AI Matching</div>
-            <div className="floating-card card-3">Smart Hiring</div>
+            {/* Enhanced floating cards with icons */}
+            <div className="floating-card card-1">
+              <div className="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </div>
+              <div className="card-content">
+                <div className="card-title">CV Analysis</div>
+                <div className="card-desc">Smart resume parsing</div>
+              </div>
+            </div>
+            <div className="floating-card card-2">
+              <div className="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <circle cx="12" cy="12" r="6"></circle>
+                  <circle cx="12" cy="12" r="2"></circle>
+                </svg>
+              </div>
+              <div className="card-content">
+                <div className="card-title">Smart Matching</div>
+                <div className="card-desc">Candidate-job fit</div>
+              </div>
+            </div>
+            <div className="floating-card card-3">
+              <div className="card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+              </div>
+              <div className="card-content">
+                <div className="card-title">Smart Hiring</div>
+                <div className="card-desc">Automated workflows</div>
+              </div>
+            </div>
+            
+            {/* Floating data elements */}
+            <div className="data-element data-1">98.5%</div>
+            <div className="data-element data-2">2.3s</div>
+            <div className="data-element data-3">∞</div>
           </div>
         </div>
       </section>
