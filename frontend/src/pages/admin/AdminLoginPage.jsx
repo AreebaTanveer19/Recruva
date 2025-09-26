@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { FaEnvelope, FaLock } from "react-icons/fa";
 import api from "./../../api";
-import { ACCESS_TOKEN } from "./../../constants";
+import { ACCESS_TOKEN, ROLE, U_ID  } from "./../../constants";
+import { useNavigate } from "react-router-dom";
 
 const AdminLoginPage = () => {
   const [loginError, setLoginError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate=useNavigate()
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     mode: "onChange",
@@ -18,10 +20,16 @@ const AdminLoginPage = () => {
     setLoginError("");
 
     try {
-      const res = await api.post("/admin-login", data);
+      const res = await api.post("/auth/login", data);
       if (res.data.success) {
         localStorage.setItem(ACCESS_TOKEN, res.data.token);
-        window.location.href = "/admin-dashboard"; // redirect to admin dashboard
+        localStorage.setItem(ROLE, res.data.user.role);
+        localStorage.setItem(U_ID, res.data.user.id);
+         if (res.data.user.role === "HR") {
+        navigate("/hr/dashboard");
+        } else if (res.data.user.role === "DEPARTMENT") {
+         navigate("/dept/dashboard");
+        }
       } else {
         setLoginError(res.data.message || "Invalid credentials");
       }
@@ -65,8 +73,8 @@ const AdminLoginPage = () => {
               type="password"
               placeholder="Password"
               {...register("password", { required: "Password required", minLength: { value: 6, message: 'Password must be at least 6 characters' },pattern: {
-                            value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                            message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+                            // value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+                            // message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
                           } })}
               className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.password ? "border-red-500" : "border-gray-300"}`}
             />
