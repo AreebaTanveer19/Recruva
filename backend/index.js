@@ -6,6 +6,7 @@ const emailRoutes = require('./emailRoutes');
 
 const app = express();
 const port = process.env.PORT || 3000;
+const prisma = require("./config/db")
 
 // Middleware
 app.use(cors({
@@ -44,4 +45,22 @@ app.listen(port, async () => {
   } else {
     console.log('❌ Email configuration failed - check your .env file');
   }
+  try {
+    await prisma.$connect();
+    console.log('✅ Prisma connected to the database');
+  } catch (err) {
+    console.error('❌ Prisma failed to connect:', err);
+  }
 });
+
+// process.on('SIGINT', async () => {
+//   await prisma.$disconnect();
+//   console.log('👋 Prisma disconnected. Server shutting down.');
+//   process.exit(0);
+// });
+
+// process.on('SIGTERM', async () => {
+//   await prisma.$disconnect();
+//   console.log('👋 Prisma disconnected. Server shutting down.');
+//   process.exit(0);
+// });
