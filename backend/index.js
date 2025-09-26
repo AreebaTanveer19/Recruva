@@ -3,6 +3,8 @@ const cors = require('cors');
 require('dotenv').config();
 const { verifyEmailConfig } = require('./emailService');
 const emailRoutes = require('./emailRoutes');
+const authRoutes = require("./routes/auth")
+const protectedRoutes = require("./routes/protected")
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -20,6 +22,8 @@ app.use(express.json());
 
 // Use email routes
 app.use('/api', emailRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api", protectedRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
