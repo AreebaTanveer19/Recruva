@@ -432,6 +432,7 @@ const AuthPage = () => {
                   
                   {/* Signup Form */}
                   <form onSubmit={handleSignupSubmit(onSignupSubmit)} className="space-y-6">
+                    <div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <FaUser className="text-gray-400" />
@@ -452,11 +453,13 @@ const AuthPage = () => {
                         className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 input-field ${signupErrors.username ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Username"
                       />
+                      </div>
                       {signupErrors.username && (
                         <p className="mt-1 text-sm text-red-600">{signupErrors.username.message}</p>
                       )}
                     </div>
                     
+                  <div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <FaEnvelope className="text-gray-400" />
@@ -473,11 +476,14 @@ const AuthPage = () => {
                         className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 input-field ${signupErrors.email ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Email"
                       />
+                      </div>
                       {signupErrors.email && (
                         <p className="mt-1 text-sm text-red-600">{signupErrors.email.message}</p>
                       )}
                     </div>
                     
+
+                  <div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <FaLock className="text-gray-400" />
@@ -498,11 +504,13 @@ const AuthPage = () => {
                         className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 input-field ${signupErrors.password ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Password"
                       />
+                    </div>
                       {signupErrors.password && (
                         <p className="mt-1 text-sm text-red-600">{signupErrors.password.message}</p>
                       )}
                     </div>
                     
+                    <div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <FaLock className="text-gray-400" />
@@ -516,6 +524,7 @@ const AuthPage = () => {
                         className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 input-field ${signupErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Confirm Password"
                       />
+                      </div>
                       {signupErrors.confirmPassword && (
                         <p className="mt-1 text-sm text-red-600">{signupErrors.confirmPassword.message}</p>
                       )}
