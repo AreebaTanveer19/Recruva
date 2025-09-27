@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { FaUser, FaEnvelope, FaLock, FaTwitter, FaFacebook, FaLinkedin, FaArrowRight, FaCheck } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaArrowRight, FaCheck, FaTimes } from 'react-icons/fa';
 import './Auth.css';
 
 const AuthPage = () => {
@@ -14,6 +14,12 @@ const AuthPage = () => {
   const [timer, setTimer] = useState(120);
   const [timerActive, setTimerActive] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState('');
+  const [currentAction, setCurrentAction] = useState('verify'); // 'verify' or 'register'
+  const [pendingRegistration, setPendingRegistration] = useState(null);
+  
+  // Error popup state
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Login form validation
   const {
@@ -83,19 +89,24 @@ const AuthPage = () => {
       if (prevInput) prevInput.focus();
     }
   };
-
   // OTP generation is now handled entirely by backend
 
   // Send OTP to email using backend API
-  const sendOtp = async (email) => {
+  const sendOtp = async (email, action = 'verify', name = '', password = '') => {
     setIsSendingOtp(true);
     try {
+      const payload = { email, action };
+      if (action === 'register' && name && password) {
+        payload.name = name;
+        payload.password = password;
+      }
+      
       const response = await fetch(`${import.meta.env.VITE_API_URL}/send-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify(payload),
       });
       
       const data = await response.json();
@@ -114,7 +125,7 @@ const AuthPage = () => {
       }
     } catch (error) {
       console.error('Failed to send OTP:', error);
-      alert('Failed to send OTP. Please try again.');
+      showError('Failed to send OTP. Please try again with another valid email.');
     } finally {
       setIsSendingOtp(false);
     }
@@ -124,7 +135,7 @@ const AuthPage = () => {
   const verifyOtp = async () => {
     const otpValue = otp.join('');
     if (otpValue.length !== 6) {
-      alert('Please enter complete OTP');
+      showError('Please enter complete OTP');
       return;
     }
 
@@ -142,14 +153,26 @@ const AuthPage = () => {
       
       if (data.success) {
         console.log(`OTP verified successfully for ${userEmail}: ${otpValue}`);
+        
+        // Store JWT token if provided
+        if (data.token) {
+          localStorage.setItem('candidateToken', data.token);
+          localStorage.setItem('candidateData', JSON.stringify(data.candidate));
+        }
+        
         setVerificationMessage('Email verification successful!');
         setAuthMode('verified');
+        
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          window.location.href = '/candidate/dashboard';
+        }, 2000);
       } else {
         throw new Error(data.message || 'Invalid OTP');
       }
     } catch (error) {
       console.error('OTP verification failed:', error);
-      alert(error.message || 'Invalid OTP. Please try again.');
+      showError(error.message || 'Invalid OTP. Please try again.');
     } finally {
       setIsVerifyingOtp(false);
     }
@@ -159,17 +182,68 @@ const AuthPage = () => {
   const resendOtp = async () => {
     setTimer(120);
     setTimerActive(true);
-    await sendOtp(userEmail);
+    if (currentAction === 'register' && pendingRegistration) {
+      await sendOtp(userEmail, 'register', pendingRegistration.name, pendingRegistration.password);
+    } else {
+      await sendOtp(userEmail, 'verify');
+    }
   };
 
-  // Handle login with OTP
-  const handleLoginWithOtp = (data) => {
-    sendOtp(data.email);
+  // Handle login with direct authentication
+  const handleLoginDirect = async (data) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/candidate/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('Login successful:', result);
+        
+        // Store JWT token and user data
+        localStorage.setItem('candidateToken', result.token);
+        localStorage.setItem('candidateData', JSON.stringify(result.candidate));
+        
+        // Redirect to dashboard
+        window.location.href = '/candidate/dashboard';
+      } else {
+        // Check if it's specifically invalid credentials error
+        if (result.message === 'Invalid credentials') {
+          showError('Invalid credentials. Please check your email and password and try again.');
+        } else {
+          showError(result.message || 'Login failed. Please check your credentials.');
+        }
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      showError('Login failed. Please try again.');
+    }
   };
 
   // Handle signup with OTP
   const handleSignupWithOtp = (data) => {
-    sendOtp(data.email);
+    setCurrentAction('register');
+    setPendingRegistration({ name: data.username, password: data.password });
+    sendOtp(data.email, 'register', data.username, data.password);
+  };
+
+  // Error popup functions
+  const showError = (message) => {
+    setErrorMessage(message);
+    setShowErrorPopup(true);
+  };
+
+  const closeErrorPopup = () => {
+    setShowErrorPopup(false);
+    setErrorMessage('');
   };
 
   // Reset to form mode
@@ -180,13 +254,14 @@ const AuthPage = () => {
     setTimer(120);
     setTimerActive(false);
     setVerificationMessage('');
+    setCurrentAction('verify');
+    setPendingRegistration(null);
   };
 
   const onLoginSubmit = (data) => {
     console.log('Login submitted:', data);
-    // For demo, we'll use OTP authentication
-    handleLoginWithOtp(data);
-    // resetLogin(); // Commented out as we're moving to OTP flow
+    // Direct password-based authentication
+    handleLoginDirect(data);
   };
 
   const handleToggleForm = () => {
@@ -196,14 +271,10 @@ const AuthPage = () => {
 
   const onSignupSubmit = (data) => {
     console.log('Signup submitted:', data);
-    // For demo, we'll use OTP authentication
+    // OTP-based authentication for signup
     handleSignupWithOtp(data);
-    // resetSignup(); // Commented out as we're moving to OTP flow
   };
 
-  const handleSocialLogin = (platform) => {
-    console.log(`Social login with ${platform}`);
-  };
 
   const switchToSignup = () => {
     setActiveForm('signup');
@@ -211,29 +282,29 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 auth-container">
-      <div className="w-full max-w-6xl bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 auth-container overflow-hidden">
+      <div className="w-full max-w-6xl bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh]">
         <div className="flex flex-col lg:flex-row">
           {/* Login Section - Left Panel */}
-          <div className="w-full lg:w-1/2 bg-gradient-to-br from-blue-900 to-blue-600 p-12 flex flex-col justify-center items-center text-white gradient-bg auth-panel lg:rounded-l-2xl">
+          <div className="w-full lg:w-1/2 bg-gradient-to-br from-blue-900 to-blue-600 p-8 flex flex-col items-center text-white gradient-bg auth-panel lg:rounded-l-2xl min-h-[500px]">
             {/* Recruva Branding */}
-            <div className="mb-8">
+            <div className="mb-6">
               <h1 className="text-5xl font-bold text-white mb-2">Recruva</h1>
               <div className="w-24 h-1 bg-white mx-auto rounded-full"></div>
             </div>
             
-            <div className="text-center max-w-md">
-              <h1 className="text-4xl font-bold mb-6 uppercase tracking-wide auth-title">
+            <div className="text-center max-w-md flex flex-col justify-center" style={{ minHeight: 'calc(100% - 120px)' }}>
+              <h1 className="text-4xl font-bold mb-4 uppercase tracking-wide auth-title">
                 {activeForm === 'login' ? 'CREATE ACCOUNT!' : 'WELCOME BACK!'}
               </h1>
-              <p className="text-lg mb-8 opacity-90 leading-relaxed auth-subtitle">
+              <p className="text-lg mb-6 opacity-90 leading-relaxed auth-subtitle">
                 {activeForm === 'login' 
                   ? 'New to our platform? Click below to create your account.' 
                   : 'Already have an account? Click below to continue using the service.'}
               </p>
               <button 
                 onClick={handleToggleForm}
-                className="bg-white text-blue-900 px-8 py-3 rounded-full font-semibold text-lg transition-all duration-300 hover:bg-gray-100 hover:scale-105 transform shadow-lg btn-hover-lift"
+                className="bg-white text-blue-900 px-8 py-3 rounded-full font-semibold text-lg transition-all duration-300 hover:bg-gray-100 hover:scale-105 transform shadow-lg btn-hover-lift mb-4"
               >
                 {activeForm === 'login' ? 'SIGN UP' : 'SIGN IN'}
               </button>
@@ -241,19 +312,19 @@ const AuthPage = () => {
           </div>
 
           {/* Form Section - Right Panel */}
-          <div className="w-full lg:w-1/2 p-12 flex flex-col justify-center auth-panel lg:rounded-r-2xl rounded-b-2xl">
-            <div className="max-w-md mx-auto w-full">
+          <div className="w-full lg:w-1/2 p-8 flex flex-col justify-center auth-panel lg:rounded-r-2xl rounded-b-2xl">
+            <div className="max-w-md mx-auto w-full min-h-[500px] flex flex-col justify-center">
               {authMode === 'otp' ? (
                 // OTP Verification Form
-                <div className="space-y-6">
-                  <div className="text-center mb-8">
+                <div className="space-y-6 flex-1 flex flex-col justify-center">
+                  <div className="text-center mb-4">
                     <h2 className="text-3xl font-bold text-blue-900 mb-2 auth-title">Verify Email</h2>
                     <p className="text-gray-600 auth-subtitle">
                       We've sent a 6-digit code to {userEmail}
                     </p>
                   </div>
                   
-                  <div className="flex justify-center gap-3 mb-8">
+                  <div className="flex justify-center gap-3 mb-6">
                     {otp.map((digit, index) => (
                       <input
                         key={index}
@@ -309,30 +380,30 @@ const AuthPage = () => {
                 </div>
               ) : authMode === 'verified' ? (
                 // Success Screen
-                <div className="space-y-6 text-center">
-                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <FaCheck className="text-3xl text-green-600" />
+                <div className="space-y-6 text-center flex-1 flex flex-col justify-center">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FaCheck className="text-2xl text-green-600" />
                   </div>
                   <h2 className="text-3xl font-bold text-green-600 mb-2">Email Verified!</h2>
-                  <p className="text-gray-600 mb-8">
+                  <p className="text-gray-600 mb-4">
                     {verificationMessage || 'Your email has been successfully verified. You can now access your account.'}
                   </p>
                   <button
                     onClick={resetToForm}
-                    className="bg-blue-900 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 hover:bg-blue-800"
+                    className="w-full bg-blue-900 text-white py-3 rounded-lg font-semibold text-lg transition-all duration-300 hover:bg-blue-800"
                   >
                     Continue to Dashboard
                   </button>
                 </div>
               ) : activeForm === 'login' ? (
                 // Login Form
-                <div className="space-y-6">
-                  <div className="text-center mb-8">
+                <div className="space-y-4 flex-1 flex flex-col justify-center">
+                  <div className="text-center mb-4">
                     <h2 className="text-3xl font-bold text-blue-900 mb-2 auth-title">Login</h2>
                     <p className="text-gray-600 auth-subtitle">Enter your credentials to continue</p>
                   </div>
                   
-                  <form onSubmit={handleLoginSubmit(onLoginSubmit)} className="space-y-6">
+                  <form onSubmit={handleLoginSubmit(onLoginSubmit)} className="space-y-4">
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <FaEnvelope className="text-gray-400" />
@@ -402,32 +473,10 @@ const AuthPage = () => {
                 </div>
               ) : (
                 // Signup Form
-                <div className="space-y-6">
-                  <div className="text-center mb-8">
+                <div className="space-y-4 flex-1 flex flex-col justify-center">
+                  <div className="text-center mb-6">
                     <h2 className="text-3xl font-bold text-blue-900 text-center mb-2 auth-title">Create Account</h2>
-                    <p className="text-gray-600 text-center auth-subtitle">or use your email account</p>
-                  </div>
-                  
-                  {/* Social Buttons */}
-                  <div className="flex justify-center gap-4 mb-8">
-                    <button 
-                      onClick={() => handleSocialLogin('Twitter')}
-                      className="w-12 h-12 rounded-full border-2 border-gray-300 flex items-center justify-center transition-all duration-300 hover:border-blue-400 hover:text-blue-400 hover:scale-110 social-btn"
-                    >
-                      <FaTwitter className="text-xl" />
-                    </button>
-                    <button 
-                      onClick={() => handleSocialLogin('Facebook')}
-                      className="w-12 h-12 rounded-full border-2 border-gray-300 flex items-center justify-center transition-all duration-300 hover:border-blue-600 hover:text-blue-600 hover:scale-110 social-btn"
-                    >
-                      <FaFacebook className="text-xl" />
-                    </button>
-                    <button 
-                      onClick={() => handleSocialLogin('LinkedIn')}
-                      className="w-12 h-12 rounded-full border-2 border-gray-300 flex items-center justify-center transition-all duration-300 hover:border-blue-700 hover:text-blue-700 hover:scale-110 social-btn"
-                    >
-                      <FaLinkedin className="text-xl" />
-                    </button>
+                    <p className="text-gray-600 text-center auth-subtitle">Fill in the details below to create your account</p>
                   </div>
                   
                   {/* Signup Form */}
@@ -476,14 +525,12 @@ const AuthPage = () => {
                         className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 input-field ${signupErrors.email ? 'border-red-500' : 'border-gray-300'}`}
                         placeholder="Email"
                       />
-                      </div>
                       {signupErrors.email && (
                         <p className="mt-1 text-sm text-red-600">{signupErrors.email.message}</p>
                       )}
                     </div>
-                    
-
-                  <div>
+                   </div>
+                    <div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <FaLock className="text-gray-400" />
@@ -543,6 +590,37 @@ const AuthPage = () => {
           </div>
         </div>
       </div>
+      
+      {/* Error Popup */}
+      {showErrorPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 popup-overlay">
+          <div className="bg-white rounded-lg p-6 max-w-md w-mx-4 shadow-2xl transform transition-all duration-300 scale-95 animate-scaleIn">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <div className="bg-red-100 rounded-full p-2 mr-3">
+                  <FaTimes className="text-red-600 text-lg" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Error</h3>
+              </div>
+              <button
+                onClick={closeErrorPopup}
+                className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+              >
+                <FaTimes className="text-xl" />
+              </button>
+            </div>
+            <p className="text-gray-700 mb-6">{errorMessage}</p>
+            <div className="flex justify-end">
+              <button
+                onClick={closeErrorPopup}
+                className="bg-blue-900 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-blue-800 hover:scale-105 transform"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

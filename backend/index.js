@@ -4,6 +4,7 @@ require('dotenv').config();
 const { verifyEmailConfig } = require('./emailService');
 const emailRoutes = require('./emailRoutes');
 const authRoutes = require("./routes/auth")
+const candidateAuthRoutes = require("./routes/candidateAuth")
 const protectedRoutes = require("./routes/protected")
 
 const app = express();
@@ -23,16 +24,22 @@ app.use(express.json());
 // Use email routes
 app.use('/api', emailRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/candidate", candidateAuthRoutes);
 app.use("/api", protectedRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'Recruva OTP Service API',
+    message: 'Recruva Authentication API',
     version: '1.0.0',
     endpoints: {
       'POST /api/send-otp': 'Send OTP to email',
       'POST /api/verify-otp': 'Verify OTP',
+      'POST /api/candidate/register': 'Register new candidate',
+      'POST /api/candidate/login': 'Login candidate',
+      'POST /api/candidate/verify-email': 'Verify candidate email',
+      'GET /api/candidate/profile': 'Get candidate profile (protected)',
+      'PUT /api/candidate/profile': 'Update candidate profile (protected)',
       'GET /api/health': 'Health check'
     }
   });
@@ -40,7 +47,7 @@ app.get('/', (req, res) => {
 
 // Start server
 app.listen(port, async () => {
-  console.log(`🚀 OTP Server running on port ${port}`);
+  console.log(`🚀 Recruva Authentication Server running on port ${port}`);
   
   // Verify email configuration on startup
   const emailConfigValid = await verifyEmailConfig();

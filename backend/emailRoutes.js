@@ -1,22 +1,40 @@
 const express = require('express');
 const { sendOtpEmail, verifyEmailConfig } = require('./emailService');
+const prisma = require('./config/db');
+const { verifyCandidateEmail } = require('./controllers/candidateAuthController');
 
 const router = express.Router();
 
-// In-memory OTP store (in production, use a database)
+// In-memory OTP store (in production, use a database or Redis)
 const otpStore = new Map();
+const pendingRegistrations = new Map(); // Store pending candidate registrations
 
-// Send OTP endpoint
+// Send OTP endpoint (only for signup verification)
 router.post('/send-otp', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, name, password } = req.body;
     
-    if (!email) {
+    if (!email || !name || !password) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Email is required' 
+        message: 'Email, name, and password are required' 
       });
     }
+
+    // Check if candidate already exists
+    const existingCandidate = await prisma.candidate.findUnique({
+      where: { email }
+    });
+
+    if (existingCandidate) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Candidate with this email already exists' 
+      });
+    }
+
+    // Store pending registration data
+    pendingRegistrations.set(email, { name, password });
 
     // Generate a 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -33,10 +51,12 @@ router.post('/send-otp', async (req, res) => {
     if (emailResult.success) {
       res.json({ 
         success: true, 
-        message: 'OTP sent successfully',
+        message: 'OTP sent successfully for email verification',
         otp: otp // Return OTP for testing (remove in production)
       });
     } else {
+      // Clean up pending registration if email fails
+      pendingRegistrations.delete(email);
       res.status(500).json({ 
         success: false, 
         message: 'Failed to send OTP',
@@ -52,8 +72,8 @@ router.post('/send-otp', async (req, res) => {
   }
 });
 
-// Verify OTP endpoint
-router.post('/verify-otp', (req, res) => {
+// Verify OTP endpoint (only for signup completion)
+router.post('/verify-otp', async (req, res) => {
   try {
     const { email, otp } = req.body;
     
@@ -77,7 +97,8 @@ router.post('/verify-otp', (req, res) => {
     
     // Check if OTP has expired
     if (Date.now() > expirationTime) {
-      otpStore.delete(email); // Clean up expired OTP
+      otpStore.delete(email);
+      pendingRegistrations.delete(email); // Clean up pending registration
       return res.status(400).json({ 
         success: false, 
         message: 'OTP has expired' 
@@ -87,10 +108,64 @@ router.post('/verify-otp', (req, res) => {
     // Verify OTP
     if (otp === storedOtp) {
       otpStore.delete(email); // Clean up verified OTP
-      res.json({ 
-        success: true, 
-        message: 'OTP verified successfully' 
-      });
+      
+      // Get pending registration data
+      const pendingData = pendingRegistrations.get(email);
+      
+      if (pendingData) {
+        const { name, password } = pendingData;
+        const bcrypt = require('bcryptjs');
+        
+        try {
+          // Hash password
+          const hashedPassword = await bcrypt.hash(password, 10);
+          
+          // Create candidate
+          const candidate = await prisma.candidate.create({
+            data: { 
+              name, 
+              email, 
+              password: hashedPassword
+            }
+          });
+          
+          // Clean up pending registration
+          pendingRegistrations.delete(email);
+          
+          // Generate JWT token
+          const { generateToken } = require('./middleware/auth');
+          const token = generateToken({
+            id: candidate.id,
+            email: candidate.email,
+            name: candidate.name,
+            role: 'candidate'
+          });
+          
+          res.json({ 
+            success: true, 
+            message: 'Email verified and candidate registered successfully',
+            token,
+            candidate: {
+              id: candidate.id,
+              name: candidate.name,
+              email: candidate.email
+            }
+          });
+        } catch (error) {
+          console.error('Candidate creation error:', error);
+          pendingRegistrations.delete(email);
+          res.status(500).json({ 
+            success: false, 
+            message: 'Failed to create candidate account',
+            error: error.message
+          });
+        }
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Registration data not found' 
+        });
+      }
     } else {
       res.status(400).json({ 
         success: false, 
@@ -115,9 +190,9 @@ router.get('/health', (req, res) => {
     config: {
       emailConfigured: emailConfig.configured,
       emailHost: emailConfig.host ? 'Configured' : 'Not configured',
+      emailPort: emailConfig.port || 'Not configured',
       emailUser: emailConfig.user ? 'Configured' : 'Not configured'
-    },
-    otpStoreSize: otpStore.size
+    }
   });
 });
 
