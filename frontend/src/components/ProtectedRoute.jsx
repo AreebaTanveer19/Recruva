@@ -1,13 +1,15 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { ACCESS_TOKEN, ROLE } from '../constants';
+import { ACCESS_TOKEN} from '../constants';
+import { jwtDecode } from "jwt-decode";
 
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const token = localStorage.getItem(ACCESS_TOKEN);
-  const userRole = localStorage.getItem(ROLE); 
+  const decoded = token ? jwtDecode(token) : null;
+  const userRole = decoded?.role;
 
   if (!token || !allowedRoles.includes(userRole)) {
-    if(userRole=="candidate")
+    if(allowedRoles[0]=="candidate")
     return <Navigate to="/candidate/auth" replace />; 
     else{
     console.log(`you dont have access to ${allowedRoles[0]} routes`)

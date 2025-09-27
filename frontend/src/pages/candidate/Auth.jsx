@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { FaUser, FaEnvelope, FaLock, FaArrowRight, FaCheck, FaTimes } from 'react-icons/fa';
 import './Auth.css';
+import { ACCESS_TOKEN, } from "./../../constants";
 
 const AuthPage = () => {
   const [activeForm, setActiveForm] = useState('signup'); // 'login' or 'signup'
@@ -156,7 +157,7 @@ const AuthPage = () => {
         
         // Store JWT token if provided
         if (data.token) {
-          localStorage.setItem('candidateToken', data.token);
+          localStorage.setItem(ACCESS_TOKEN, data.token);
           localStorage.setItem('candidateData', JSON.stringify(data.candidate));
         }
         
@@ -208,8 +209,7 @@ const AuthPage = () => {
       if (result.success) {
         console.log('Login successful:', result);
         
-        // Store JWT token and user data
-        localStorage.setItem('candidateToken', result.token);
+        localStorage.setItem(ACCESS_TOKEN, result.token);
         localStorage.setItem('candidateData', JSON.stringify(result.candidate));
         
         // Redirect to dashboard

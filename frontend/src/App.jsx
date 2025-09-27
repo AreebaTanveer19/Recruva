@@ -5,6 +5,7 @@ import AdminLoginPage from './pages/admin/AdminLoginPage';
 import HRDashboard from './pages/HR/HRDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import DeptDashboard from './pages/DEPT/DeptDashboard'
+import CandidateDashboard from './pages/candidate/CandidateDashboard';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/admin/auth" element={<AdminLoginPage />} />
         <Route path="/hr/dashboard" element={<ProtectedRoute allowedRoles={['HR']}><HRDashboard /></ProtectedRoute>} />
         <Route path="/dept/dashboard" element={<ProtectedRoute allowedRoles={['DEPARTMENT']}><DeptDashboard /></ProtectedRoute>} />
+        <Route path="/candidate/dashboard" element={<ProtectedRoute allowedRoles={['candidate']}><CandidateDashboard/></ProtectedRoute>} />
       </Routes>
     </Router>
   )
