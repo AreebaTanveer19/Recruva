@@ -49,4 +49,39 @@ const createJob = async (req, res) => {
   }
 };
 
-module.exports = { createJob };
+const getPendingJobs = async (req, res) => {
+  try {
+    const pendingJobs = await prisma.job.findMany({
+      where: { status: "Pending" },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json({
+      message: "Pending jobs retrieved successfully",
+      jobs: pendingJobs,
+    });
+  } catch (error) {
+    console.error("Error fetching pending jobs:", error);
+    res.status(500).json({ error: "Failed to fetch pending jobs" });
+  }
+};
+
+
+const getOpenJobs = async (req, res) => {
+  try {
+    const openJobs = await prisma.job.findMany({
+      where: { status: "Open" },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json({
+      message: "Open jobs retrieved successfully",
+      jobs: openJobs,
+    });
+  } catch (error) {
+    console.error("Error fetching open jobs:", error);
+    res.status(500).json({ error: "Failed to fetch open jobs" });
+  }
+};
+
+module.exports =  { createJob, getPendingJobs, getOpenJobs };
