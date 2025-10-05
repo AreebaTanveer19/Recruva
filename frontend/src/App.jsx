@@ -6,7 +6,8 @@ import HRDashboard from './pages/HR/HRDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import DeptDashboard from './pages/DEPT/DeptDashboard'
 import CandidateDashboard from './pages/candidate/CandidateDashboard';
-import JobCreationForm from './pages/DEPT/JobCreationForm';
+import JobCreationForm from './pages/DEPT/Jobs/JobCreationForm';
+import JobsPage from './pages/DEPT/Jobs/JobsPage';
 
 function App() {
   return (
@@ -17,7 +18,8 @@ function App() {
         <Route path="/admin/auth" element={<AdminLoginPage />} />
         <Route path="/hr/dashboard" element={<ProtectedRoute allowedRoles={['HR']}><HRDashboard /></ProtectedRoute>} />
         <Route path="/dept/dashboard" element={<ProtectedRoute allowedRoles={['DEPARTMENT']}><DeptDashboard /></ProtectedRoute>} />
-        <Route path="/dept/dashboard/createjob" element={<ProtectedRoute allowedRoles={['DEPARTMENT']}><JobCreationForm /></ProtectedRoute>} />
+        <Route path="/dept/dashboard/jobs/createjob" element={<ProtectedRoute allowedRoles={['DEPARTMENT']}><JobCreationForm /></ProtectedRoute>} />
+        <Route path="/dept/dashboard/jobs" element={<ProtectedRoute allowedRoles={['DEPARTMENT']}><JobsPage /></ProtectedRoute>} />
         <Route path="/candidate/dashboard" element={<ProtectedRoute allowedRoles={['candidate']}><CandidateDashboard/></ProtectedRoute>} />
       </Routes>
     </Router>
