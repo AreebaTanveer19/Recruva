@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
-import api from "../../api";
-import alertDisplay from "../../components/AlertDisplay";
+import api from "../../../api";
+import alertDisplay from "../../../components/AlertDisplay";
 
 const JobCreationForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -86,7 +86,7 @@ const JobCreationForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="bg-white shadow-sm border border-gray-200 rounded-t-lg px-8 py-6">
