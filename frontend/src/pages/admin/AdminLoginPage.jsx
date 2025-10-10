@@ -24,8 +24,6 @@ const AdminLoginPage = () => {
       const res = await api.post("/auth/login", data);
       if (res.data.success) {
         localStorage.setItem(ACCESS_TOKEN, res.data.token);
-        // localStorage.setItem(ROLE, res.data.user.role);
-        // localStorage.setItem(U_ID, res.data.user.id);
         const decoded = res.data.token ? jwtDecode(res.data.token) : null;
         const userRole = decoded?.role;
          if (userRole === "HR") {
