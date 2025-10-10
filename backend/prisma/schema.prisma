@@ -82,3 +82,4 @@ model Job {
   deadline         DateTime?
 
 }
+
