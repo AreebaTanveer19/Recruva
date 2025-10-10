@@ -1,86 +1,78 @@
 import React, { useState } from "react";
-import { Home, Briefcase, FileText, Clock, LogOut, Menu, X } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ACCESS_TOKEN } from "../constants";
+import { MdLogout } from "react-icons/md";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 
-export default function Sidebar() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [isOpen, setIsOpen] = useState(false);
+const Sidebar = ({ brandName = "Recruva", panelName, navItems = [], onLogout }) => {
+  const [openLogout, setOpenLogout] = useState(false);
 
-  const links = [
-    { name: "Dashboard", path: "/hr/dashboard", icon: <Home size={18} /> },
-    { name: "Open Jobs", path: "/OpenJobs", icon: <Briefcase size={18} /> },
-    { name: "Pending Jobs", path: "/pending-jobs", icon: <Clock size={18} /> },
-    { name: "Job Applications", path: "/applications", icon: <FileText size={18} /> },
-  ];
+  const handleOpenLogout = () => setOpenLogout(true);
+  const handleCloseLogout = () => setOpenLogout(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem(ACCESS_TOKEN); 
-    setIsOpen(false);
-    navigate("/admin/auth"); 
+  const handleConfirmLogout = () => {
+    if (onLogout) onLogout();
+    handleCloseLogout();
   };
 
   return (
-    <>
-      {/* Mobile toggle button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 bg-gray-900 p-2 rounded-md text-white"
-      >
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
-
-      {/* Sidebar */}
-      <div
-        className={`fixed top-0 left-0 h-full w-60 bg-gradient-to-b from-black via-gray-900 to-gray-800 text-gray-200 flex flex-col shadow-lg transform transition-transform duration-300 md:translate-x-0 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-  
-        <div className="p-5 text-xl font-bold text-white tracking-wide border-b border-gray-700">
-          Recruva
-        </div>
-
-        {/* Nav Links */}
-        <nav className="flex-1 p-4 space-y-2">
-          {links.map((link) => {
-            const active = location.pathname === link.path;
-            return (
-              <Link
-                key={link.name}
-                to={link.path}
-                onClick={() => setIsOpen(false)} // close on mobile
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                  active
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-500 text-white shadow-md"
-                    : "hover:bg-gray-700 hover:text-white text-gray-300"
-                }`}
-              >
-                {link.icon}
-                <span>{link.name}</span>
-              </Link>
-            );
-          })}
-
-          {/* Logout button */}
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg w-full text-left text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-200"
-          >
-            <LogOut size={18} />
-            <span>Logout</span>
-          </button>
-        </nav>
-
-        {/* Footer */}
-        <div className="p-4 text-sm text-gray-500 border-t border-gray-700">
-          © 2025 Recruva
-        </div>
+    <div className="bg-gradient-to-b from-black to-gray-800 text-white flex flex-col items-center justify-start p-8 h-screen w-64 shadow-lg">
+      {/* Branding */}
+      <div className="mb-10 text-center">
+        <h1 className="text-3xl font-bold mb-2">{brandName}</h1>
+        <p className="text-xl font-medium mb-1">{panelName}</p>
+        <p className="text-gray-300 text-sm">
+          Manage your team's tasks and jobs
+        </p>
       </div>
 
-      {/* Ensure main content shifts right on desktop */}
-      <div className="md:ml-60"></div>
-    </>
+      {/* Navigation */}
+      <nav className="flex flex-col w-full gap-1">
+        {navItems.map((item) => (
+          <button
+            key={item.name}
+            onClick={item.onClick}
+            className="w-full flex items-center gap-2 px-4 py-2 rounded hover:bg-gray-700 transition-colors"
+          >
+            {item.icon && <span>{item.icon}</span>}
+            <span>{item.name}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div className="mt-auto w-full text-center">
+        <button
+          onClick={handleOpenLogout}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
+        >
+          <MdLogout size={20} />
+          Logout
+        </button>
+      </div>
+
+      {/* Confirmation Modal */}
+      <Dialog open={openLogout} onClose={handleCloseLogout}>
+        <DialogTitle>Confirm Logout</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to logout? You will be redirected to the login page.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseLogout} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmLogout} color="primary" autoFocus>
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </div>
   );
-}
+};
+
+export default Sidebar;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "./../../api";
-import Sidebar from "./../../components/Sidebar"
+import HRSidebar from "./../../components/HRSidebar"
 
 const HRDashboard = () => {
 const [message, setMessage] = useState("Loading...");
@@ -24,7 +24,7 @@ const [message, setMessage] = useState("Loading...");
   return (
     <div>
       <div className="flex min-h-screen ">
-              <Sidebar />
+              <HRSidebar />
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">HR DASHBOARD</h1>
       {error ? (

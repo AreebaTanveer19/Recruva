@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "./../../api";
-import Sidebar from "./../../components/Sidebar";
+import HRSidebar from "./../../components/HRSidebar";
 
 function OpenJobs() {
   const [jobs, setJobs] = useState([]);
@@ -25,7 +25,7 @@ function OpenJobs() {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-b from-black to-gray-800 text-white">
-      <Sidebar />
+      <HRSidebar />
 
       <div className="flex-1 py-10 px-6 overflow-y-auto">
         {loading ? (
