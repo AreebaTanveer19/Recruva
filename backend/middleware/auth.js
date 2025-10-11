@@ -29,6 +29,6 @@ const auth = (req, res, next) => {
 };
 
 const generateToken = (userData) => {
-  return jwt.sign(userData, JWT_SECRET, { expiresIn: "1h" });
+  return jwt.sign(userData, JWT_SECRET, { expiresIn: "6h" });
 };
 module.exports = { auth, generateToken };

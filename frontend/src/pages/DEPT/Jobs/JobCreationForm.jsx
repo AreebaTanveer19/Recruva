@@ -40,9 +40,9 @@ const JobCreationForm = () => {
         responsibilities: data.responsibilities
           .split(";")
           .map((item) => item.trim()),
-        qualifications: data.qualifications
-          .split(";")
-          .map((item) => item.trim()),
+        // qualifications: data.qualifications
+        //   .split(";")
+        //   .map((item) => item.trim()),
         experienceLevel: parseInt(data.experienceLevel, 10),
         salaryMin: parseInt(data.salaryMin, 10),
         salaryMax: parseInt(data.salaryMax, 10),
@@ -281,26 +281,6 @@ const JobCreationForm = () => {
                 )}
               </div>
 
-              {/* Qualifications */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Qualifications <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  {...register("qualifications", { required: true })}
-                  placeholder="e.g., Bachelor's degree; 5+ years experience"
-                  className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
-                />
-                <p className="text-xs text-gray-500 mt-1.5">
-                  Separate each qualification with a semicolon
-                </p>
-                {errors.qualifications && (
-                  <p className="text-red-500 text-sm mt-1.5">
-                    Qualifications are required
-                  </p>
-                )}
-              </div>
             </div>
           </div>
 

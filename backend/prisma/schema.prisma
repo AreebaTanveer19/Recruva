@@ -17,7 +17,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   createdJobs  Job[] @relation("JobCreator")
-  approvedJobs Job[] @relation("JobApprover")
+  postedJobs   Job[] @relation("JobPosters")
 }
 
 enum Role {
@@ -33,6 +33,19 @@ model Candidate {
   createdAt DateTime @default(now())
 }
 
+model JobDetails {
+  jobId            Int     @id
+  description      String
+  requirements     String[]
+  responsibilities String[]
+  experienceLevel  Int
+  salaryMin        Int
+  salaryMax        Int
+
+  job Job @relation(fields: [jobId], references: [id])
+}
+
+
 enum EmploymentType {
   FullTime
   PartTime
@@ -46,7 +59,6 @@ enum WorkMode {
 }
 
 enum JobStatus {
-  Pending
   Open
   Closed
 }
@@ -60,26 +72,20 @@ model Job {
   employmentType   EmploymentType
   workMode         WorkMode
 
-  description      String
-  requirements     String[]        
-  responsibilities String[]
-  qualifications   String[]
-  experienceLevel  Int
-
-  salaryMin        Int
-  salaryMax        Int
   
-  status           JobStatus       @default(Pending)
+  status           JobStatus       @default(Open)
 
   createdBy   Int
   creator     User   @relation("JobCreator", fields: [createdBy], references: [id])
-
-  approvedBy  Int?
-  approver    User?  @relation("JobApprover", fields: [approvedBy], references: [id])
 
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   deadline         DateTime?
 
+  details JobDetails?
+
+  posters     User[] @relation("JobPosters")
+
 }
+
 
