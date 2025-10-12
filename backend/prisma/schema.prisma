@@ -3,46 +3,67 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  role      Role     @default(DEPARTMENT)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  role        Role     @default(DEPARTMENT)
+  
+  createdJobs Job[]    @relation("JobCreator")
+  postedJobs  Job[]    @relation("JobPosters")
 
-  createdJobs  Job[] @relation("JobCreator")
-  postedJobs   Job[] @relation("JobPosters")
-}
-
-enum Role {
-  HR
-  DEPARTMENT
+  linkedinId      String?  
+  linkedinToken   String?  
+  linkedinExpires DateTime?
 }
 
 model Candidate {
-  id       Int    @id @default(autoincrement())
-  name     String
-  email    String @unique
-  password String
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
   createdAt DateTime @default(now())
 }
 
+model Job {
+  id             Int            @id @default(autoincrement())
+  title          String
+  department     String
+  location       String
+  employmentType EmploymentType
+  workMode       WorkMode
+  status         JobStatus      @default(Open)
+  createdBy      Int
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deadline       DateTime?
+  creator        User           @relation("JobCreator", fields: [createdBy], references: [id])
+  details        JobDetails?
+  posters        User[]         @relation("JobPosters")
+}
+
 model JobDetails {
-  jobId            Int     @id
+  jobId            Int      @id
   description      String
   requirements     String[]
   responsibilities String[]
   experienceLevel  Int
   salaryMin        Int
   salaryMax        Int
+  job              Job      @relation(fields: [jobId], references: [id])
+}
 
-  job Job @relation(fields: [jobId], references: [id])
+
+enum Role {
+  HR
+  DEPARTMENT
 }
 
 
@@ -62,30 +83,3 @@ enum JobStatus {
   Open
   Closed
 }
-
-model Job {
-  id               Int            @id @default(autoincrement())
-  title            String
-  department       String
-  location         String
-
-  employmentType   EmploymentType
-  workMode         WorkMode
-
-  
-  status           JobStatus       @default(Open)
-
-  createdBy   Int
-  creator     User   @relation("JobCreator", fields: [createdBy], references: [id])
-
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  deadline         DateTime?
-
-  details JobDetails?
-
-  posters     User[] @relation("JobPosters")
-
-}
-
-

@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "public"."Role" AS ENUM ('HR', 'DEPARTMENT');
+
 -- CreateTable
 CREATE TABLE "public"."User" (
     "id" SERIAL NOT NULL,
@@ -5,6 +8,7 @@ CREATE TABLE "public"."User" (
     "password" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "role" "public"."Role" NOT NULL DEFAULT 'DEPARTMENT',
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
