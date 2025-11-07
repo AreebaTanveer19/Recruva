@@ -83,3 +83,16 @@ enum JobStatus {
   Open
   Closed
 }
+
+model CvData {
+  id              Int      @id @default(autoincrement())
+  name            String
+  email           String   @unique
+  phone           String? 
+  address         String?
+  education       Json?
+  work_experience Json?
+  skills          String[]
+  projects        Json?
+  certifications  Json?
+}
