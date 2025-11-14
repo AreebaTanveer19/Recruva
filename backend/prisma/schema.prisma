@@ -30,6 +30,7 @@ model Candidate {
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+  cvData    CvData?
 }
 
 model Job {
@@ -86,8 +87,6 @@ enum JobStatus {
 
 model CvData {
   id              Int      @id @default(autoincrement())
-  name            String
-  email           String   @unique
   phone           String? 
   address         String?
   education       Json?
@@ -95,4 +94,7 @@ model CvData {
   skills          String[]
   projects        Json?
   certifications  Json?
+
+  candidateId Int      @unique
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
 }
