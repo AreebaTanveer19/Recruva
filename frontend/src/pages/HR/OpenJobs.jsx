@@ -2,12 +2,19 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "./../../api";
 import HRSidebar from "./../../components/HRSidebar";
+import axios from "axios";
+import { ACCESS_TOKEN } from "./../../constants";
 
 function OpenJobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isLinkedInConnected, setIsLinkedInConnected] = useState(false);
   const navigate = useNavigate();
+  const [postingJobId, setPostingJobId] = useState(null);
 
+  // ------------------------
+  // Fetch open jobs
+  // ------------------------
   useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -19,15 +26,93 @@ function OpenJobs() {
         setLoading(false);
       }
     };
-
     fetchJobs();
   }, []);
 
+  // ------------------------
+  // Check LinkedIn connection
+  // ------------------------
+
+  useEffect(() => {
+    const checkLinkedInStatus = async () => {
+      try {
+        const token = localStorage.getItem(ACCESS_TOKEN);
+
+        const res = await axios.get(
+          "http://localhost:3000/auth/linkedin/status",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setIsLinkedInConnected(res.data.connected);
+      } catch (err) {
+        console.error("Failed to check LinkedIn status:", err);
+        setIsLinkedInConnected(false);
+      }
+    };
+
+    checkLinkedInStatus();
+  }, []);
+
+  // ------------------------
+  // Handlers
+  // ------------------------
+  const connectLinkedIn = () => {
+    const token = localStorage.getItem("ACCESS_TOKEN");
+    window.location.href = `http://localhost:3000/auth/linkedin/auth?token=${token}`;
+  };
+
+  const postToLinkedIn = async (jobId) => {
+    try {
+      setPostingJobId(jobId);
+      const token = localStorage.getItem("ACCESS_TOKEN");
+
+      const res = await axios.post(
+        `http://localhost:3000/auth/linkedin/post/${jobId}`,
+        {}, // empty body if not sending anything
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      alert(res.data.message || "Posted successfully!");
+    } catch (err) {
+      console.error("Post error:", err);
+      alert("Failed to post on LinkedIn. Please reconnect your LinkedIn.");
+    } finally {
+      setPostingJobId(null);
+    }
+  };
+
+  // ------------------------
+  // UI
+  // ------------------------
   return (
     <div className="flex min-h-screen bg-gradient-to-b from-black to-gray-800 text-white">
       <HRSidebar />
 
       <div className="flex-1 py-10 px-6 overflow-y-auto">
+        <div className="flex justify-end mb-6">
+          <button
+            onClick={connectLinkedIn}
+            disabled={isLinkedInConnected}
+            className={`px-4 py-2 rounded-lg font-semibold transition ${
+              isLinkedInConnected
+                ? "bg-green-600 cursor-not-allowed"
+                : "bg-[#0077b5] hover:bg-[#006097]"
+            } text-white`}
+          >
+            {isLinkedInConnected
+              ? "Connected to LinkedIn ✅"
+              : "Connect LinkedIn"}
+          </button>
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center min-h-screen text-white">
             <p className="text-lg animate-pulse">Loading open jobs...</p>
@@ -55,32 +140,9 @@ function OpenJobs() {
                     {job.department} • {job.location}
                   </p>
 
-                  <div className="text-sm text-gray-300 space-y-1">
-                    <p>
-                      <strong>Employment Type:</strong> {job.employmentType}
-                    </p>
-                    <p>
-                      <strong>Work Mode:</strong> {job.workMode}
-                    </p>
-                    <p>
-                      <strong>Experience Level:</strong> {job.experienceLevel}+ years
-                    </p>
-                    <p>
-                      <strong>Salary:</strong> PKR{" "}
-                      {job.salaryMin.toLocaleString()} -{" "}
-                      {job.salaryMax.toLocaleString()}
-                    </p>
-                  </div>
-
                   <p className="mt-3 text-gray-400 text-sm line-clamp-3">
                     {job.description}
                   </p>
-
-                  {job.deadline && (
-                    <p className="text-xs text-gray-500 mt-3">
-                      Deadline: {new Date(job.deadline).toLocaleDateString()}
-                    </p>
-                  )}
 
                   <div className="mt-5 flex gap-2">
                     <button
@@ -91,10 +153,17 @@ function OpenJobs() {
                     </button>
 
                     <button
-                      className="flex items-center justify-center gap-2 px-3 py-2 bg-[#0077b5] text-white rounded-lg font-semibold hover:bg-[#006097] transition"
-                      title="Post to LinkedIn"
+                      onClick={() => postToLinkedIn(job.id)}
+                      disabled={!isLinkedInConnected || postingJobId === job.id}
+                      className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-semibold transition ${
+                        isLinkedInConnected
+                          ? "bg-[#0077b5] hover:bg-[#006097] text-white"
+                          : "bg-gray-600 cursor-not-allowed text-gray-300"
+                      }`}
                     >
-                      <span className="hidden sm:inline">Post to LinkedIn</span>
+                      {postingJobId === job.id
+                        ? "Posting..."
+                        : "Post to LinkedIn"}
                     </button>
                   </div>
                 </div>

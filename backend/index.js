@@ -7,6 +7,8 @@ const authRoutes = require("./routes/auth");
 const candidateAuthRoutes = require("./routes/candidateAuth");
 const protectedRoutes = require("./routes/protected");
 const jobRoutes = require("./routes/job");
+const linkedinRoutes = require("./routes/linkedinRoutes.js");
+
 const cvRoutes = require("./routes/cv");
 
 const app = express();
@@ -29,6 +31,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/candidate", candidateAuthRoutes);
 app.use("/api", protectedRoutes);
 app.use("/api", jobRoutes);
+app.use("/auth/linkedin", linkedinRoutes);
 app.use("/api", cvRoutes);
 
 // Root endpoint
