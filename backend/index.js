@@ -3,10 +3,11 @@ const cors = require('cors');
 require('dotenv').config();
 const { verifyEmailConfig } = require('./emailService');
 const emailRoutes = require('./emailRoutes');
-const authRoutes = require("./routes/auth")
-const candidateAuthRoutes = require("./routes/candidateAuth")
-const protectedRoutes = require("./routes/protected")
+const authRoutes = require("./routes/auth");
+const candidateAuthRoutes = require("./routes/candidateAuth");
+const protectedRoutes = require("./routes/protected");
 const jobRoutes = require("./routes/job");
+const cvRoutes = require("./routes/cv");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -28,6 +29,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/candidate", candidateAuthRoutes);
 app.use("/api", protectedRoutes);
 app.use("/api", jobRoutes);
+app.use("/api", cvRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -42,6 +44,8 @@ app.get('/', (req, res) => {
       'POST /api/candidate/verify-email': 'Verify candidate email',
       'GET /api/candidate/profile': 'Get candidate profile (protected)',
       'PUT /api/candidate/profile': 'Update candidate profile (protected)',
+      'GET /api/cv': 'Get CV data (protected)',
+      'POST /api/cv': 'Save CV data (protected)',
       'GET /api/health': 'Health check'
     }
   });

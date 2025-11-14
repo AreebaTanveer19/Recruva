@@ -59,7 +59,19 @@ model JobDetails {
   salaryMax        Int
   job              Job      @relation(fields: [jobId], references: [id])
 }
+model CVData {
+  id             String   @id @default(cuid())
+  candidateId    String   @unique
+  education      Json
+  work_experience Json
+  skills         Json
+  projects       Json
+  certifications Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
+  candidate      Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
 
 enum Role {
   HR
