@@ -7,10 +7,10 @@ const Sidebar = () => {
   
   const navItems = [
     { icon: <FiHome className="w-5 h-5" />, label: 'Dashboard', path: '/candidate/dashboard' },
-    { icon: <FiBriefcase className="w-5 h-5" />, label: 'Job Openings', path: '/candidate/jobs' },
+    // { icon: <FiBriefcase className="w-5 h-5" />, label: 'Job Openings', path: '/candidate/jobs' },
     { icon: <FiFileText className="w-5 h-5" />, label: 'Applications', path: '/candidate/applications' },
     { icon: <FiUser className="w-5 h-5" />, label: 'Profile', path: '/candidate/profile' },
-    { icon: <FiSettings className="w-5 h-5" />, label: 'Settings', path: '/candidate/settings' },
+    // { icon: <FiSettings className="w-5 h-5" />, label: 'Settings', path: '/candidate/settings' },
   ];
 
   return (

@@ -11,6 +11,7 @@ import JobsPage from './pages/DEPT/Jobs/JobsPage';
 import OpenJobs from './pages/HR/OpenJobs';
 import JobDetails from './components/JobDetails';
 import Profile from './pages/candidate/Profile';
+import ProfileDisplay from './pages/candidate/ProfileDisplay';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/dept/dashboard/jobs" element={<ProtectedRoute allowedRoles={['DEPARTMENT']}><JobsPage /></ProtectedRoute>} />
         <Route path="/candidate/dashboard" element={<ProtectedRoute allowedRoles={['candidate']}><CandidateDashboard/></ProtectedRoute>} />
         <Route path="/candidate/profile" element={<ProtectedRoute allowedRoles={['candidate']}><Profile /></ProtectedRoute>} />
+        <Route path="/candidate/profile/view" element={<ProtectedRoute allowedRoles={['candidate']}><ProfileDisplay /></ProtectedRoute>} />
         <Route path="/OpenJobs" element={<ProtectedRoute allowedRoles={['HR']}><OpenJobs/></ProtectedRoute>} />
         <Route path="/open-jobs/:id" element={<ProtectedRoute allowedRoles={['HR']}><JobDetails /></ProtectedRoute>} />
       </Routes>

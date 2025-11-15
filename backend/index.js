@@ -32,7 +32,7 @@ app.use("/api/candidate", candidateAuthRoutes);
 app.use("/api", protectedRoutes);
 app.use("/api", jobRoutes);
 app.use("/auth/linkedin", linkedinRoutes);
-app.use("/api", cvRoutes);
+app.use("/api/cv", cvRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

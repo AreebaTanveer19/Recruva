@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Listbox, Transition } from '@headlessui/react';
 import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
+import api from '../../api';
+import { ACCESS_TOKEN } from "../../constants";
 
-const API_URL = 'http://localhost:3000/api/candidate/profile';
+const API_URL = `${import.meta.env.VITE_API_URL}/candidate/profile`;
 
 // Predefined options for form fields
 const DEGREE_TYPES = [
@@ -48,50 +50,66 @@ const ProfileForm = () => {
   const navigate = useNavigate();
 
   // Create axios instance with default config
-  const api = axios.create({
-    baseURL: API_URL,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    }
-  });
+  // const api = axios.create({
+  //   baseURL: API_URL,
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //     'Authorization': `Bearer ${localStorage.getItem('token')}`
+  //   }
+  // });
 
   // Fetch profile data on component mount
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/candidate/profile');
-          return;
-        }
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem(ACCESS_TOKEN);
 
-        const response = await api.get('/');
-        const data = response.data;
-        
-        if (data) {
-          setFormData(prev => ({
-            ...prev,
-            ...data,
-            education: data.education?.length ? data.education : [{ degree: '', institution: '', year: '' }],
-            work_experience: data.work_experience?.length ? data.work_experience : [{ company: '', role: '', duration: '', description: '' }],
-            projects: data.projects?.length ? data.projects : [{ title: '', description: '', link: '' }],
-            certifications: data.certifications?.length ? data.certifications : [{ name: '', authority: '', year: '' }],
-            skills: data.skills || []
-          }));
-        }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        if (error.response?.status === 401) {
-          navigate('/candidate/auth');
-        }
-      } finally {
-        setIsLoading(false);
+      if (!token) {
+        navigate('/candidate/auth');
+        return;
       }
-    };
 
-    fetchProfile();
-  }, [navigate]);
+      const response = await api.get('/cv');
+
+      const data = response.data.data; // FIXED
+
+      if (data) {
+        setFormData(prev => ({
+          ...prev,
+          ...data,
+          education: data.education?.length
+            ? data.education
+            : [{ degree: '', institution: '', year: '' }],
+          
+          work_experience: data.work_experience?.length
+            ? data.work_experience
+            : [{ company: '', role: '', duration: '', description: '' }],
+
+          projects: data.projects?.length
+            ? data.projects
+            : [{ title: '', description: '', link: '' }],
+
+          certifications: data.certifications?.length
+            ? data.certifications
+            : [{ name: '', authority: '', year: '' }],
+
+          skills: data.skills || []
+        }));
+      }
+
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+
+      if (error.response?.status === 401) {
+        navigate('/candidate/auth');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  fetchProfile();
+}, [navigate]);
 
   const handleChange = (e, section, index) => {
     const { name, value } = e.target;
@@ -182,21 +200,15 @@ const ProfileForm = () => {
         email: formData.email,
         phone: formData.phone,
         address: formData.address,
-        education: formData.education,
-        work_experience: formData.work_experience,
-        skills: formData.skills,
-        projects: formData.projects,
-        certifications: formData.certifications
+        education: formData.education || [],
+        work_experience: formData.work_experience || [],
+        skills: formData.skills || [],
+        projects: formData.projects || [],
+        certifications: formData.certifications || []
       };
+     const response = await api.post("/cv", cvData);
 
-      const response = await axios.post('http://localhost:3000/api/cv', cvData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.status === 200) {
+      if (response.data.success) {
         setSuccess('CV data saved successfully!');
         setTimeout(() => setSuccess(''), 3000);
       }
