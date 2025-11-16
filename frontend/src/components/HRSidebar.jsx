@@ -24,74 +24,75 @@ export default function HRSidebar() {
 
   return (
     <>
-      {/* Mobile toggle button */}
+      <>
+  {/* Mobile toggle button (Menu) */}
+  {!isOpen && (
+    <button
+      onClick={() => setIsOpen(true)}
+      className="md:hidden fixed top-4 left-4 z-50 bg-gray-900 p-2 rounded-md text-white"
+    >
+      <Menu size={20} />
+    </button>
+  )}
+
+  {/* Sidebar */}
+  <div
+    className={`z-10 fixed top-0 left-0 h-full w-60 bg-black border-r border-gray-800 text-white flex flex-col shadow-lg transform transition-transform duration-300 md:translate-x-0 ${
+      isOpen ? "translate-x-0" : "-translate-x-full"
+    }`}
+  >
+    {/* Logo + close button */}
+    <div className="p-5 text-xl font-bold text-white tracking-wide border-b border-gray-800 flex items-center justify-between">
+      <span>Recruva</span>
+      {/* X button only on mobile */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 bg-gray-900 p-2 rounded-md text-white"
+        onClick={() => setIsOpen(false)}
+        className="md:hidden text-white"
       >
-        {isOpen ? <X size={20} /> : <Menu size={20} />}
+        <X size={20} />
       </button>
+    </div>
 
-      {/* Sidebar */}
-      <div
-        className={`fixed top-0 left-0 h-full w-60 bg-gradient-to-b from-black via-gray-900 to-gray-800 text-gray-200 flex flex-col shadow-lg transform transition-transform duration-300 md:translate-x-0 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-  
-        <div className="p-5 text-xl font-bold text-white tracking-wide border-b border-gray-700">
-          Recruva
-        </div>
-
-        {/* Nav Links */}
-        <nav className="flex-1 p-4 space-y-2">
-          {links.map((link) => {
-            const active = location.pathname === link.path;
-            return (
-              <Link
-                key={link.name}
-                to={link.path}
-                onClick={() => setIsOpen(false)} // close on mobile
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-                  active
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-500 text-white shadow-md"
-                    : "hover:bg-gray-700 hover:text-white text-gray-300"
-                }`}
-              >
-                {link.icon}
-                <span>{link.name}</span>
-              </Link>
-            );
-          })}
-
-          {/* Logout button */}
-
-
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg w-full text-left text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-200"
-
+    {/* Nav Links */}
+    <nav className="flex-1 p-4 space-y-2">
+      {links.map((link) => {
+        const active = location.pathname === link.path;
+        return (
+          <Link
+            key={link.name}
+            to={link.path}
+            onClick={() => setIsOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+              active
+                ? "bg-white text-black shadow-sm"
+                : "hover:bg-gray-900 hover:text-white text-gray-400"
+            }`}
           >
-            <LogOut size={18} />
-            <span>Logout</span>
-          </button>
-        </nav>
+            {link.icon}
+            <span>{link.name}</span>
+          </Link>
+        );
+      })}
 
+      <button
+        onClick={handleLogout}
+        className="flex items-center gap-3 px-3 py-2 rounded-lg w-full text-left text-gray-400 hover:bg-gray-900 hover:text-white transition-all duration-200"
+      >
+        <LogOut size={18} />
+        <span>Logout</span>
+      </button>
+    </nav>
 
-        {/* Footer */}
-        <div className="p-4 text-sm text-gray-500 border-t border-gray-700">
-          © 2025 Recruva
-        </div>
+    {/* Footer */}
+    <div className="p-4 text-sm text-gray-600 border-t border-gray-800">
+      © 2025 Recruva
+    </div>
+  </div>
 
-
-
-
-
-      </div>
-
-      {/* Ensure main content shifts right on desktop */}
-      <div className="md:ml-60"></div>
-    </>
+  {/* Ensure main content shifts right on desktop */}
+  <div className="md:ml-60"></div>
+</>
+</>
 
 
 

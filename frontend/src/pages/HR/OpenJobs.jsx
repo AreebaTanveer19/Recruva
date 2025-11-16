@@ -120,13 +120,14 @@ function OpenJobs() {
   // UI
   // ------------------------
   return (
-    <div className="flex min-h-screen bg-gradient-to-b from-black to-gray-800 text-white">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 text-gray-900">
       <HRSidebar />
 
-      <div className="flex-1 py-10 px-6 overflow-y-auto">
+      <div className="flex-1 py-10 px-4 sm:px-6 md:px-8 overflow-y-auto bg-gray-100">
+        {/* LinkedIn Button */}
         <div className="flex justify-end mb-6">
           {linkedinLoading ? (
-            <button className="px-4 py-2 rounded-lg bg-gray-600 text-gray-300 cursor-wait animate-pulse">
+            <button className="px-4 py-2 rounded-lg bg-gray-300 text-gray-600 cursor-wait animate-pulse">
               Checking LinkedIn...
             </button>
           ) : (
@@ -135,9 +136,9 @@ function OpenJobs() {
               disabled={isLinkedInConnected}
               className={`px-4 py-2 rounded-lg font-semibold transition ${
                 isLinkedInConnected
-                  ? "bg-green-600 cursor-not-allowed"
-                  : "bg-[#0077b5] hover:bg-[#006097]"
-              } text-white`}
+                  ? "bg-black text-white cursor-not-allowed"
+                  : "bg-gray-900 hover:bg-black text-white"
+              }`}
             >
               {isLinkedInConnected
                 ? "Connected to LinkedIn ✅"
@@ -146,95 +147,109 @@ function OpenJobs() {
           )}
         </div>
 
+        {/* Loading / No Jobs */}
         {loading ? (
-          <div className="flex items-center justify-center min-h-screen text-white">
+          <div className="flex items-center justify-center h-64">
             <p className="text-lg animate-pulse">Loading open jobs...</p>
           </div>
         ) : jobs.length === 0 ? (
-          <div className="flex items-center justify-center min-h-screen text-gray-300">
+          <div className="flex items-center justify-center h-64 text-gray-600">
             <p>No open jobs available.</p>
           </div>
         ) : (
           <>
-            <h2 className="text-3xl font-semibold mb-8 text-center text-white">
+            <h2 className="text-3xl font-semibold mb-6 text-center text-gray-900">
               Open Job Positions
             </h2>
 
-            <div className="mb-6 flex flex-col md:flex-row gap-3 items-start md:items-center">
-              {/* Search Input */}
+            {/* Search & Filters */}
+            <div className="items-stretch mb-6 flex flex-col sm:flex-row gap-3 md:items-center flex-wrap">
+              {" "}
+              {/* Search Input */}{" "}
               <input
                 type="text"
                 placeholder="Search jobs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 px-4 py-2 rounded-xl bg-gray-800 border border-gray-700 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
-              />
-
-              {/* Department Filter */}
+                className="flex-1 px-4 py-2 rounded-xl bg-white border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
+              />{" "}
+              {/* Department Filter */}{" "}
               <select
                 value={filterDept}
                 onChange={(e) => setFilterDept(e.target.value)}
-                className="px-4 py-2 rounded-xl bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
               >
-                <option value="">All Departments</option>
+                {" "}
+                <option value="">All Departments</option>{" "}
                 {Array.from(new Set(jobs.map((job) => job.department))).map(
                   (dept) => (
                     <option key={dept} value={dept}>
-                      {dept}
+                      {" "}
+                      {dept}{" "}
                     </option>
                   )
-                )}
-              </select>
-
-              {/* Location Filter */}
+                )}{" "}
+              </select>{" "}
+              {/* Location Filter */}{" "}
               <select
                 value={filterLocation}
                 onChange={(e) => setFilterLocation(e.target.value)}
-                className="px-4 py-2 rounded-xl bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+                className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
               >
-                <option value="">All Locations</option>
+                {" "}
+                <option value="">All Locations</option>{" "}
                 {Array.from(new Set(jobs.map((job) => job.location))).map(
                   (loc) => (
                     <option key={loc} value={loc}>
-                      {loc}
+                      {" "}
+                      {loc}{" "}
                     </option>
                   )
-                )}
-              </select>
-
-  <button
-    onClick={() => {
-      setSearchTerm("");
-      setFilterDept("");
-      setFilterLocation("");
-    }}
-    className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold transition"
-  >
-    Clear Filters
-  </button>
+                )}{" "}
+              </select>{" "}
+              {/* Clear Filters */}{" "}
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterDept("");
+                  setFilterLocation("");
+                }}
+                className="px-4 py-2 rounded-xl bg-gray-900 hover:bg-black text-white font-semibold transition"
+              >
+                {" "}
+                Clear Filters{" "}
+              </button>{" "}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Job Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               {filteredJobs.map((job) => (
                 <div
                   key={job.id}
-                  className="bg-gray-900 border border-gray-700 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-transform transform hover:-translate-y-1"
+                  className="bg-white border border-gray-300 rounded-xl p-6 shadow-sm hover:shadow-lg hover:border-gray-400 transition-all transform hover:-translate-y-1 flex flex-col"
                 >
-                  <h3 className="text-xl font-bold text-white mb-2">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
                     {job.title}
                   </h3>
-                  <p className="text-gray-400 text-sm mb-2">
-                    {job.department} • {job.location}
-                  </p>
+                  <p className="text-gray-600 text-sm mb-2">
+      {job.department} • {job.location}
+    </p>
 
-                  <p className="mt-3 text-gray-400 text-sm line-clamp-3">
-                    {job.description}
-                  </p>
+    <p className="mt-3 text-gray-600 text-sm line-clamp-3 flex-1">
+      {job.description}
+    </p>
 
-                  <div className="mt-5 flex gap-2">
+    {/* Extra Job Details */}
+    <div className="mt-4 space-y-1 text-sm text-gray-700">
+      <p><span className="font-semibold">Employment Type:</span> {job.employmentType}</p>
+      <p><span className="font-semibold">Work Mode:</span> {job.workMode}</p>
+      <p><span className="font-semibold">Salary Range:</span> {job.salaryMin} - {job.salaryMax}</p>
+    </div>
+
+                  <div className="mt-5 flex flex-col sm:flex-col lg:flex-row gap-2">
                     <button
                       onClick={() => navigate(`/open-jobs/${job.id}`)}
-                      className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2 rounded-lg font-semibold hover:opacity-90 transition"
+                      className="flex-1 bg-gray-900 text-white py-2 rounded-lg font-semibold hover:bg-black transition"
                     >
                       View Details
                     </button>
@@ -244,8 +259,8 @@ function OpenJobs() {
                       disabled={!isLinkedInConnected || postingJobId === job.id}
                       className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-semibold transition ${
                         isLinkedInConnected
-                          ? "bg-[#0077b5] hover:bg-[#006097] text-white"
-                          : "bg-gray-600 cursor-not-allowed text-gray-300"
+                          ? "bg-gray-800 hover:bg-black text-white"
+                          : "bg-gray-300 cursor-not-allowed text-gray-500"
                       }`}
                     >
                       {postingJobId === job.id
