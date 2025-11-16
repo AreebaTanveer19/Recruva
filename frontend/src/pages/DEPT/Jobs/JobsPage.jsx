@@ -1,42 +1,9 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { MdAdd } from "react-icons/md";
-import api from '../../../api'
 import { useState, useEffect } from "react";
-
-// const JobsPage = () => {
-//   const navigate = useNavigate();
-
-//   const handleCreateJob = () => {
-//     navigate("/dept/dashboard/jobs/createjob");
-//   };
-
-//   return (
-//     <div className="p-8 flex-1">
-//       {/* Page Header */}
-//       <div className="flex items-center justify-between mb-6">
-//         <h1 className="text-3xl font-bold text-gray-900">Jobs</h1>
-//         <button
-//           onClick={handleCreateJob}
-//           className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors"
-//         >
-//           <MdAdd size={20} />
-//           Create Job
-//         </button>
-//       </div>
-
-//       {/* Jobs List Placeholder */}
-//       <div className="grid gap-4">
-//         {/* Replace with JobCard components */}
-//         <div className="p-4 bg-white rounded shadow">Job 1</div>
-//         <div className="p-4 bg-white rounded shadow">Job 2</div>
-//         <div className="p-4 bg-white rounded shadow">Job 3</div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default JobsPage;
+import { useNavigate } from "react-router-dom";
+import DeptSideBar from "../components/DeptSideBar";
+import api from "../../../api";
+import JobCard from "../../../components/JobCard";
+import { Plus } from "lucide-react";
 
 const JobsPage = () => {
   const navigate = useNavigate();
@@ -44,11 +11,18 @@ const JobsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch open jobs on mount
+  const [expandedId, setExpandedId] = useState(null);
+
+const toggleExpand = (id) => {
+  setExpandedId(expandedId === id ? null : id);
+};
+
+
+  // Fetch jobs
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const res = await api.get("/openJobs"); // assuming your route is /api/jobs/open
+        const res = await api.get("/openJobs");
         setJobs(res.data.jobs);
       } catch (err) {
         console.error("Error fetching jobs:", err);
@@ -57,7 +31,6 @@ const JobsPage = () => {
         setLoading(false);
       }
     };
-
     fetchJobs();
   }, []);
 
@@ -65,87 +38,48 @@ const JobsPage = () => {
     navigate("/dept/dashboard/jobs/createjob");
   };
 
-  if (loading) {
-    return <div className="p-8">Loading jobs...</div>;
-  }
-
-  if (error) {
-    return <div className="p-8 text-red-600">{error}</div>;
-  }
-
- 
   return (
-    <div className="p-8 flex-1">
-      {/* Page Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Jobs</h1>
-        <button
-          onClick={handleCreateJob}
-          className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors"
-        >
-          <MdAdd size={20} />
-          Create Job
-        </button>
-      </div>
+    <div className="flex bg-gray-50 min-h-screen ">
+      {/* Sidebar */}
+      <DeptSideBar />
 
-      {/* Jobs List */}
-      <div className="grid gap-6">
-        {jobs.length > 0 ? (
-          jobs.map((job) => (
-            <div
-              key={job.id}
-              className="p-6 bg-white rounded-xl shadow hover:shadow-lg transition-all cursor-pointer"
-              onClick={() => navigate(`/dept/dashboard/jobs/${job.id}`)}
-            >
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">{job.title}</h2>
-              <div className="flex flex-wrap gap-3 text-sm text-gray-600 mb-3">
-                <span>📍 {job.location || "N/A"}</span>
-                <span>🏢 {job.department || "No Department"}</span>
-                <span>💼 {job.employmentType || "N/A"}</span>
-                <span>🌐 {job.workMode || "N/A"}</span>
-              </div>
+      {/* Main Content */}
+      <div className="flex-1 p-10 ml-72">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+          <div>
+            <h1 className="text-5xl font-bold text-foreground mb-3 tracking-tight">
+              Job Openings
+            </h1>
+            <p className="text-lg text-gray-600 dark:text-gray-400">
+              Manage and review all active postings for your department • {jobs.length} open positions
+            </p>
+          </div>
+          <button
+            onClick={handleCreateJob}
+            className="flex items-center gap-2 bg-black text-white px-5 py-2 rounded-md hover:bg-gray-800 transition-colors"
+          >
+            <Plus size={20} />
+            Create Job
+          </button>
+        </div>
 
-              <p className="text-gray-700 mb-3">{job.description}</p>
-
-              <div className="mb-3">
-                <h3 className="font-semibold text-gray-800">Requirements:</h3>
-                <ul className="list-disc list-inside text-gray-700">
-                  {job.requirements?.map((req, i) => <li key={i}>{req}</li>)}
-                </ul>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold text-gray-800">Responsibilities:</h3>
-                <ul className="list-disc list-inside text-gray-700">
-                  {job.responsibilities?.map((res, i) => <li key={i}>{res}</li>)}
-                </ul>
-              </div>
-
-              <div className="mb-3">
-                <h3 className="font-semibold text-gray-800">Qualifications:</h3>
-                <ul className="list-disc list-inside text-gray-700">
-                  {job.qualifications?.map((q, i) => <li key={i}>{q}</li>)}
-                </ul>
-              </div>
-
-              <p className="text-gray-700 mb-1">
-                <strong>Experience Level:</strong> {job.experienceLevel || "N/A"} years
-              </p>
-              <p className="text-gray-700 mb-1">
-                <strong>Salary Range:</strong> ${job.salaryMin} - ${job.salaryMax}
-              </p>
-              <p className="text-gray-500 text-sm">
-                🕒 Deadline: {new Date(job.deadline).toLocaleDateString()}
-              </p>
-
-              <hr className="my-4" />
-              <p className="text-sm text-gray-400">
-                Posted on {new Date(job.createdAt).toLocaleDateString()}
-              </p>
-            </div>
-          ))
+        {/* Jobs Grid / Loading / Error */}
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="w-12 h-12 border-4 border-gray-300 border-t-black dark:border-gray-600 rounded-full animate-spin"></div>
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 text-red-600 rounded shadow p-6 text-center dark:bg-red-900 dark:text-red-400">
+            {error}
+          </div>
         ) : (
-          <div className="text-gray-600 italic">No open jobs found.</div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {jobs.map((job) => (
+              <JobCard key={job.id} job={job}   isExpanded={expandedId === job.id}
+  toggleExpand={() => toggleExpand(job.id)}/>
+            ))}
+          </div>
         )}
       </div>
     </div>
