@@ -19,7 +19,7 @@ const Sidebar = ({ brandName = "Recruva", panelName, navItems = [], onLogout }) 
   };
 
   return (
-    <div className="bg-gradient-to-b from-black to-gray-800 text-white flex flex-col items-center justify-start p-8 h-screen w-64 shadow-lg">
+   <div className="bg-gradient-to-b from-black to-gray-800 text-white flex flex-col items-center justify-start p-8 shadow-lg h-screen overflow-y-auto fixed">
       {/* Branding */}
       <div className="mb-10 text-center">
         <h1 className="text-3xl font-bold mb-2">{brandName}</h1>
