@@ -11,6 +11,24 @@ function OpenJobs() {
   const [isLinkedInConnected, setIsLinkedInConnected] = useState(false);
   const navigate = useNavigate();
   const [postingJobId, setPostingJobId] = useState(null);
+  const [linkedinLoading, setLinkedinLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterDept, setFilterDept] = useState(""); // filter by department
+  const [filterLocation, setFilterLocation] = useState("");
+
+  const filteredJobs = jobs.filter((job) => {
+    const matchesSearch =
+      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.location.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesDept = filterDept ? job.department === filterDept : true;
+    const matchesLocation = filterLocation
+      ? job.location === filterLocation
+      : true;
+
+    return matchesSearch && matchesDept && matchesLocation;
+  });
 
   // ------------------------
   // Fetch open jobs
@@ -18,10 +36,11 @@ function OpenJobs() {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const res = await api.get("/openJobs");
+        const res = await api.get("/pending-post");
         setJobs(res.data.jobs);
       } catch (error) {
         console.error("Error fetching open jobs:", error);
+        setJobs([]);
       } finally {
         setLoading(false);
       }
@@ -35,9 +54,15 @@ function OpenJobs() {
 
   useEffect(() => {
     const checkLinkedInStatus = async () => {
-      try {
-        const token = localStorage.getItem(ACCESS_TOKEN);
+      const token = localStorage.getItem(ACCESS_TOKEN);
 
+      if (!token) {
+        setIsLinkedInConnected(false);
+        setLinkedinLoading(false);
+        return;
+      }
+
+      try {
         const res = await axios.get(
           "http://localhost:3000/auth/linkedin/status",
           {
@@ -51,6 +76,8 @@ function OpenJobs() {
       } catch (err) {
         console.error("Failed to check LinkedIn status:", err);
         setIsLinkedInConnected(false);
+      } finally {
+        setLinkedinLoading(false);
       }
     };
 
@@ -61,14 +88,14 @@ function OpenJobs() {
   // Handlers
   // ------------------------
   const connectLinkedIn = () => {
-    const token = localStorage.getItem("ACCESS_TOKEN");
-    window.location.href = `http://localhost:3000/auth/linkedin/auth?token=${token}`;
+    const token = localStorage.getItem(ACCESS_TOKEN);
+    window.location.replace = `http://localhost:3000/auth/linkedin/auth?token=${token}`;
   };
 
   const postToLinkedIn = async (jobId) => {
     try {
       setPostingJobId(jobId);
-      const token = localStorage.getItem("ACCESS_TOKEN");
+      const token = localStorage.getItem(ACCESS_TOKEN);
 
       const res = await axios.post(
         `http://localhost:3000/auth/linkedin/post/${jobId}`,
@@ -83,7 +110,7 @@ function OpenJobs() {
       alert(res.data.message || "Posted successfully!");
     } catch (err) {
       console.error("Post error:", err);
-      alert("Failed to post on LinkedIn. Please reconnect your LinkedIn.");
+      alert(err.response?.data?.message || "Failed to post on LinkedIn.");
     } finally {
       setPostingJobId(null);
     }
@@ -98,19 +125,25 @@ function OpenJobs() {
 
       <div className="flex-1 py-10 px-6 overflow-y-auto">
         <div className="flex justify-end mb-6">
-          <button
-            onClick={connectLinkedIn}
-            disabled={isLinkedInConnected}
-            className={`px-4 py-2 rounded-lg font-semibold transition ${
-              isLinkedInConnected
-                ? "bg-green-600 cursor-not-allowed"
-                : "bg-[#0077b5] hover:bg-[#006097]"
-            } text-white`}
-          >
-            {isLinkedInConnected
-              ? "Connected to LinkedIn ✅"
-              : "Connect LinkedIn"}
-          </button>
+          {linkedinLoading ? (
+            <button className="px-4 py-2 rounded-lg bg-gray-600 text-gray-300 cursor-wait animate-pulse">
+              Checking LinkedIn...
+            </button>
+          ) : (
+            <button
+              onClick={connectLinkedIn}
+              disabled={isLinkedInConnected}
+              className={`px-4 py-2 rounded-lg font-semibold transition ${
+                isLinkedInConnected
+                  ? "bg-green-600 cursor-not-allowed"
+                  : "bg-[#0077b5] hover:bg-[#006097]"
+              } text-white`}
+            >
+              {isLinkedInConnected
+                ? "Connected to LinkedIn ✅"
+                : "Connect LinkedIn"}
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -127,8 +160,62 @@ function OpenJobs() {
               Open Job Positions
             </h2>
 
+            <div className="mb-6 flex flex-col md:flex-row gap-3 items-start md:items-center">
+              {/* Search Input */}
+              <input
+                type="text"
+                placeholder="Search jobs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 px-4 py-2 rounded-xl bg-gray-800 border border-gray-700 placeholder-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+              />
+
+              {/* Department Filter */}
+              <select
+                value={filterDept}
+                onChange={(e) => setFilterDept(e.target.value)}
+                className="px-4 py-2 rounded-xl bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+              >
+                <option value="">All Departments</option>
+                {Array.from(new Set(jobs.map((job) => job.department))).map(
+                  (dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  )
+                )}
+              </select>
+
+              {/* Location Filter */}
+              <select
+                value={filterLocation}
+                onChange={(e) => setFilterLocation(e.target.value)}
+                className="px-4 py-2 rounded-xl bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
+              >
+                <option value="">All Locations</option>
+                {Array.from(new Set(jobs.map((job) => job.location))).map(
+                  (loc) => (
+                    <option key={loc} value={loc}>
+                      {loc}
+                    </option>
+                  )
+                )}
+              </select>
+
+  <button
+    onClick={() => {
+      setSearchTerm("");
+      setFilterDept("");
+      setFilterLocation("");
+    }}
+    className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold transition"
+  >
+    Clear Filters
+  </button>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {jobs.map((job) => (
+              {filteredJobs.map((job) => (
                 <div
                   key={job.id}
                   className="bg-gray-900 border border-gray-700 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-transform transform hover:-translate-y-1"

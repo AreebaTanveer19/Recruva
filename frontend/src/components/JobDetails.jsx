@@ -2,12 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import api from "./../api";
+import { useLocation } from "react-router-dom";
 
 function JobDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
+  const showLinkedInButton = /^\/open-jobs\/\d+$/.test(location.pathname);
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -132,11 +134,11 @@ function JobDetails() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3 mt-5">
-            <button
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0077b5] rounded-lg text-white font-semibold hover:bg-[#006097] transition"
-            >
-              Share to LinkedIn
-            </button>
+            {showLinkedInButton && (
+              <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0077b5] rounded-lg text-white font-semibold hover:bg-[#006097] transition">
+                Share to LinkedIn
+              </button>
+            )}
           </div>
         </div>
       </div>

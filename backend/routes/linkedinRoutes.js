@@ -5,6 +5,7 @@ const { encrypt, decrypt } = require("../utils/encryption");
 const { auth } = require("../middleware/auth");
 const roleCheck = require("../middleware/role");
 const jwt = require("jsonwebtoken");
+const {addJobPoster} = require("../controllers/jobController");
 
 const router = express.Router();
 
@@ -112,34 +113,28 @@ router.post("/post/:jobId", auth , roleCheck("HR"), async (req, res) => {
     }
 
     // Build LinkedIn post content
-    let postText = `📢 We’re hiring!`;
+    let postText = `🚀 Project Demo: Sample Job Posting \n\⚠️ This post does NOT represent an actual job opportunity.\n\n`;
 
-if (job.title) postText += `\n\nPosition: ${job.title}`;
-if (job.department) postText += `\nDepartment: ${job.department}`;
-if (job.location) postText += `\nLocation: ${job.location}`;
-if (job.employmentType) postText += `\nEmployment Type: ${job.employmentType}`;
-if (job.workMode) postText += `\nWork Mode: ${job.workMode}`;
-if (job.details?.experienceLevel)
-  postText += `\nExperience Level: ${job.details.experienceLevel} years`;
-if (job.details?.salaryMin && job.details?.salaryMax)
-  postText += `\nSalary Range: $${job.details.salaryMin} – $${job.details.salaryMax}`;
-if (job.deadline)
-  postText += `\nDeadline to Apply: ${new Date(job.deadline).toLocaleDateString()}`;
+  // Description at the top
+  if (job.details?.description) {
+    postText += `${job.details?.description}\n\n`;
+  }
 
-if (job.details?.description)
-  postText += `\n\n📝 Description:\n${job.details.description}`;
+  // Key job details with emojis
+  if (job.title) postText += `📌 Position: ${job.title}\n`;
+  if (job.department) postText += `🏢 Department: ${job.department}\n`;
+  if (job.location) postText += `📍 Location: ${job.location}\n`;
+  if (job.employmentType || job.workMode)
+    postText += `🕒 Type: ${job.employmentType || "N/A"} | Work Mode: ${job.workMode || "N/A"}\n`;
+  if (job.details?.experienceLevel)
+    postText += `🎓 Experience: ${job.details.experienceLevel}+ years\n`;
 
-if (job.details?.requirements?.length)
-  postText +=
-    `\n\n🎯 Requirements:\n` +
-    job.details.requirements.map((r) => `• ${r}`).join("\n");
+  // Optional: Salary
+  if (job.details?.salaryMin && job.details?.salaryMax)
+    postText += `💰 Salary Range: $${job.details.salaryMin} – $${job.details.salaryMax}\n`;
 
-if (job.details?.responsibilities?.length)
-  postText +=
-    `\n\n💼 Responsibilities:\n` +
-    job.details.responsibilities.map((r) => `• ${r}`).join("\n");
-
-postText += `\n\nApply here 👉 https://yourjobportal.com/jobs/${job.id}`;
+  // Application link
+  postText += `\n📩 Apply here 👉 https://yourjobportal.com/jobs/${job.id}`;
 
 const postContent = {
   author: `urn:li:person:${user.linkedinId}`,
@@ -163,6 +158,14 @@ const postContent = {
     "Content-Type": "application/json",
     "x-restli-protocol-version": "2.0.0",
     },
+    });
+
+    await prisma.job.update({
+      where: { id: job.id },
+      data: {
+        posters: { connect: { id: user.id } },
+      },
+      include: { posters: true, details: true },
     });
 
     res.json({ success: true, message: "Posted to LinkedIn successfully" });

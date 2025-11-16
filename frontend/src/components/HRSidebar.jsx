@@ -12,7 +12,7 @@ export default function HRSidebar() {
   const links = [
     { name: "Dashboard", path: "/hr/dashboard", icon: <Home size={18} /> },
     { name: "Open Jobs", path: "/OpenJobs", icon: <Briefcase size={18} /> },
-    { name: "Pending Jobs", path: "/pending-jobs", icon: <Clock size={18} /> },
+    { name: "Posted Jobs", path: "/posted-jobs", icon: <Clock size={18} /> },
     { name: "Job Applications", path: "/applications", icon: <FileText size={18} /> },
   ];
 
