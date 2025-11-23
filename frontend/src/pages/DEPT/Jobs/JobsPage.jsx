@@ -1,22 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DeptSideBar from "../components/DeptSideBar";
 import api from "../../../api";
-import JobCard from "../../../components/JobCard";
 import { Plus } from "lucide-react";
+import JobCardGrid from "../../../components/JobCardGrid";
 
 const JobsPage = () => {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const [expandedId, setExpandedId] = useState(null);
-
-const toggleExpand = (id) => {
-  setExpandedId(expandedId === id ? null : id);
-};
-
 
   // Fetch jobs
   useEffect(() => {
@@ -39,12 +33,12 @@ const toggleExpand = (id) => {
   };
 
   return (
-    <div className="flex bg-gray-50 min-h-screen ">
+    <div className="flex bg-gray-50 min-h-screen">
       {/* Sidebar */}
       <DeptSideBar />
 
       {/* Main Content */}
-      <div className="flex-1 p-10 ml-72">
+      <div className="flex-1 p-7 md:ml-72 sm-ml-3">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
@@ -64,7 +58,6 @@ const toggleExpand = (id) => {
           </button>
         </div>
 
-        {/* Jobs Grid / Loading / Error */}
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="w-12 h-12 border-4 border-gray-300 border-t-black dark:border-gray-600 rounded-full animate-spin"></div>
@@ -74,12 +67,12 @@ const toggleExpand = (id) => {
             {error}
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {jobs.map((job) => (
-              <JobCard key={job.id} job={job}   isExpanded={expandedId === job.id}
-  toggleExpand={() => toggleExpand(job.id)}/>
-            ))}
-          </div>
+          <JobCardGrid
+            jobs={jobs}
+            isLinkedInConnected={false} 
+            postingJobId={null} 
+            postToLinkedIn={() => {}}
+          />
         )}
       </div>
     </div>

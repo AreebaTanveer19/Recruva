@@ -29,7 +29,7 @@ function App() {
         <Route path="/candidate/profile" element={<ProtectedRoute allowedRoles={['candidate']}><Profile /></ProtectedRoute>} />
         <Route path="/candidate/profile/view" element={<ProtectedRoute allowedRoles={['candidate']}><ProfileDisplay /></ProtectedRoute>} />
         <Route path="/OpenJobs" element={<ProtectedRoute allowedRoles={['HR']}><OpenJobs/></ProtectedRoute>} />
-        <Route path="/open-jobs/:id" element={<ProtectedRoute allowedRoles={['HR']}><JobDetails /></ProtectedRoute>} />
+        <Route path="/open-jobs/:id" element={<ProtectedRoute allowedRoles={['HR', 'DEPARTMENT']}><JobDetails /></ProtectedRoute>} />
         <Route path="/posted-jobs" element={<ProtectedRoute allowedRoles={['HR']}><PostedJobs/></ProtectedRoute>} />
         <Route path="/posted-jobs/:id" element={<ProtectedRoute allowedRoles={['HR']}><JobDetails /></ProtectedRoute>} />
       </Routes>
