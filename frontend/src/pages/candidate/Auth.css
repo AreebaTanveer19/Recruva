@@ -104,6 +104,7 @@ body {
   .auth-panels {
     grid-template-columns: 1fr;
   }
+  
 
   .auth-left-panel {
     display: none;
