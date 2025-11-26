@@ -101,17 +101,25 @@ body {
 
 /* Responsive adjustments */
 @media (max-width: 1024px) {
-  .auth-panel {
+  .auth-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-left-panel {
+    display: none;
+  }
+
+  .auth-right-panel {
     padding: 3rem 1.5rem;
   }
 }
 
 @media (max-width: 768px) {
-  .auth-container {
+  /* .auth-container {
     margin: 1rem;
-  }
+  } */
   
-  .auth-panel {
+  .auth-right-panel {
     padding: 2rem 1rem;
   }
   

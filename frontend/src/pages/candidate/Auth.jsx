@@ -1,11 +1,40 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { FaUser, FaEnvelope, FaLock, FaArrowRight, FaCheck, FaTimes } from 'react-icons/fa';
 import './Auth.css';
 import { ACCESS_TOKEN, } from "./../../constants";
 
+const InputField = ({
+  icon: Icon,
+  label,
+  type = 'text',
+  registration,
+  error,
+  placeholder,
+}) => (
+  <div>
+    <label className="block text-sm font-medium text-slate-500 mb-1">{label}</label>
+    <div className="relative group">
+      {Icon && (
+        <Icon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors duration-300" />
+      )}
+      <input
+        type={type}
+        placeholder={placeholder}
+        {...registration}
+        className={`w-full pl-12 pr-4 py-3 rounded-2xl border bg-white/80 backdrop-blur-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 transition-all duration-300 shadow-sm ${
+          error ? 'border-red-400' : 'border-slate-200'
+        }`}
+      />
+      <span className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 transition-opacity duration-300 border border-indigo-500/50"></span>
+    </div>
+    {error && <p className="mt-1 text-sm text-red-500">{error}</p>}
+  </div>
+);
+
 const AuthPage = () => {
-  const [activeForm, setActiveForm] = useState('signup'); // 'login' or 'signup'
+  const [activeForm, setActiveForm] = useState('login'); // 'login' or 'signup'
   const [authMode, setAuthMode] = useState('form'); // 'form', 'otp', 'verified'
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [userEmail, setUserEmail] = useState('');
@@ -265,8 +294,14 @@ const AuthPage = () => {
   };
 
   const handleToggleForm = () => {
-    setActiveForm(activeForm === 'login' ? 'signup' : 'login');
-    console.log(`Switch to ${activeForm === 'login' ? 'signup' : 'login'} form`);
+    const nextForm = activeForm === 'login' ? 'signup' : 'login';
+    setActiveForm(nextForm);
+    setAuthMode('form');
+  };
+
+  const handleFormTab = (formType) => {
+    setActiveForm(formType);
+    setAuthMode('form');
   };
 
   const onSignupSubmit = (data) => {
@@ -275,348 +310,343 @@ const AuthPage = () => {
     handleSignupWithOtp(data);
   };
 
-
-  const switchToSignup = () => {
-    setActiveForm('signup');
-    console.log('Switch to signup form');
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 auth-container overflow-hidden">
-      <div className="w-full max-w-6xl bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh]">
-        <div className="flex flex-col lg:flex-row">
-          {/* Login Section - Left Panel */}
-          <div className="w-full lg:w-1/2 bg-gradient-to-br from-blue-900 to-blue-600 p-8 flex flex-col items-center text-white gradient-bg auth-panel lg:rounded-l-2xl min-h-[500px]">
-            {/* Recruva Branding */}
-            <div className="mb-6">
-              <h1 className="text-5xl font-bold text-white mb-2">Recruva</h1>
-              <div className="w-24 h-1 bg-white mx-auto rounded-full"></div>
-            </div>
-            
-            <div className="text-center max-w-md flex flex-col justify-center" style={{ minHeight: 'calc(100% - 120px)' }}>
-              <h1 className="text-4xl font-bold mb-4 uppercase tracking-wide auth-title">
-                {activeForm === 'login' ? 'CREATE ACCOUNT!' : 'WELCOME BACK!'}
-              </h1>
-              <p className="text-lg mb-6 opacity-90 leading-relaxed auth-subtitle">
-                {activeForm === 'login' 
-                  ? 'New to our platform? Click below to create your account.' 
-                  : 'Already have an account? Click below to continue using the service.'}
-              </p>
-              <button 
-                onClick={handleToggleForm}
-                className="bg-white text-blue-900 px-8 py-3 rounded-full font-semibold text-lg transition-all duration-300 hover:bg-gray-100 hover:scale-105 transform shadow-lg btn-hover-lift mb-4"
-              >
-                {activeForm === 'login' ? 'SIGN UP' : 'SIGN IN'}
-              </button>
-            </div>
-          </div>
+    <div className="relative min-h-screen overflow-hidden bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 auth-container">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="floating-shape absolute -top-16 -left-8 h-64 w-64 rounded-full bg-indigo-600/20 blur-3xl" />
+        <div className="floating-shape floating-shape-delay absolute bottom-0 right-0 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
+      </div>
 
-          {/* Form Section - Right Panel */}
-          <div className="w-full lg:w-1/2 p-8 flex flex-col justify-center auth-panel lg:rounded-r-2xl rounded-b-2xl">
-            <div className="max-w-md mx-auto w-full min-h-[500px] flex flex-col justify-center">
-              {authMode === 'otp' ? (
-                // OTP Verification Form
-                <div className="space-y-6 flex-1 flex flex-col justify-center">
-                  <div className="text-center mb-4">
-                    <h2 className="text-3xl font-bold text-blue-900 mb-2 auth-title">Verify Email</h2>
-                    <p className="text-gray-600 auth-subtitle">
-                      We've sent a 6-digit code to {userEmail}
-                    </p>
-                  </div>
-                  
-                  <div className="flex justify-center gap-3 mb-6">
-                    {otp.map((digit, index) => (
-                      <input
-                        key={index}
-                        id={`otp-${index}`}
-                        type="text"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleOtpChange(index, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className="w-12 h-12 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
-                        placeholder="0"
-                      />
-                    ))}
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <button
-                      onClick={verifyOtp}
-                      disabled={isVerifyingOtp}
-                      className="w-full bg-blue-900 text-white py-3 rounded-lg font-semibold text-lg transition-all duration-300 hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {isVerifyingOtp ? (
-                        <>
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                          Verifying...
-                        </>
-                      ) : (
-                        <>
-                          <FaCheck className="text-lg" />
-                          Verify OTP
-                        </>
-                      )}
-                    </button>
-                    
-                    <div className="text-center">
-                      <button
-                        onClick={resendOtp}
-                        disabled={timerActive || isSendingOtp}
-                        className="text-blue-600 hover:text-blue-800 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isSendingOtp ? 'Sending...' : 
-                         timerActive ? `Resend OTP in ${timer}s` : 'Resend OTP'}
-                      </button>
-                    </div>
-                    
-                    <button
-                      onClick={resetToForm}
-                      className="w-full text-gray-600 hover:text-gray-800 py-2 text-sm transition-colors"
-                    >
-                      ← Back to {activeForm === 'login' ? 'Login' : 'Signup'}
-                    </button>
-                  </div>
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative mx-auto max-w-6xl"
+      >
+        <div className="auth-panels grid items-stretch gap-8 lg:grid-cols-2">
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1, duration: 0.6 }}
+            className="animated-gradient auth-left-panel relative flex min-h-[520px] flex-col justify-between gap-10 overflow-hidden rounded-[32px] p-10 text-white shadow-2xl"
+          >
+            <div className="pointer-events-none absolute inset-0 opacity-40">
+              <span className="floating-shape absolute top-10 right-8 h-32 w-32 rounded-full bg-white/30 blur-3xl" />
+              <span className="floating-shape floating-shape-delay absolute bottom-6 left-4 h-40 w-40 rounded-full bg-blue-200/30 blur-3xl" />
+            </div>
+
+            <div className="relative z-10 flex flex-col gap-6">
+              <span className="text-xs font-semibold uppercase tracking-[0.4em] text-white/70">Candidate Portal</span>
+              <h1 className="text-4xl font-semibold text-white lg:text-5xl">Recruva</h1>
+              <h2 className="text-3xl font-semibold text-white">
+                {activeForm === 'login' ? 'Create Account' : 'Welcome Back'}
+              </h2>
+              <p className="text-base text-white/80 max-w-md">
+                {activeForm === 'login'
+                  ? 'Build once, apply everywhere—your journey starts here.'
+                  : 'Already part of Recruva? Jump back in and continue your journey.'}
+              </p>
+
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleFormTab(activeForm === 'login' ? 'signup' : 'login')}
+                className="mt-4 inline-flex w-fit items-center justify-center gap-3 rounded-full bg-white/90 px-8 py-3 font-semibold text-indigo-700 shadow-xl shadow-indigo-900/30 backdrop-blur"
+              >
+                {activeForm === 'login' ? 'Create account' : 'Go to login'}
+                <FaArrowRight />
+              </motion.button>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15, duration: 0.6 }}
+            className="auth-right-panel relative rounded-[32px] border border-slate-100 bg-white/95 p-8 shadow-lg sm:p-10"
+          >
+
+            <div className="mb-6 space-y-2 text-center sm:text-left">
+              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-indigo-500">
+                {activeForm === 'login' ? 'Welcome back' : 'New to Recruva'}
+              </p>
+              <h2 className="text-3xl font-bold text-slate-900">
+                {activeForm === 'login' ? 'Log in to continue' : 'Create your candidate account'}
+              </h2>
+              <p className="text-sm text-slate-500">
+                {activeForm === 'login'
+                  ? 'Access personalized job recommendations, saved roles, and live application tracking.'
+                  : 'Set up your professional profile once and reuse it across every Recruva opportunity.'}
+              </p>
+            </div>
+
+            <div className="flex items-center rounded-full border border-slate-200 bg-slate-50 p-1 text-sm font-semibold text-slate-500 shadow-inner">
+
+              {['login', 'signup'].map((form) => (
+                <button
+                  key={form}
+                  type="button"
+                  onClick={() => handleFormTab(form)}
+                  className={`flex-1 rounded-full px-4 py-2 transition-all ${
+                    activeForm === form ? 'bg-white text-indigo-600 shadow' : 'text-slate-500'
+                  }`}
+                >
+                  {form === 'login' ? 'Login' : 'Sign Up'}
+                </button>
+              ))}
+            </div>
+
+            {authMode === 'otp' ? (
+              <div className="mt-8 space-y-6 text-center">
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-semibold text-slate-900">Verify your email</h3>
+                  <p className="text-sm text-slate-500">Enter the 6-digit code we sent to {userEmail}</p>
                 </div>
-              ) : authMode === 'verified' ? (
-                // Success Screen
-                <div className="space-y-6 text-center flex-1 flex flex-col justify-center">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FaCheck className="text-2xl text-green-600" />
-                  </div>
-                  <h2 className="text-3xl font-bold text-green-600 mb-2">Email Verified!</h2>
-                  <p className="text-gray-600 mb-4">
-                    {verificationMessage || 'Your email has been successfully verified. You can now access your account.'}
-                  </p>
-                  <button
-                    onClick={resetToForm}
-                    className="w-full bg-blue-900 text-white py-3 rounded-lg font-semibold text-lg transition-all duration-300 hover:bg-blue-800"
-                  >
-                    Continue to Dashboard
+
+                <div className="flex justify-center gap-3">
+                  {otp.map((digit, index) => (
+                    <input
+                      key={index}
+                      id={`otp-${index}`}
+                      type="text"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      className="h-14 w-12 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-semibold text-slate-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300"
+                      placeholder="0"
+                    />
+                  ))}
+                </div>
+
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: isVerifyingOtp ? 1 : 1.01 }}
+                  whileTap={{ scale: isVerifyingOtp ? 1 : 0.98 }}
+                  onClick={verifyOtp}
+                  disabled={isVerifyingOtp}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30 transition disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isVerifyingOtp ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <FaCheck />
+                      Verify OTP
+                    </>
+                  )}
+                </motion.button>
+
+                <button
+                  type="button"
+                  onClick={resendOtp}
+                  disabled={timerActive || isSendingOtp}
+                  className="text-sm font-medium text-indigo-600 transition hover:text-indigo-500 disabled:cursor-not-allowed disabled:text-slate-400"
+                >
+                  {isSendingOtp ? 'Sending OTP…' : timerActive ? `Resend OTP in ${timer}s` : 'Resend OTP'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={resetToForm}
+                  className="text-sm text-slate-500 underline-offset-4 transition hover:text-slate-700"
+                >
+                  ← Back to {activeForm === 'login' ? 'Login' : 'Sign Up'}
+                </button>
+              </div>
+            ) : authMode === 'verified' ? (
+              <div className="mt-10 space-y-6 text-center">
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                  <FaCheck className="text-2xl text-green-600" />
+                </div>
+                <h3 className="text-2xl font-semibold text-slate-900">Email verified!</h3>
+                <p className="text-sm text-slate-500">{verificationMessage || 'You are all set. Redirecting you to your dashboard.'}</p>
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={resetToForm}
+                  className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30"
+                >
+                  Continue
+                </motion.button>
+              </div>
+            ) : activeForm === 'login' ? (
+              <form onSubmit={handleLoginSubmit(onLoginSubmit)} className="mt-8 space-y-6">
+                <InputField
+                  icon={FaEnvelope}
+                  label="Email address"
+                  type="email"
+                  placeholder="you@example.com"
+                  registration={registerLogin('email', {
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address',
+                    },
+                  })}
+                  error={loginErrors.email?.message}
+                />
+
+                <InputField
+                  icon={FaLock}
+                  label="Password"
+                  type="password"
+                  placeholder="••••••••"
+                  registration={registerLogin('password', {
+                    required: 'Password is required',
+                    minLength: {
+                      value: 6,
+                      message: 'Password must be at least 6 characters',
+                    },
+                  })}
+                  error={loginErrors.password?.message}
+                />
+
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
+                  <label className="inline-flex items-center gap-2">
+                    <input type="checkbox" className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                    Remember me
+                  </label>
+                  <button type="button" className="font-semibold text-indigo-600 transition hover:text-indigo-500">
+                    Forgot password?
                   </button>
                 </div>
-              ) : activeForm === 'login' ? (
-                // Login Form
-                <div className="space-y-4 flex-1 flex flex-col justify-center">
-                  <div className="text-center mb-4">
-                    <h2 className="text-3xl font-bold text-blue-900 mb-2 auth-title">Login</h2>
-                    <p className="text-gray-600 auth-subtitle">Enter your credentials to continue</p>
-                  </div>
-                  
-                  <form onSubmit={handleLoginSubmit(onLoginSubmit)} className="space-y-4">
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaEnvelope className="text-gray-400" />
-                      </div>
-                      <input
-                        type="email"
-                        {...registerLogin('email', {
-                          required: 'Email is required',
-                          pattern: {
-                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                            message: 'Invalid email address'
-                          }
-                        })}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 input-field ${loginErrors.email ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Email"
-                      />
-                      {loginErrors.email && (
-                        <p className="mt-1 text-sm text-red-600">{loginErrors.email.message}</p>
-                      )}
-                    </div>
-                    
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaLock className="text-gray-400" />
-                      </div>
-                      <input
-                        type="password"
-                        {...registerLogin('password', {
-                          required: 'Password is required',
-                          minLength: {
-                            value: 6,
-                            message: 'Password must be at least 6 characters'
-                          }
-                        })}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 input-field ${loginErrors.password ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Password"
-                      />
-                      {loginErrors.password && (
-                        <p className="mt-1 text-sm text-red-600">{loginErrors.password.message}</p>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <label className="flex items-center">
-                        <input type="checkbox" className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                        <span className="ml-2 text-sm text-gray-600">Remember me</span>
-                      </label>
-                      <a href="#" className="text-sm text-blue-600 hover:text-blue-800 transition-colors">Forgot password?</a>
-                    </div>
-                    
-                    <div className="flex gap-3">
-                      <button
-                        type="submit"
-                        className="flex-1 bg-blue-900 text-white py-3 rounded-lg font-semibold transition-all duration-300 hover:bg-blue-800 btn-hover-lift"
-                      >
-                        LOGIN
-                      </button>
-                      <button
-                        type="button"
-                        onClick={switchToSignup}
-                        className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold transition-all duration-300 hover:bg-gray-300"
-                      >
-                        SIGN UP
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              ) : (
-                // Signup Form
-                <div className="space-y-4 flex-1 flex flex-col justify-center">
-                  <div className="text-center mb-6">
-                    <h2 className="text-3xl font-bold text-blue-900 text-center mb-2 auth-title">Create Account</h2>
-                    <p className="text-gray-600 text-center auth-subtitle">Fill in the details below to create your account</p>
-                  </div>
-                  
-                  {/* Signup Form */}
-                  <form onSubmit={handleSignupSubmit(onSignupSubmit)} className="space-y-6">
-                    <div>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaUser className="text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        {...registerSignup('username', {
-                          required: 'Username is required',
-                          minLength: {
-                            value: 3,
-                            message: 'Username must be at least 3 characters'
-                          },
-                          pattern: {
-                            value: /^[a-zA-Z0-9_]+$/,
-                            message: 'Username can only contain letters, numbers, and underscores'
-                          }
-                        })}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 input-field ${signupErrors.username ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Username"
-                      />
-                      </div>
-                      {signupErrors.username && (
-                        <p className="mt-1 text-sm text-red-600">{signupErrors.username.message}</p>
-                      )}
-                    </div>
-                    
-                  <div>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaEnvelope className="text-gray-400" />
-                      </div>
-                      <input
-                        type="email"
-                        {...registerSignup('email', {
-                          required: 'Email is required',
-                          pattern: {
-                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                            message: 'Invalid email address'
-                          }
-                        })}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 input-field ${signupErrors.email ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Email"
-                      />
-                      {signupErrors.email && (
-                        <p className="mt-1 text-sm text-red-600">{signupErrors.email.message}</p>
-                      )}
-                    </div>
-                   </div>
-                    <div>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaLock className="text-gray-400" />
-                      </div>
-                      <input
-                        type="password"
-                        {...registerSignup('password', {
-                          required: 'Password is required',
-                          minLength: {
-                            value: 6,
-                            message: 'Password must be at least 6 characters'
-                          },
-                          pattern: {
-                            value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                            message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
-                          }
-                        })}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 input-field ${signupErrors.password ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Password"
-                      />
-                    </div>
-                      {signupErrors.password && (
-                        <p className="mt-1 text-sm text-red-600">{signupErrors.password.message}</p>
-                      )}
-                    </div>
-                    
-                    <div>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaLock className="text-gray-400" />
-                      </div>
-                      <input
-                        type="password"
-                        {...registerSignup('confirmPassword', {
-                          required: 'Please confirm your password',
-                          validate: (value) => value === password || 'Passwords do not match'
-                        })}
-                        className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 hover:border-gray-400 input-field ${signupErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'}`}
-                        placeholder="Confirm Password"
-                      />
-                      </div>
-                      {signupErrors.confirmPassword && (
-                        <p className="mt-1 text-sm text-red-600">{signupErrors.confirmPassword.message}</p>
-                      )}
-                    </div>
-                    
-                    <button
-                      type="submit"
-                      className="w-full bg-blue-900 text-white py-3 rounded-lg font-semibold text-lg transition-all duration-300 hover:bg-blue-800 hover:scale-105 transform shadow-lg btn-hover-lift"
-                    >
-                      SIGN UP
-                    </button>
-                  </form>
-                </div>
-              )}
-            </div>
-          </div>
+
+                <motion.button
+                  type="submit"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30"
+                >
+                  Login
+                  <FaArrowRight />
+                </motion.button>
+
+                <p className="text-center text-sm text-slate-500">
+                  Need an account?{' '}
+                  <button type="button" onClick={() => handleFormTab('signup')} className="font-semibold text-indigo-600 hover:text-indigo-500">
+                    Sign up
+                  </button>
+                </p>
+              </form>
+            ) : (
+              <form onSubmit={handleSignupSubmit(onSignupSubmit)} className="mt-8 space-y-5">
+                <InputField
+                  icon={FaUser}
+                  label="Full name"
+                  placeholder="Jane Candidate"
+                  registration={registerSignup('username', {
+                    required: 'Name is required',
+                    minLength: {
+                      value: 3,
+                      message: 'Name must be at least 3 characters',
+                    },
+                    pattern: {
+                      value: /^[a-zA-Z0-9_ ]+$/,
+                      message: 'Only letters, numbers, spaces, and underscores allowed',
+                    },
+                  })}
+                  error={signupErrors.username?.message}
+                />
+
+                <InputField
+                  icon={FaEnvelope}
+                  label="Email address"
+                  type="email"
+                  placeholder="you@example.com"
+                  registration={registerSignup('email', {
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address',
+                    },
+                  })}
+                  error={signupErrors.email?.message}
+                />
+
+                <InputField
+                  icon={FaLock}
+                  label="Password"
+                  type="password"
+                  placeholder="Create a strong password"
+                  registration={registerSignup('password', {
+                    required: 'Password is required',
+                    minLength: {
+                      value: 6,
+                      message: 'Password must be at least 6 characters',
+                    },
+                    pattern: {
+                      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+                      message: 'Include upper, lower, and numeric characters',
+                    },
+                  })}
+                  error={signupErrors.password?.message}
+                />
+
+                <InputField
+                  icon={FaLock}
+                  label="Confirm password"
+                  type="password"
+                  placeholder="Repeat password"
+                  registration={registerSignup('confirmPassword', {
+                    required: 'Please confirm your password',
+                    validate: (value) => value === password || 'Passwords do not match',
+                  })}
+                  error={signupErrors.confirmPassword?.message}
+                />
+
+                <motion.button
+                  type="submit"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30"
+                >
+                  Start verification
+                  <FaArrowRight />
+                </motion.button>
+
+                <p className="text-center text-sm text-slate-500">
+                  Already have an account?{' '}
+                  <button type="button" onClick={() => handleFormTab('login')} className="font-semibold text-indigo-600 hover:text-indigo-500">
+                    Sign in
+                  </button>
+                </p>
+              </form>
+            )}
+          </motion.div>
         </div>
-      </div>
-      
-      {/* Error Popup */}
+      </motion.div>
+
       {showErrorPopup && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 popup-overlay">
-          <div className="bg-white rounded-lg p-6 max-w-md w-mx-4 shadow-2xl transform transition-all duration-300 scale-95 animate-scaleIn">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <div className="bg-red-100 rounded-full p-2 mr-3">
-                  <FaTimes className="text-red-600 text-lg" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">Error</h3>
+        <div className="popup-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                  <FaTimes className="text-lg text-red-600" />
+                </span>
+                <h3 className="text-lg font-semibold text-slate-900">We hit a snag</h3>
               </div>
-              <button
-                onClick={closeErrorPopup}
-                className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
-              >
+              <button onClick={closeErrorPopup} className="text-slate-400 transition hover:text-slate-600">
                 <FaTimes className="text-xl" />
               </button>
             </div>
-            <p className="text-gray-700 mb-6">{errorMessage}</p>
-            <div className="flex justify-end">
-              <button
+            <p className="text-sm text-slate-600">{errorMessage}</p>
+            <div className="mt-6 flex justify-end">
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 onClick={closeErrorPopup}
-                className="bg-blue-900 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-blue-800 hover:scale-105 transform"
+                className="rounded-xl bg-indigo-600 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30"
               >
-                OK
-              </button>
+                Okay
+              </motion.button>
             </div>
           </div>
         </div>

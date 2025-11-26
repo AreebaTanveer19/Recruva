@@ -31,7 +31,7 @@ const MONTHS = [
 
 const YEARS = Array.from({ length: 30 }, (_, i) => (new Date().getFullYear() - i).toString());
 
-const ProfileForm = () => {
+const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -206,11 +206,12 @@ const ProfileForm = () => {
         projects: formData.projects || [],
         certifications: formData.certifications || []
       };
-     const response = await api.post("/cv", cvData);
+      const response = await api.post("/cv", cvData);
 
       if (response.data.success) {
         setSuccess('CV data saved successfully!');
         setTimeout(() => setSuccess(''), 3000);
+        onSuccess();
       }
     } catch (error) {
       console.error('Error saving CV data:', error);
@@ -411,14 +412,27 @@ const ProfileForm = () => {
   return (
     <div className="w-full">
       <div className="p-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Candidate Profile</h1>
-        <p className="text-gray-600 mb-6">Update your profile information</p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Candidate Profile</h1>
+            <p className="text-gray-600">Update your profile information</p>
+          </div>
+          {typeof onCancel === 'function' && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="inline-flex items-center justify-center rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 shadow-sm transition hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
         {success && (
-          <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-md border border-green-200">
+          <div className="mt-6 rounded-md border border-green-200 bg-green-50 p-4 text-green-700">
             {success}
           </div>
         )}
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-8">
         {/* Basic Information */}
         <div className="bg-gray-50 p-6 rounded-lg">
           <div className="mb-6">
@@ -982,17 +996,12 @@ const ProfileForm = () => {
         </div>
 
         {/* Submit Button */}
-        <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-          <div>
-            {success && (
-              <p className="text-sm text-green-600">{success}</p>
-            )}
-          </div>
+        <div className="flex items-center justify-between border-t border-gray-200 pt-6">
           <div className="flex space-x-3">
             <button
               type="button"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               <svg className="-ml-1 mr-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
@@ -1002,15 +1011,15 @@ const ProfileForm = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                isSubmitting ? 'opacity-70 cursor-not-allowed' : ''
+              className={`inline-flex items-center rounded-md border border-transparent px-6 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                isSubmitting ? 'cursor-not-allowed bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
               }`}
             >
               {isSubmitting ? (
                 <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg className="-ml-1 mr-2 h-4 w-4 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   Saving...
                 </>
