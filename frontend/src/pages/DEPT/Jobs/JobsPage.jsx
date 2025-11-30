@@ -35,10 +35,8 @@ const JobsPage = () => {
   return (
     <div className="flex bg-gray-50 min-h-screen">
       {/* Sidebar */}
-      <DeptSideBar />
-
       {/* Main Content */}
-      <div className="flex-1 p-7 md:ml-72 sm-ml-3">
+      <div className="flex-1 p-8 ">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>

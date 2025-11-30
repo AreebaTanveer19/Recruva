@@ -87,10 +87,10 @@ const JobCreationForm = () => {
   };
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen py-7 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="bg-white shadow-sm border border-gray-200 rounded-t-lg px-8 py-6">
+        <div className="bg-white shadow-lg border border-gray-200 rounded-t-lg px-8 py-6">
           <h2 className="text-3xl font-bold text-gray-900">Create Job</h2>
           <p className="mt-2 text-sm text-gray-600">
             Fill in the details below to create a new job opening
@@ -107,7 +107,7 @@ const JobCreationForm = () => {
         {/* Form */}
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="bg-white shadow-sm border border-gray-200 rounded-b-lg px-8 py-8 space-y-6"
+          className="bg-white shadow-lg border border-gray-200 rounded-b-lg px-8 py-8 space-y-6"
         >
           {/* Basic Information Section */}
           <div className="border-b border-gray-200 pb-6">
