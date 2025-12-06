@@ -4,8 +4,8 @@ const prisma = new PrismaClient();
 // Save or update CV data
 const saveCVData = async (req, res) => {
   try {
-    console.log("[saveCVData] prisma delegates:", Object.keys(prisma));
-    console.log("[saveCVData] prisma.cvData type:", typeof prisma.cvData);
+    // console.log("[saveCVData] prisma delegates:", Object.keys(prisma));
+    // console.log("[saveCVData] prisma.cvData type:", typeof prisma.cvData);
     if (!req.user?.id) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }

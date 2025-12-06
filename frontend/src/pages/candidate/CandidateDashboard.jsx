@@ -115,16 +115,14 @@ const CandidateDashboard = () => {
 
   const activeFilters = [searchTerm, filters.employmentType, filters.workMode, filters.location].filter(Boolean).length;
 
-  const Background = ({ children }) => (
-    <div className="relative min-h-screen overflow-hidden bg-[#030712]">
-      <div className="absolute inset-0 bg-gradient-to-br from-[#040418] via-[#050d2c] to-[#051534]" />
-      <div className="pointer-events-none absolute -top-24 right-[-10%] h-96 w-96 rounded-full bg-indigo-500/30 blur-[180px]" />
-      <div className="pointer-events-none absolute bottom-[-10%] left-[-10%] h-[28rem] w-[28rem] rounded-full bg-blue-500/20 blur-[200px]" />
-      <div className="relative flex min-h-screen flex-col lg:flex-row">
-        {children}
-      </div>
+ const Background = ({ children }) => (
+  <div className="min-h-screen bg-white">
+    <div className="relative flex min-h-screen flex-col lg:flex-row">
+      {children}
     </div>
-  );
+  </div>
+);
+
 
   if (loading) {
     return (

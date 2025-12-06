@@ -49,10 +49,9 @@ const Profile = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto ml-64">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="min-h-screen bg-gray-50">
+      <main className="w-full overflow-x-hidden">
+        <div className="w-full px-4 py-6 sm:px-6 md:px-8">
           {isEditing || !hasProfileData ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               <ProfileForm
