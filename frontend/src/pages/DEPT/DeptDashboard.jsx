@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import DeptSideBar from "./components/DeptSideBar";
 import { MdAdd } from "react-icons/md";
 import {
   Card,
@@ -38,11 +37,8 @@ const DeptDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-white">
-      {/* Sidebar */}
-      <DeptSideBar />
-
       {/* Main Content */}
-      <div className="flex-1 p-8 ml-72 space-y-8">
+      <div className="flex-1 p-8  space-y-8">
         {/* Header */}
         <div className="flex justify-between items-center">
           <Typography variant="h4" fontWeight="bold" className="tracking-tight">
