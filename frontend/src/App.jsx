@@ -15,6 +15,8 @@ import Profile from "./pages/candidate/Profile";
 import ProfileDisplay from "./pages/candidate/ProfileDisplay";
 import PostedJobs from "./pages/HR/PostedJobs";
 import SidebarLayout from "./layouts/SidebarLayout";
+import ShortlistedCandidates from "./pages/DEPT/Shortlisted Candidates/ShortlistedCandidates";
+import InterviewsCalendar from "./pages/DEPT/components/Interview Scheduling/InterviewsCalendar";
 
 function App() {
   return (
@@ -114,6 +116,8 @@ function App() {
           <Route index element={<DeptDashboard />} />
           <Route path="jobs" element={<JobsPage />} />
           <Route path="jobs/createjob" element={<JobCreationForm />} />
+          <Route path="shortlisted-candidates" element={<ShortlistedCandidates />} />
+          <Route path="interviews" element={<InterviewsCalendar />} />
         </Route>
       </Routes>
     </Router>

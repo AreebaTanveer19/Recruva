@@ -18,8 +18,8 @@ const DeptSideBar = () => {
   const navItems = [
     { name: "Dashboard", icon: <MdDashboard size={20} />, onClick: () => navigate("/dept/dashboard") },
     { name: "Jobs", icon: <MdWork size={20} />, onClick: () => navigate("/dept/dashboard/jobs") },
-    { name: "Candidates", icon: <MdPeople size={20} />, onClick: () => navigate("/dept/dashboard/candidates") },
-    { name: "Teams", icon: <MdGroups size={20} />, onClick: () => navigate("/dept/dashboard/teams") },
+    { name: "Shortlisted", icon: <MdPeople size={20} />, onClick: () => navigate("/dept/dashboard/shortlisted-candidates") },
+    { name: "Interviews", icon: <MdGroups size={20} />, onClick: () => navigate("/dept/dashboard/interviews") },
     { name: "Reports", icon: <MdBarChart size={20} />, onClick: () => navigate("/dept/dashboard/reports") },
     { name: "Settings", icon: <MdSettings size={20} />, onClick: () => navigate("/dept/dashboard/settings") },
   ];
