@@ -108,6 +108,7 @@ function OpenJobs() {
       );
 
       alert(res.data.message || "Posted successfully!");
+      setJobs((prev) => prev.filter((job) => job.id !== jobId));
     } catch (err) {
       console.error("Post error:", err);
       alert(err.response?.data?.message || "Failed to post on LinkedIn.");
