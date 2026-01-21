@@ -8,7 +8,7 @@ const candidateAuthRoutes = require("./routes/candidateAuth");
 const protectedRoutes = require("./routes/protected");
 const jobRoutes = require("./routes/job");
 const linkedinRoutes = require("./routes/linkedinRoutes.js");
-
+const interviewRoutes = require("./routes/interviewRoutes.js");
 const cvRoutes = require("./routes/cv");
 
 const app = express();
@@ -33,6 +33,7 @@ app.use("/api", protectedRoutes);
 app.use("/api", jobRoutes);
 app.use("/auth/linkedin", linkedinRoutes);
 app.use("/api/cv", cvRoutes);
+app.use("/api/interview", interviewRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
