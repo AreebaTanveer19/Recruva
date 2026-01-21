@@ -1,21 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiMenu } from 'react-icons/fi';
+import {FiMenu,FiMapPin,FiPhone,FiMail,FiStar,FiBookOpen,FiBriefcase,FiLayers,FiAward,} from 'react-icons/fi';
 import Sidebar from '../../components/candidate/Sidebar';
 import api from '../../api';
 import { ACCESS_TOKEN } from '../../constants';
 
-const InfoRow = ({ label, value }) => (
-  <div className="space-y-1 text-sm">
-    <span className="font-semibold text-slate-900">{label}</span>
-    <p className="text-slate-600">{value || 'Not provided'}</p>
-  </div>
-);
-
-const SectionBlock = ({ title, children }) => (
-  <section className="space-y-3">
-    <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-600">{title}</h2>
-    {children}
+const SectionBlock = ({ title, Icon, children }) => (
+  <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <div className="mb-4 flex items-center gap-2">
+      {Icon && <Icon className="h-5 w-5 text-slate-500" />}
+      <h2 className="text-base font-semibold tracking-tight text-slate-900">{title}</h2>
+    </div>
+    <div className="space-y-3 text-sm text-slate-700">{children}</div>
   </section>
 );
 
@@ -75,7 +71,7 @@ const ProfileDisplay = ({ onEdit }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-slate-50">
         <div className="relative flex min-h-screen flex-col lg:flex-row">
           <Sidebar isMobileOpen={isSidebarOpen} onClose={closeSidebar} />
           <main className="flex-1 px-4 py-8 sm:px-8 lg:ml-64">
@@ -113,8 +109,17 @@ const ProfileDisplay = ({ onEdit }) => {
     certifications = [],
   } = profileData;
 
+  const displayName = name || 'Areeba Tanveer';
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50 font-sans">
       <div className="relative flex min-h-screen flex-col lg:flex-row">
         <Sidebar isMobileOpen={isSidebarOpen} onClose={closeSidebar} />
         {isSidebarOpen && (
@@ -126,8 +131,8 @@ const ProfileDisplay = ({ onEdit }) => {
           />
         )}
 
-        <main className="flex-1 w-full overflow-x-hidden lg:pl-64">
-          <div className="w-full max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        <main className="w-full flex-1 overflow-x-hidden lg:pl-64">
+          <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
             <div className="mb-6 flex items-center justify-between lg:hidden">
               <button
                 type="button"
@@ -139,52 +144,69 @@ const ProfileDisplay = ({ onEdit }) => {
               </button>
             </div>
             
-            <div className="space-y-6">
-              <header className="border-b border-slate-200 pb-5 w-full">
+            <div className="space-y-8">
+              <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                 <p className="text-[0.65rem] font-semibold uppercase tracking-[0.5em] text-slate-500">Profile</p>
-                <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">{name || 'Candidate Name'}</h1>
-                    <p className="text-sm text-slate-600">{email || 'email@example.com'}</p>
+                <div className="mt-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-900 text-lg font-semibold text-white shadow-sm">
+                      {initials}
+                    </div>
+                    <div>
+                      <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{displayName}</h1>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 sm:text-sm">
+                        <div className="flex items-center gap-1.5">
+                          <FiMail className="h-3.5 w-3.5 text-slate-400" />
+                          <span>{email || 'email@example.com'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <FiMapPin className="h-3.5 w-3.5 text-slate-400" />
+                          <span>{address || 'Location not provided'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <FiPhone className="h-3.5 w-3.5 text-slate-400" />
+                          <span>{phone || 'Phone not provided'}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <button
                     onClick={() => (onEdit ? onEdit() : navigate('/candidate/profile'))}
-                    className="self-start rounded-full border border-slate-900 px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-900 hover:text-white"
+                    className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
                   >
                     Edit profile
                   </button>
                 </div>
               </header>
 
-              <div className="grid gap-y-4 gap-x-4 text-sm text-slate-600 sm:grid-cols-2 sm:gap-x-10">
-                <InfoRow label="Name" value={name} />
-                <InfoRow label="Email" value={email} />
-                <InfoRow label="Phone" value={phone} />
-                <InfoRow label="Location" value={address} />
-              </div>
-
               {(skills.length > 0 || education.length > 0 || work_experience.length > 0 || projects.length > 0 || certifications.length > 0) && (
-                <div className="space-y-5 text-sm text-slate-700">
+                <div className="space-y-6">
                   {skills.length > 0 && (
-                    <SectionBlock title="Skills">
-                      <ul className="grid gap-y-2 gap-x-6 text-sm font-medium text-slate-800 sm:grid-cols-2">
+                    <SectionBlock title="Skills" Icon={FiStar}>
+                      <div className="flex flex-wrap gap-2">
                         {skills.map((skill, idx) => (
-                          <li key={`${skill}-${idx}`} className="relative pl-4 text-slate-700 before:absolute before:left-0 before:top-2 before:h-1 before:w-1 before:rounded-full before:bg-slate-500">
+                          <span
+                            key={`${skill}-${idx}`}
+                            className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800 sm:text-sm"
+                          >
                             {skill}
-                          </li>
+                          </span>
                         ))}
-                      </ul>
+                      </div>
                     </SectionBlock>
                   )}
 
                   {education.length > 0 && (
-                    <SectionBlock title="Education">
-                      <ul className="space-y-3">
+                    <SectionBlock title="Education" Icon={FiBookOpen}>
+                      <ul className="space-y-4 border-l border-slate-200 pl-4 sm:space-y-5 sm:pl-6">
                         {education.map((edu, idx) => (
-                          <li key={`${edu.degree}-${idx}`} className="border-b border-slate-200 pb-3 last:border-none last:pb-0">
+                          <li key={`${edu.degree}-${idx}`} className="relative pl-4">
+                            <div className="absolute -left-2.5 top-2 h-3.5 w-3.5 rounded-full bg-blue-600 ring-4 ring-blue-100" />
                             <p className="text-base font-semibold text-slate-900">{edu.degree}</p>
                             <p className="text-sm text-slate-600">{edu.institution}</p>
-                            {edu.year && <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Class of {edu.year}</p>}
+                            {edu.year && (
+                              <p className="text-xs font-medium text-slate-400">Class of {edu.year}</p>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -192,18 +214,23 @@ const ProfileDisplay = ({ onEdit }) => {
                   )}
 
                   {work_experience.length > 0 && (
-                    <SectionBlock title="Experience">
-                      <ul className="space-y-3">
+                    <SectionBlock title="Experience" Icon={FiBriefcase}>
+                      <ul className="space-y-4 border-l border-slate-200 pl-4 sm:space-y-5 sm:pl-6">
                         {work_experience.map((work, idx) => (
-                          <li key={`${work.role}-${idx}`} className="space-y-2 border-b border-slate-200 pb-3 last:border-none last:pb-0">
+                          <li key={`${work.role}-${idx}`} className="relative pl-4">
+                            <div className="absolute -left-2.5 top-2 h-3.5 w-3.5 rounded-full bg-blue-600 ring-4 ring-blue-100" />
                             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                               <div>
                                 <p className="text-base font-semibold text-slate-900">{work.role}</p>
                                 <p className="text-sm text-slate-600">{work.company}</p>
                               </div>
-                              {work.duration && <span className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">{work.duration}</span>}
+                              {work.duration && (
+                                <span className="text-xs font-medium text-slate-400">{work.duration}</span>
+                              )}
                             </div>
-                            {work.description && <p className="leading-relaxed text-slate-600">{work.description}</p>}
+                            {work.description && (
+                              <p className="mt-1 text-sm leading-relaxed text-slate-600">{work.description}</p>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -211,10 +238,13 @@ const ProfileDisplay = ({ onEdit }) => {
                   )}
 
                   {projects.length > 0 && (
-                    <SectionBlock title="Projects">
-                      <ul className="space-y-3">
+                    <SectionBlock title="Projects" Icon={FiLayers}>
+                      <ul className="space-y-4">
                         {projects.map((project, idx) => (
-                          <li key={`${project.title}-${idx}`} className="space-y-2 border-b border-slate-200 pb-3 last:border-none last:pb-0">
+                          <li
+                            key={`${project.title}-${idx}`}
+                            className="rounded-xl bg-slate-50/80 p-4 sm:p-5"
+                          >
                             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                               <p className="text-base font-semibold text-slate-900">{project.title}</p>
                               {project.link && (
@@ -222,13 +252,15 @@ const ProfileDisplay = ({ onEdit }) => {
                                   href={project.link}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-sm font-semibold text-slate-900 underline decoration-slate-400 decoration-2 underline-offset-4 transition hover:text-slate-600"
+                                  className="text-sm font-semibold text-blue-800 underline decoration-blue-200 underline-offset-4 transition hover:text-blue-900"
                                 >
                                   View project
                                 </a>
                               )}
                             </div>
-                            {project.description && <p className="text-slate-600">{project.description}</p>}
+                            {project.description && (
+                              <p className="mt-1 text-sm text-slate-600">{project.description}</p>
+                            )}
                           </li>
                         ))}
                       </ul>
@@ -236,13 +268,18 @@ const ProfileDisplay = ({ onEdit }) => {
                   )}
 
                   {certifications.length > 0 && (
-                    <SectionBlock title="Certifications">
-                      <ul className="space-y-3">
+                    <SectionBlock title="Certifications" Icon={FiAward}>
+                      <ul className="space-y-4">
                         {certifications.map((cert, idx) => (
-                          <li key={`${cert.name}-${idx}`} className="border-b border-slate-200 pb-3 last:border-none last:pb-0">
+                          <li
+                            key={`${cert.name}-${idx}`}
+                            className="rounded-xl bg-slate-50/80 p-4 sm:p-5"
+                          >
                             <p className="text-base font-semibold text-slate-900">{cert.name}</p>
                             <p className="text-sm text-slate-600">{cert.authority}</p>
-                            {cert.year && <p className="text-xs uppercase tracking-[0.3em] text-slate-400">Issued {cert.year}</p>}
+                            {cert.year && (
+                              <p className="mt-1 text-xs font-medium text-slate-400">Issued {cert.year}</p>
+                            )}
                           </li>
                         ))}
                       </ul>

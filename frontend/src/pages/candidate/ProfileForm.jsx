@@ -2,7 +2,7 @@ import { useState, useEffect, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Listbox, Transition } from '@headlessui/react';
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/react/20/solid';
+import { CheckIcon, ChevronUpDownIcon, PlusIcon } from '@heroicons/react/20/solid';
 import api from '../../api';
 import { ACCESS_TOKEN } from "../../constants";
 
@@ -22,6 +22,15 @@ const SKILLS = [
   'JavaScript', 'React', 'Node.js', 'Python', 'Java', 'C++', 'C#', 'Ruby', 'PHP',
   'HTML', 'CSS', 'TypeScript', 'Angular', 'Vue.js', 'Docker', 'AWS', 'Azure',
   'Git', 'REST API', 'GraphQL', 'MongoDB', 'PostgreSQL', 'MySQL', 'UI/UX Design'
+];
+
+const FORM_SECTIONS = [
+  { id: 'general', label: 'General Info' },
+  { id: 'education', label: 'Education' },
+  { id: 'experience', label: 'Experience' },
+  { id: 'skills', label: 'Skills' },
+  { id: 'projects', label: 'Projects' },
+  { id: 'certifications', label: 'Certifications' },
 ];
 
 const MONTHS = [
@@ -47,6 +56,8 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState('');
+  const [activeSection, setActiveSection] = useState('general');
+  const [avatarPreview, setAvatarPreview] = useState(null);
   const navigate = useNavigate();
 
   // Create axios instance with default config
@@ -188,6 +199,27 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
     }));
   };
 
+  const handleSectionClick = (sectionId) => {
+    setActiveSection(sectionId);
+    const element = document.getElementById(`section-${sectionId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const url = URL.createObjectURL(file);
+    setAvatarPreview((prev) => {
+      if (prev) {
+        URL.revokeObjectURL(prev);
+      }
+      return url;
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -225,47 +257,6 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const renderSection = (section, fields, index) => {
-    return (
-      <div key={index} className="bg-white p-6 rounded-lg shadow-md mb-6 relative">
-        {index > 0 && (
-          <button
-            type="button"
-            onClick={() => removeSection(section, index)}
-            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-          >
-            Remove
-          </button>
-        )}
-        {Object.entries(fields).map(([field, value]) => (
-          <div key={field} className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2 capitalize">
-              {field.replace('_', ' ')}
-            </label>
-            {field === 'description' ? (
-              <textarea
-                name={field}
-                value={value}
-                onChange={(e) => handleChange(e, section, index)}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                rows="3"
-              />
-            ) : (
-              <input
-                type={field === 'year' || field === 'duration' ? 'text' : 'text'}
-                name={field}
-                value={value}
-                onChange={(e) => handleChange(e, section, index)}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                placeholder={`Enter ${field.replace('_', ' ')}`}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-    );
   };
 
   if (isLoading) {
@@ -397,7 +388,7 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
 
   // Skill chip component
   const SkillChip = ({ skill, onRemove }) => (
-    <div className="inline-flex items-center bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full mr-2 mb-2">
+    <div className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800 mr-2 mb-2">
       {skill}
       <button
         type="button"
@@ -411,84 +402,129 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
 
   return (
     <div className="w-full">
-      <div className="p-8">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Candidate Profile</h1>
-            <p className="text-gray-600">Update your profile information</p>
-          </div>
-          {typeof onCancel === 'function' && (
-            <button
-              type="button"
-              onClick={onCancel}
-              className="inline-flex items-center justify-center rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 shadow-sm transition hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
-        {success && (
-          <div className="mt-6 rounded-md border border-green-200 bg-green-50 p-4 text-green-700">
-            {success}
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="mt-6 space-y-8">
-        {/* Basic Information */}
-        <div className="bg-gray-50 p-6 rounded-lg">
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-1">Basic Information</h2>
-            <p className="text-sm text-gray-500">Your personal details and contact information</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Full Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={(e) => handleChange(e)}
-                className="w-full px-4 py-2 text-gray-700 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out sm:text-sm"
-                required
-              />
+      <div className="p-4 sm:p-6 lg:p-0">
+        <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[220px,minmax(0,1fr)]">
+          <aside className="order-2 lg:order-1">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Form sections</p>
+              <nav className="mt-4 space-y-1">
+                {FORM_SECTIONS.map((section) => (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => handleSectionClick(section.id)}
+                    className={`flex w-full items-center rounded-lg border-l-4 px-3 py-2 text-left text-sm transition ${
+                      activeSection === section.id
+                        ? 'border-blue-600 bg-blue-50 text-blue-900'
+                        : 'border-transparent text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="truncate">{section.label}</span>
+                  </button>
+                ))}
+              </nav>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={(e) => handleChange(e)}
-                className="w-full px-4 py-2 text-gray-700 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out sm:text-sm"
-                required
-              />
+          </aside>
+
+          <section className="order-1 lg:order-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-800">Candidate Profile</h1>
+                <p className="text-gray-600">Update your profile information</p>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={(e) => handleChange(e)}
-                className="w-full px-4 py-2 text-gray-700 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out sm:text-sm"
-                placeholder="+1 (555) 000-0000"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-              <textarea
-                name="address"
-                value={formData.address}
-                onChange={(e) => handleChange(e)}
-                rows={2}
-                className="w-full px-4 py-2 text-gray-700 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out sm:text-sm"
-                placeholder="Enter your full address"
-              />
-            </div>
-          </div>
-        </div>
+            {success && (
+              <div className="mt-4 rounded-md border border-green-200 bg-green-50 p-4 text-green-700">
+                {success}
+              </div>
+            )}
+            <form onSubmit={handleSubmit} className="mt-6 space-y-8">
+            {/* Basic Information */}
+            <section id="section-general" className="rounded-lg bg-gray-50 p-6">
+              <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h2 className="mb-1 text-lg font-semibold text-gray-800">Basic Information</h2>
+                  <p className="text-sm text-gray-500">Your personal details and contact information</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-lg font-semibold text-slate-500">
+                    {avatarPreview ? (
+                      <img
+                        src={avatarPreview}
+                        alt="Profile preview"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span>{(formData.name || 'A T').trim().charAt(0)}</span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">Profile photo</p>
+                    <p className="text-xs text-slate-500">Optional. This is not yet stored in your profile.</p>
+                    <div className="mt-2">
+                      <label className="inline-flex cursor-pointer items-center rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2">
+                        Change photo
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="sr-only"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="block text-sm font-semibold text-gray-800">Full Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={(e) => handleChange(e)}
+                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-800">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={(e) => handleChange(e)}
+                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-800">Location</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={(e) => handleChange(e)}
+                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="City, Country or full address"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-semibold text-gray-800">Phone</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={(e) => handleChange(e)}
+                    className="w-full rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+              </div>
+            </section>
 
         {/* Education */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+        <section id="section-education" className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <div className="flex justify-between items-center border-b border-gray-200 pb-4 mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-800">Education</h2>
@@ -499,7 +535,8 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
               onClick={() => addSection('education')}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              + Add Education
+              <PlusIcon className="mr-1.5 h-4 w-4" />
+              Add education
             </button>
           </div>
           {formData.education.map((edu, index) => (
@@ -567,10 +604,10 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
               </div>
             </div>
           ))}
-        </div>
+        </section>
 
         {/* Work Experience */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+        <section id="section-experience" className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <div className="flex justify-between items-center border-b border-gray-200 pb-4 mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-800">Work Experience</h2>
@@ -581,7 +618,8 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
               onClick={() => addSection('work_experience')}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              + Add Experience
+              <PlusIcon className="mr-1.5 h-4 w-4" />
+              Add experience
             </button>
           </div>
           {formData.work_experience.map((exp, index) => (
@@ -648,10 +686,10 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
               </div>
             </div>
           ))}
-        </div>
+        </section>
 
         {/* Skills */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+        <section id="section-skills" className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <div className="border-b border-gray-200 pb-4 mb-6">
             <h2 className="text-lg font-semibold text-gray-800">Skills</h2>
             <p className="text-sm text-gray-500">Add your professional skills and competencies</p>
@@ -739,10 +777,10 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
               <p className="text-sm text-gray-500 italic">No skills added yet. Start typing to add skills.</p>
             )}
           </div>
-        </div>
+        </section>
 
         {/* Projects */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+        <section id="section-projects" className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <div className="flex justify-between items-center border-b border-gray-200 pb-4 mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-800">Projects</h2>
@@ -753,7 +791,8 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
               onClick={() => addSection('projects')}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              + Add Project
+              <PlusIcon className="mr-1.5 h-4 w-4" />
+              Add project
             </button>
           </div>
           {formData.projects.map((project, index) => (
@@ -834,10 +873,10 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
               </div>
             </div>
           ))}
-        </div>
+        </section>
 
         {/* Certifications */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+        <section id="section-certifications" className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
           <div className="flex justify-between items-center border-b border-gray-200 pb-4 mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-800">Certifications</h2>
@@ -848,7 +887,8 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
               onClick={() => addSection('certifications')}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              + Add Certification
+              <PlusIcon className="mr-1.5 h-4 w-4" />
+              Add certification
             </button>
           </div>
           {formData.certifications.map((cert, index) => (
@@ -993,26 +1033,25 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
               </div>
             </div>
           ))}
-        </div>
+        </section>
 
         {/* Submit Button */}
-        <div className="flex items-center justify-between border-t border-gray-200 pt-6">
+        <div className="flex items-center justify-end border-t border-gray-200 pt-6">
           <div className="flex space-x-3">
-            <button
-              type="button"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              <svg className="-ml-1 mr-2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-              Back to Top
-            </button>
+            {typeof onCancel === 'function' && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                Cancel
+              </button>
+            )}
             <button
               type="submit"
               disabled={isSubmitting}
               className={`inline-flex items-center rounded-md border border-transparent px-6 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                isSubmitting ? 'cursor-not-allowed bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
+                isSubmitting ? 'cursor-not-allowed bg-blue-400' : 'bg-blue-900 hover:bg-blue-800'
               }`}
             >
               {isSubmitting ? (
@@ -1028,15 +1067,17 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
                   <svg className="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
-                  Save Profile
+                  Save Changes
                 </>
               )}
             </button>
           </div>
         </div>
         </form>
-      </div>
+      </section>
     </div>
+  </div>
+</div>
   );
 };
 

@@ -29,16 +29,15 @@ const Profile = () => {
     checkProfileData();
   }, [checkProfileData]);
 
-
   if (isLoading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex min-h-screen bg-slate-50">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto ml-64">
-          <div className="max-w-6xl mx-auto px-6 py-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden p-12">
+        <main className="ml-64 flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-6xl px-6 py-8">
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white p-12 shadow-sm">
               <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
                 <p className="mt-4 text-gray-600">Loading profile...</p>
               </div>
             </div>
@@ -48,12 +47,13 @@ const Profile = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="w-full overflow-x-hidden">
-        <div className="w-full px-4 py-6 sm:px-6 md:px-8">
-          {isEditing || !hasProfileData ? (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+  if (isEditing || !hasProfileData) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <div className="relative flex min-h-screen flex-col lg:flex-row">
+          <Sidebar />
+          <main className="w-full flex-1 overflow-x-hidden lg:pl-64">
+            <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
               <ProfileForm
                 onSuccess={() => {
                   setIsEditing(false);
@@ -63,13 +63,14 @@ const Profile = () => {
                 onCancel={() => setIsEditing(false)}
               />
             </div>
-          ) : (
-            <ProfileDisplay onEdit={() => setIsEditing(true)} />
-          )}
+          </main>
         </div>
-      </main>
-    </div>
-  );
-};
+      </div>
+    );
+  }
+
+  return <ProfileDisplay onEdit={() => setIsEditing(true)} />;
+}
+;
 
 export default Profile;
