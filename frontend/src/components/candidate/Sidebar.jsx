@@ -52,13 +52,13 @@ const Sidebar = ({ isMobileOpen, onClose }) => {
             key={item.path}
             to={item.path}
             onClick={() => onClose?.()}
-            className={`flex items-center px-6 py-3 text-sm font-medium transition-colors duration-200 ${
-              location.pathname === item.path 
-                ? 'bg-blue-700 text-white' 
-                : 'text-blue-100 hover:bg-blue-700/50'
+            className={`flex items-center gap-3 px-6 py-3 text-sm font-medium border-l-4 border-transparent transition-colors duration-200 ${
+              location.pathname === item.path
+                ? 'bg-blue-900/40 text-white border-blue-300'
+                : 'text-blue-100 hover:bg-blue-800/30'
             }`}
           >
-            <span className="mr-3">{item.icon}</span>
+            <span>{item.icon}</span>
             {item.label}
           </Link>
         ))}
