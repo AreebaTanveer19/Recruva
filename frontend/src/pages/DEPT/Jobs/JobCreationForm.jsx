@@ -2,7 +2,6 @@ import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import api from "../../../api";
 import alertDisplay from "../../../components/AlertDisplay";
-import DeptSideBar from "../components/DeptSideBar";
 
 const JobCreationForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,9 +40,6 @@ const JobCreationForm = () => {
         responsibilities: data.responsibilities
           .split(";")
           .map((item) => item.trim()),
-        // qualifications: data.qualifications
-        //   .split(";")
-        //   .map((item) => item.trim()),
         experienceLevel: parseInt(data.experienceLevel, 10),
         salaryMin: parseInt(data.salaryMin, 10),
         salaryMax: parseInt(data.salaryMax, 10),

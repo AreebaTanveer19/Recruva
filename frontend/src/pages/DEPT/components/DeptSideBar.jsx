@@ -20,8 +20,6 @@ const DeptSideBar = () => {
     { name: "Jobs", icon: <MdWork size={20} />, onClick: () => navigate("/dept/dashboard/jobs") },
     { name: "Shortlisted", icon: <MdPeople size={20} />, onClick: () => navigate("/dept/dashboard/shortlisted-candidates") },
     { name: "Interviews", icon: <MdGroups size={20} />, onClick: () => navigate("/dept/dashboard/interviews") },
-    { name: "Reports", icon: <MdBarChart size={20} />, onClick: () => navigate("/dept/dashboard/reports") },
-    { name: "Settings", icon: <MdSettings size={20} />, onClick: () => navigate("/dept/dashboard/settings") },
   ];
     const handleLogout = () => {
     localStorage.removeItem("ACCESS_TOKEN");

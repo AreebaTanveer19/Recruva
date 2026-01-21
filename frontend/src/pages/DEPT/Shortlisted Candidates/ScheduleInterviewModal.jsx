@@ -29,18 +29,8 @@ import VideocamIcon from "@mui/icons-material/Videocam";
 import LinkIcon from "@mui/icons-material/Link";
 import PlaceIcon from "@mui/icons-material/Place";
 import DescriptionIcon from "@mui/icons-material/Description";
+import { interviewModes, meetingLinkTemplates } from "../data/interviewData";
 
-const interviewModes = [
-  { value: "google-meet", label: "Google Meet" },
-  { value: "zoom", label: "Zoom" },
-  { value: "on-site", label: "On-Site" },
-];
-
-const meetingLinkTemplates = {
-  "google-meet": "https://meet.google.com/xxx-xxxx-xxx",
-  zoom: "https://zoom.us/j/xxxxxxxxxx",
-  "on-site": "123 Office Street, Suite 456",
-};
 
 export default function ScheduleInterviewModal({
   open,
