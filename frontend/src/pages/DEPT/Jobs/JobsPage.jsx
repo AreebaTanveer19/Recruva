@@ -1,8 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import DeptSideBar from "../components/DeptSideBar";
-import api from "../../../api";
+import { fetchOpenJobs } from "../../../helper";
 import { Plus } from "lucide-react";
 import JobCardGrid from "../../../components/JobCardGrid";
 
@@ -12,12 +10,11 @@ const JobsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch jobs
   useEffect(() => {
-    const fetchJobs = async () => {
+    const loadJobs = async () => {
       try {
-        const res = await api.get("/openJobs");
-        setJobs(res.data.jobs);
+        const jobsData = await fetchOpenJobs();
+        setJobs(jobsData);
       } catch (err) {
         console.error("Error fetching jobs:", err);
         setError("Failed to load jobs.");
@@ -25,7 +22,8 @@ const JobsPage = () => {
         setLoading(false);
       }
     };
-    fetchJobs();
+
+    loadJobs();
   }, []);
 
   const handleCreateJob = () => {
@@ -34,17 +32,15 @@ const JobsPage = () => {
 
   return (
     <div className="flex bg-gray-50 min-h-screen">
-      {/* Sidebar */}
-      {/* Main Content */}
       <div className="flex-1 p-8 ">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
             <h1 className="text-5xl font-bold text-foreground mb-3 tracking-tight">
               Job Openings
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-400">
-              Manage and review all active postings for your department • {jobs.length} open positions
+              Manage and review all active postings for your department •{" "}
+              {jobs.length} open positions
             </p>
           </div>
           <button
@@ -67,9 +63,11 @@ const JobsPage = () => {
         ) : (
           <JobCardGrid
             jobs={jobs}
-            isLinkedInConnected={false} 
-            postingJobId={null} 
+            isLinkedInConnected={false}
+            postingJobId={null}
             postToLinkedIn={() => {}}
+            variant="dept"
+            detailRoute="dept/dashboard/open-jobs"
           />
         )}
       </div>

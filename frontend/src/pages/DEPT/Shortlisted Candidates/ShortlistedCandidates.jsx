@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { Search, Filter, Download, UserCheck } from "lucide-react";
-import {CandidateTable }from "./CandidateTable";
+import { CandidateTable } from "./CandidateTable";
 import ScheduleInterviewModal from "./ScheduleInterviewModal";
 
 const stats = [
@@ -12,7 +11,7 @@ const stats = [
 ];
 
 export default function ShortlistedCandidates() {
-const [openModal, setOpenModal] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   const handleScheduleClick = (candidate) => {
@@ -62,37 +61,33 @@ const [openModal, setOpenModal] = useState(false);
               Filters
             </button>
           </div>
- 
         </div>
 
         {/* Stats Cards */}
-<div className="animate-fade-in grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-  {stats.map((stat) => (
-    <div
-      key={stat.label}
-      className="p-6 rounded-xl h-28 bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200"
-    >
-      <p className="text-sm font-medium text-gray-500 tracking-wide mb-1">
-        {stat.label}
-      </p>
+        <div className="animate-fade-in grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="p-6 rounded-xl h-28 bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200"
+            >
+              <p className="text-sm font-medium text-gray-500 tracking-wide mb-1">
+                {stat.label}
+              </p>
 
-      <p className="text-2xl font-bold text-gray-900">
-        {stat.value}
-      </p>
-    </div>
-  ))}
-</div>
-
+              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+            </div>
+          ))}
+        </div>
 
         {/* Candidate Table */}
         <CandidateTable onScheduleInterview={handleScheduleClick} />
 
         {/* Schedule Modal */}
         <ScheduleInterviewModal
-        open={openModal}
-        onClose={handleCloseModal}
-        candidate={selectedCandidate}
-        onSchedule={handleScheduleInterview}
+          open={openModal}
+          onClose={handleCloseModal}
+          candidate={selectedCandidate}
+          onSchedule={handleScheduleInterview}
         />
       </main>
     </div>

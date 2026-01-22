@@ -1,11 +1,8 @@
 import React from "react";
 import { FiMapPin, FiBriefcase, FiChevronDown, FiChevronUp, FiCreditCard } from "react-icons/fi";
+import { formatDate } from "../helper";
 
 const JobCard = ({ job, isExpanded, toggleExpand }) => {
-  const formatDate = (dateString) => {
-    const options = { year: "numeric", month: "short", day: "numeric" };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
 
   const getStatusBadge = (status) => {
     const statusMap = {
@@ -26,7 +23,6 @@ const JobCard = ({ job, isExpanded, toggleExpand }) => {
   return (
     <div className="relative w-full md:w-[560px] bg-white rounded-lg shadow-md hover:shadow-lg overflow-hidden transition-shadow duration-300 border border-gray-300">
       <div className="p-7 flex flex-col justify-between text-black">
-        {/* Header */}
         <div className="flex justify-between items-start mb-3">
           <div>
             <h3 className="text-lg font-semibold mb-1 truncate">{job.title}</h3>
@@ -35,7 +31,6 @@ const JobCard = ({ job, isExpanded, toggleExpand }) => {
           {getStatusBadge(job.status)}
         </div>
 
-        {/* Horizontal Badges */}
         <div className="flex flex-wrap gap-2 mb-4">
           {job.location && (
             <span className="flex items-center gap-1 px-3 py-1 text-xs font-medium bg-gray-200 text-black rounded-full">

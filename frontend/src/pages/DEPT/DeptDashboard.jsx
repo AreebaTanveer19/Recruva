@@ -4,7 +4,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Button,
   Table,
   TableBody,
   TableCell,
@@ -15,31 +14,30 @@ import {
 } from "@mui/material";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import api from "../../api";
+import { fetchOpenJobs } from "../../helper";
 
 const DeptDashboard = () => {
   const [jobs, setJobs] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        const res = await api.get("/openJobs");
-        setJobs(res.data.jobs);
-      } catch (err) {
-        console.error("Error fetching jobs:", err);
-        setError("Failed to load jobs.");
-      }
-    };
-    fetchJobs();
-  }, []);
-
+ useEffect(() => {
+     const loadJobs = async () => {
+       try {
+         const jobsData = await fetchOpenJobs();
+         setJobs(jobsData);
+       } catch (err) {
+         console.error("Error fetching jobs:", err);
+         setError("Failed to load jobs.");
+       } 
+     };
+ 
+     loadJobs();
+   }, []);
+ 
   return (
     <div className="flex min-h-screen bg-white">
-      {/* Main Content */}
       <div className="flex-1 p-8  space-y-8">
-        {/* Header */}
         <div className="flex justify-between items-center">
           <Typography variant="h4" fontWeight="bold" className="tracking-tight">
             Department Dashboard
@@ -53,7 +51,6 @@ const DeptDashboard = () => {
           </button>
         </div>
 
-        {/* Summary Cards */}
         <motion.div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
           initial={{ opacity: 0, y: 20 }}

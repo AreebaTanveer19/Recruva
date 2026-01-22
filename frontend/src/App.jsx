@@ -16,7 +16,7 @@ import ProfileDisplay from "./pages/candidate/ProfileDisplay";
 import PostedJobs from "./pages/HR/PostedJobs";
 import SidebarLayout from "./layouts/SidebarLayout";
 import ShortlistedCandidates from "./pages/DEPT/Shortlisted Candidates/ShortlistedCandidates";
-import InterviewsCalendar from "./pages/DEPT/components/Interview Scheduling/InterviewsCalendar";
+import InterviewsCalendar from "./pages/DEPT/Interview Scheduling/InterviewsCalendar";
 
 function App() {
   return (
@@ -64,45 +64,19 @@ function App() {
         {/* HR */}
 
         <Route
-          path="/hr/dashboard"
+          path="/hr"
           element={
             <ProtectedRoute allowedRoles={["HR"]}>
-              <HRDashboard />
+              <SidebarLayout />
             </ProtectedRoute>
           }
-        />
-        <Route
-          path="/OpenJobs"
-          element={
-            <ProtectedRoute allowedRoles={["HR"]}>
-              <OpenJobs />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/open-jobs/:id"
-          element={
-            <ProtectedRoute allowedRoles={["HR", "DEPARTMENT"]}>
-              <JobDetails />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/posted-jobs"
-          element={
-            <ProtectedRoute allowedRoles={["HR"]}>
-              <PostedJobs />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/posted-jobs/:id"
-          element={
-            <ProtectedRoute allowedRoles={["HR"]}>
-              <JobDetails />
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route path="dashboard" element={<HRDashboard />} />
+          <Route path="open-jobs" element={<OpenJobs />} />
+          <Route path="open-jobs/:id" element={<JobDetails />} />
+          <Route path="posted-jobs" element={<PostedJobs />} />
+          <Route path="posted-jobs/:id" element={<JobDetails />} />
+        </Route>
 
         {/* Department */}
         <Route
@@ -116,7 +90,11 @@ function App() {
           <Route index element={<DeptDashboard />} />
           <Route path="jobs" element={<JobsPage />} />
           <Route path="jobs/createjob" element={<JobCreationForm />} />
-          <Route path="shortlisted-candidates" element={<ShortlistedCandidates />} />
+          <Route path="open-jobs/:id" element={<JobDetails />} />
+          <Route
+            path="shortlisted-candidates"
+            element={<ShortlistedCandidates />}
+          />
           <Route path="interviews" element={<InterviewsCalendar />} />
         </Route>
       </Routes>
