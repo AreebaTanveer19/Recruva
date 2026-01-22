@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { FaUser, FaEnvelope, FaLock, FaArrowRight, FaCheck, FaTimes } from 'react-icons/fa';
-import './Auth.css';
+// import './Auth.css';
 import { ACCESS_TOKEN, } from "./../../constants";
 
 const InputField = ({
@@ -507,7 +507,7 @@ const AuthPage = () => {
                   error={loginErrors.password?.message}
                 />
 
-                <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
+                {/* <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
                   <label className="inline-flex items-center gap-2">
                     <input type="checkbox" className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
                     Remember me
@@ -515,7 +515,7 @@ const AuthPage = () => {
                   <button type="button" className="font-semibold text-indigo-600 transition hover:text-indigo-500">
                     Forgot password?
                   </button>
-                </div>
+                </div> */}
 
                 <motion.button
                   type="submit"

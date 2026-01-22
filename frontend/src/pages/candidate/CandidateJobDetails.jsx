@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -13,12 +13,41 @@ import {
 import api from '../../api';
 
 const Background = ({ children }) => (
-  <div className="relative min-h-screen overflow-hidden bg-[#030712]">
-    <div className="absolute inset-0 bg-gradient-to-br from-[#040418] via-[#050d2c] to-[#051534]" />
-    <div className="pointer-events-none absolute -top-24 right-[-10%] h-96 w-96 rounded-full bg-indigo-500/30 blur-[180px]" />
-    <div className="pointer-events-none absolute bottom-[-10%] left-[-10%] h-[28rem] w-[28rem] rounded-full bg-blue-500/20 blur-[200px]" />
-    <div className="relative z-10 min-h-screen px-4 py-10 sm:px-8 lg:px-12">{children}</div>
+  <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-6xl">{children}</div>
   </div>
+);
+
+const Card = ({ children, className = '' }) => {
+  const base = 'rounded-xl border border-slate-200 bg-white shadow-sm';
+  return <div className={`${base} ${className}`.trim()}>{children}</div>;
+};
+
+const DetailRow = ({ icon: Icon, label, value }) => (
+  <div className="flex items-center justify-between gap-3 text-sm">
+    <dt className="flex items-center gap-2 text-slate-500">
+      {Icon && <Icon size={16} className="text-slate-400" />}
+      <span>{label}</span>
+    </dt>
+    <dd className="font-medium text-slate-900">{value}</dd>
+  </div>
+);
+
+const ActionCard = ({ title, description, actionLabel, onAction }) => (
+  <Card className="p-5">
+    <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+    {description && (
+      <p className="mt-2 text-sm text-slate-500">{description}</p>
+    )}
+    {actionLabel && onAction && (
+      <button
+        onClick={onAction}
+        className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50"
+      >
+        {actionLabel}
+      </button>
+    )}
+  </Card>
 );
 
 const formatCurrency = (value) => {
@@ -63,31 +92,29 @@ const CandidateJobDetails = () => {
   const renderList = (items = [], title) => {
     if (!Array.isArray(items) || items.length === 0) return null;
     return (
-      <section className="rounded-[28px] border border-white/10 bg-white/95 p-6 shadow-[0_35px_80px_rgba(4,7,29,0.12)]">
-        <h3 className="text-lg font-semibold tracking-tight text-slate-900">{title}</h3>
-        <ul className="mt-4 space-y-3 text-sm text-slate-600">
+      <Card className="p-6">
+        <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+        <ul className="mt-4 space-y-2 text-sm text-slate-700">
           {items.map((item, index) => (
-            <li key={`${title}-${index}`} className="flex items-start gap-3 leading-relaxed">
-              <span className="mt-1 inline-block h-2 w-2 rounded-full bg-indigo-400" />
+            <li key={`${title}-${index}`} className="flex items-start gap-3">
+              <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-slate-300" />
               <span>{item}</span>
             </li>
           ))}
         </ul>
-      </section>
+      </Card>
     );
   };
 
   if (loading) {
     return (
       <Background>
-        <div className="mx-auto max-w-6xl">
-          <div className="space-y-6">
-            <div className="h-12 w-32 animate-pulse rounded-full bg-white/10" />
-            <div className="h-40 animate-pulse rounded-[32px] bg-white/5" />
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="h-64 animate-pulse rounded-[32px] bg-white/5 lg:col-span-2" />
-              <div className="h-64 animate-pulse rounded-[32px] bg-white/5" />
-            </div>
+        <div className="space-y-4">
+          <div className="h-9 w-24 animate-pulse rounded-md bg-slate-200/80" />
+          <Card className="h-32 animate-pulse bg-slate-100" />
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <Card className="h-64 animate-pulse bg-slate-100" />
+            <Card className="h-64 animate-pulse bg-slate-100" />
           </div>
         </div>
       </Background>
@@ -97,16 +124,18 @@ const CandidateJobDetails = () => {
   if (!job) {
     return (
       <Background>
-        <div className="mx-auto max-w-4xl rounded-[32px] border border-white/10 bg-white/95 p-10 text-center shadow-[0_35px_80px_rgba(4,7,29,0.12)]">
-          <p className="text-lg font-semibold text-slate-900">We couldn't find that role.</p>
-          <p className="mt-2 text-sm text-slate-500">It may have been closed or removed. Head back to the dashboard to continue exploring.</p>
+        <Card className="mx-auto max-w-xl p-8 text-center">
+          <p className="text-base font-semibold text-slate-900">We couldn't find that role.</p>
+          <p className="mt-2 text-sm text-slate-600">
+            It may have been closed or removed. Head back to the dashboard to continue exploring.
+          </p>
           <button
             onClick={() => navigate('/candidate/dashboard')}
-            className="mt-6 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/40 transition hover:scale-[1.02]"
+            className="mt-6 inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50"
           >
             Return to dashboard
           </button>
-        </div>
+        </Card>
       </Background>
     );
   }
@@ -138,148 +167,157 @@ const CandidateJobDetails = () => {
 
   return (
     <Background>
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
+      <div className="space-y-6">
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/10"
+          className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
         >
           <ArrowLeft size={16} />
-          Back
+          Back to jobs
         </button>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="space-y-8 lg:col-span-2">
-            <section className="rounded-[32px] border border-white/10 bg-white/95 p-8 text-slate-900 shadow-[0_35px_80px_rgba(4,7,29,0.12)]">
-              <div className="flex flex-col gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.35em] text-indigo-500/80">Recruva — {job.department} team</p>
-                  <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">{job.title}</h1>
-                  <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-slate-500">
-                    <span className="inline-flex items-center gap-2">
-                      <MapPin size={16} className="text-indigo-500" />
-                      {job.location}
-                    </span>
-                    <span className="inline-flex items-center gap-2">
-                      <Building2 size={16} className="text-indigo-500" />
-                      {job.workMode}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 text-sm text-slate-500 sm:grid-cols-2">
-                  <div className="inline-flex items-center gap-2">
-                    <Clock3 size={16} className="text-indigo-500" />
-                    Posted {new Date(job.createdAt).toLocaleDateString()}
-                  </div>
-                  {job.deadline && (
-                    <div className="inline-flex items-center gap-2">
-                      <CalendarDays size={16} className="text-indigo-500" />
-                      Apply by {new Date(job.deadline).toLocaleDateString()}
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {infoChips.map(({ label, value, icon: Icon }) => (
-                    <div key={label} className="rounded-3xl border border-slate-100 bg-slate-50/60 px-4 py-3">
-                      <span className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">{label}</span>
-                      <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
-                        <Icon size={16} className="text-indigo-500" />
-                        {value || '—'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {job.description && (
-                  <div className="rounded-[28px] border border-slate-100 bg-white/90 p-6">
-                    <h3 className="text-lg font-semibold tracking-tight text-slate-900">Description</h3>
-                    <p className="mt-3 text-sm leading-relaxed text-slate-600">{job.description}</p>
-                  </div>
+        <Card className="p-6 sm:p-8">
+          <div className="flex flex-col gap-4">
+            <div>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+                {job.title}
+              </h1>
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                <span className="inline-flex items-center gap-1.5">
+                  <MapPin size={16} className="text-slate-400" />
+                  {job.location}
+                </span>
+                {job.workMode && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Building2 size={16} className="text-slate-400" />
+                    {job.workMode}
+                  </span>
+                )}
+                {job.employmentType && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Briefcase size={16} className="text-slate-400" />
+                    {job.employmentType}
+                  </span>
                 )}
               </div>
-            </section>
+            </div>
 
-            {renderList(job.requirements, 'Requirements')}
+            <div className="grid gap-3 text-xs text-slate-500 sm:grid-cols-2">
+              <div className="inline-flex items-center gap-2">
+                <Clock3 size={16} className="text-slate-400" />
+                <span>
+                  Posted{' '}
+                  {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : ''}
+                </span>
+              </div>
+              {job.deadline && (
+                <div className="inline-flex items-center gap-2">
+                  <CalendarDays size={16} className="text-slate-400" />
+                  <span>Apply by {new Date(job.deadline).toLocaleDateString()}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {infoChips.map(({ label, value, icon: Icon }) => (
+                <div
+                  key={label}
+                  className="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2"
+                >
+                  <Icon size={18} className="text-slate-400" />
+                  <div>
+                    <p className="text-xs font-medium text-slate-500">{label}</p>
+                    <p className="text-sm font-medium text-slate-900">{value || ''}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="space-y-6">
+            {job.description && (
+              <Card className="p-6">
+                <h3 className="text-base font-semibold text-slate-900">Job description</h3>
+                <p className="mt-3 text-sm leading-relaxed text-slate-700">{job.description}</p>
+              </Card>
+            )}
+
             {renderList(job.responsibilities, 'Responsibilities')}
+            {renderList(job.requirements, 'Requirements')}
 
-            <section
-              id="apply-section"
-              className="rounded-[32px] border border-white/10 bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 p-8 text-white shadow-[0_45px_90px_rgba(28,27,66,0.55)]"
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">Ready to apply?</p>
-              <h3 className="mt-4 text-2xl font-semibold tracking-tight">Share your profile and get matched faster.</h3>
-              <p className="mt-3 text-sm text-white/80">
-                Upload a tailored resume, highlight your impact, and the hiring team will reach out if you’re a fit.
-              </p>
-              <button
-                onClick={() => navigate('/candidate/profile')}
-                className="mt-6 inline-flex items-center justify-center rounded-full bg-white/90 px-8 py-3 text-sm font-semibold text-indigo-700 shadow-xl shadow-indigo-900/30"
-              >
-                Go to profile
-              </button>
+            <section id="apply-section" className="mt-2">
+              <div className="rounded-xl border border-blue-100 bg-blue-50 px-6 py-5 sm:flex sm:items-center sm:justify-between sm:gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900">Ready to apply?</h3>
+                  <p className="mt-1 text-sm text-slate-700">
+                    Share your updated profile and resume so the hiring team can review your application.
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate('/candidate/profile')}
+                  className="mt-4 inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-50 sm:mt-0"
+                >
+                  Go to profile
+                </button>
+              </div>
             </section>
           </div>
 
-          <div className="space-y-6 lg:col-span-1">
-            <div className="sticky top-6 space-y-6">
-              <div className="rounded-[32px] border border-white/10 bg-white/95 p-6 shadow-[0_35px_80px_rgba(4,7,29,0.12)]">
-                <h3 className="text-lg font-semibold text-slate-900">Apply now</h3>
-                <p className="mt-2 text-sm text-slate-500">Submit your application to join the {job.department} team at Recruva.</p>
-                <button
-                  onClick={scrollToApply}
-                  className="mt-6 w-full rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/40 transition hover:scale-[1.02]"
-                >
-                  Start application
-                </button>
-              </div>
+          <div className="space-y-4 lg:pl-2">
+            <div className="sticky top-4 space-y-4">
+              <ActionCard
+                title="Apply now"
+                description={`Submit your application to join the ${job.department} team at Recruva.`}
+                actionLabel="Start application"
+                onAction={scrollToApply}
+              />
 
-              <div className="rounded-[32px] border border-white/10 bg-white/95 p-6 shadow-[0_35px_80px_rgba(4,7,29,0.12)]">
-                <h3 className="text-lg font-semibold text-slate-900">Role summary</h3>
-                <dl className="mt-4 space-y-3 text-sm text-slate-600">
-                  <div className="flex items-center justify-between">
-                    <dt className="flex items-center gap-2">
-                      <Briefcase size={16} className="text-indigo-500" />
-                      Employment
-                    </dt>
-                    <dd className="font-semibold text-slate-900">{job.employmentType}</dd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="flex items-center gap-2">
-                      <Layers size={16} className="text-indigo-500" />
-                      Experience
-                    </dt>
-                    <dd className="font-semibold text-slate-900">{job.experienceLevel ? `${job.experienceLevel}+ yrs` : '—'}</dd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="flex items-center gap-2">
-                      <DollarSign size={16} className="text-indigo-500" />
-                      Salary
-                    </dt>
-                    <dd className="font-semibold text-slate-900">
-                      {job.salaryMin && job.salaryMax
+              <Card className="p-5">
+                <h3 className="text-sm font-semibold text-slate-900">Role summary</h3>
+                <dl className="mt-4 space-y-3">
+                  <DetailRow
+                    icon={Briefcase}
+                    label="Employment"
+                    value={job.employmentType || ''}
+                  />
+                  <DetailRow
+                    icon={Layers}
+                    label="Experience"
+                    value={
+                      job.experienceLevel
+                        ? `${job.experienceLevel}+ yrs`
+                        : 'Not specified'
+                    }
+                  />
+                  <DetailRow
+                    icon={DollarSign}
+                    label="Salary"
+                    value={
+                      job.salaryMin && job.salaryMax
                         ? `$${formatCurrency(job.salaryMin)} - $${formatCurrency(job.salaryMax)}`
-                        : 'Not disclosed'}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="flex items-center gap-2">
-                      <CalendarDays size={16} className="text-indigo-500" />
-                      Deadline
-                    </dt>
-                    <dd className="font-semibold text-slate-900">
-                      {job.deadline ? new Date(job.deadline).toLocaleDateString() : 'Rolling'}
-                    </dd>
-                  </div>
+                        : 'Not disclosed'
+                    }
+                  />
+                  <DetailRow
+                    icon={CalendarDays}
+                    label="Deadline"
+                    value={
+                      job.deadline
+                        ? new Date(job.deadline).toLocaleDateString()
+                        : 'Rolling'
+                    }
+                  />
                 </dl>
-              </div>
+              </Card>
 
-              <div className="rounded-[32px] border border-white/10 bg-white/95 p-6 shadow-[0_35px_80px_rgba(4,7,29,0.12)]">
-                <h3 className="text-lg font-semibold text-slate-900">Need support?</h3>
-                <p className="mt-2 text-sm text-slate-500">
+              <Card className="p-5">
+                <h3 className="text-sm font-semibold text-slate-900">Need support?</h3>
+                <p className="mt-2 text-sm text-slate-600">
                   Email careers@recruva.com for questions about the role, interview process, or accessibility requests.
                 </p>
-              </div>
+              </Card>
             </div>
           </div>
         </div>

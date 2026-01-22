@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {FiMenu,FiMapPin,FiPhone,FiMail,FiStar,FiBookOpen,FiBriefcase,FiLayers,FiAward,} from 'react-icons/fi';
+import {FiMapPin,FiPhone,FiMail,FiStar,FiBookOpen,FiBriefcase,FiLayers,FiAward} from 'react-icons/fi';
 import Sidebar from '../../components/candidate/Sidebar';
 import api from '../../api';
 import { ACCESS_TOKEN } from '../../constants';
@@ -21,11 +21,7 @@ const ProfileDisplay = ({ onEdit }) => {
   const [profileData, setProfileData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
-
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-  const closeSidebar = () => setIsSidebarOpen(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -71,17 +67,19 @@ const ProfileDisplay = ({ onEdit }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50 font-sans">
         <div className="relative flex min-h-screen flex-col lg:flex-row">
-          <Sidebar isMobileOpen={isSidebarOpen} onClose={closeSidebar} />
-          <main className="flex-1 px-4 py-8 sm:px-8 lg:ml-64">
-            <div className="h-6 w-24 animate-pulse bg-slate-200" />
-            <div className="mt-4 h-4 w-full animate-pulse bg-slate-100" />
-            <div className="mt-2 h-4 w-3/4 animate-pulse bg-slate-100" />
-            <div className="mt-6 space-y-2">
-              {[...Array(4)].map((_, idx) => (
-                <div key={idx} className="h-4 w-full animate-pulse bg-slate-100" />
-              ))}
+          <Sidebar />
+          <main className="w-full flex-1 overflow-x-hidden lg:pl-64">
+            <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+              <div className="space-y-8">
+                <div className="h-24 w-full animate-pulse rounded-2xl bg-slate-200" />
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, idx) => (
+                    <div key={idx} className="h-40 w-full animate-pulse rounded-2xl bg-slate-100" />
+                  ))}
+                </div>
+              </div>
             </div>
           </main>
         </div>
@@ -121,29 +119,9 @@ const ProfileDisplay = ({ onEdit }) => {
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       <div className="relative flex min-h-screen flex-col lg:flex-row">
-        <Sidebar isMobileOpen={isSidebarOpen} onClose={closeSidebar} />
-        {isSidebarOpen && (
-          <button
-            type="button"
-            className="fixed inset-0 z-30 bg-black/40 lg:hidden"
-            onClick={closeSidebar}
-            aria-label="Close menu overlay"
-          />
-        )}
-
+        <Sidebar />
         <main className="w-full flex-1 overflow-x-hidden lg:pl-64">
           <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-            <div className="mb-6 flex items-center justify-between lg:hidden">
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-              >
-                <FiMenu className="h-4 w-4" />
-                Menu
-              </button>
-            </div>
-            
             <div className="space-y-8">
               <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                 <p className="text-[0.65rem] font-semibold uppercase tracking-[0.5em] text-slate-500">Profile</p>
