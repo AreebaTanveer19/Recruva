@@ -29,12 +29,10 @@ const SidebarLayout = () => {
   return (
     <div>
         <div className="flex min-h-screen">
-      {/* Sidebar */}
       {role === "HR" && <HRSidebar links={HrNavLinks}/>}
       {role === "DEPARTMENT" && <HRSidebar links={DeptNavLinks} />}
 
-      {/* Main Content */}
-      <div className="flex-1 bg-gray-100 lg:ml-[282px] ml-0">
+      <div className="flex-1 bg-gray-100 ml-0">
         <Outlet />
       </div>
     </div>
