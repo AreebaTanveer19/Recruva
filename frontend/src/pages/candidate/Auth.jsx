@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { FaUser, FaEnvelope, FaLock, FaArrowRight, FaCheck, FaTimes } from 'react-icons/fa';
-// import './Auth.css';
 import { ACCESS_TOKEN, } from "./../../constants";
 
 const InputField = ({
