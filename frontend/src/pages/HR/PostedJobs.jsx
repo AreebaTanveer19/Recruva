@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "./../../api";
-import HRSidebar from "./../../components/HRSidebar";
 import axios from "axios";
 import { ACCESS_TOKEN } from "./../../constants";
 import JobCardGrid from "../../components/JobCardGrid";
@@ -10,11 +9,11 @@ function PostedJobs() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filterDept, setFilterDept] = useState(""); // filter by department
-    const [filterLocation, setFilterLocation] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterDept, setFilterDept] = useState(""); // filter by department
+  const [filterLocation, setFilterLocation] = useState("");
 
-    const filteredJobs = jobs.filter((job) => {
+  const filteredJobs = jobs.filter((job) => {
     const matchesSearch =
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -27,7 +26,6 @@ function PostedJobs() {
 
     return matchesSearch && matchesDept && matchesLocation;
   });
-
 
   // ------------------------
   // Fetch open jobs
@@ -49,11 +47,7 @@ function PostedJobs() {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 text-gray-900">
-          <HRSidebar />
-
       <div className="flex-1 py-10 px-4 sm:px-6 md:px-8 overflow-y-auto bg-gray-100">
-
-
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <p className="text-lg animate-pulse">Loading posted jobs...</p>
@@ -93,7 +87,7 @@ function PostedJobs() {
                       {" "}
                       {dept}{" "}
                     </option>
-                  )
+                  ),
                 )}{" "}
               </select>{" "}
               {/* Location Filter */}{" "}
@@ -110,7 +104,7 @@ function PostedJobs() {
                       {" "}
                       {loc}{" "}
                     </option>
-                  )
+                  ),
                 )}{" "}
               </select>{" "}
               {/* Clear Filters */}{" "}
@@ -128,13 +122,13 @@ function PostedJobs() {
             </div>
 
             <JobCardGrid
-            jobs={jobs}
-            isLinkedInConnected={false}
-            postingJobId={null}
-            postToLinkedIn={() => {}}
-            variant="dept"
-            detailRoute="posted-jobs"
-          />
+              jobs={jobs}
+              isLinkedInConnected={false}
+              postingJobId={null}
+              postToLinkedIn={() => {}}
+              variant="dept"
+              detailRoute="hr/posted-jobs"
+            />
           </>
         )}
       </div>

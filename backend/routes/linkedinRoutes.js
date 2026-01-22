@@ -83,7 +83,7 @@ router.get("/callback", async (req, res) => {
     },
     });
 
-    res.redirect("http://localhost:5173/OpenJobs");
+    res.redirect("http://localhost:5173/hr/open-jobs");
   } catch (error) {
     console.error("LinkedIn callback error:", error.response?.data || error);
     res.status(500).send("LinkedIn auth failed");

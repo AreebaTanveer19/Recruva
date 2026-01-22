@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "./../../api";
-import HRSidebar from "./../../components/HRSidebar";
 import axios from "axios";
 import { ACCESS_TOKEN } from "./../../constants";
 import JobCardGrid from "../../components/JobCardGrid";
@@ -111,8 +110,6 @@ function OpenJobs() {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 text-gray-900">
-      <HRSidebar />
-
       <div className="flex-1 py-10 px-4 sm:px-6 md:px-8 overflow-y-auto bg-gray-100">
         {/* LinkedIn Button */}
         <div className="flex justify-end mb-6">
@@ -216,7 +213,7 @@ function OpenJobs() {
             postingJobId={postingJobId}
             postToLinkedIn={postToLinkedIn}
             variant="hr"
-            detailRoute="open-jobs"
+            detailRoute="/hr/open-jobs"
             />
           </>
         )}

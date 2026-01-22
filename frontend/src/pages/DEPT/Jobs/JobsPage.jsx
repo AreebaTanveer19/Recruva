@@ -67,7 +67,7 @@ const JobsPage = () => {
             postingJobId={null}
             postToLinkedIn={() => {}}
             variant="dept"
-            detailRoute="open-jobs"
+            detailRoute="dept/dashboard/open-jobs"
           />
         )}
       </div>

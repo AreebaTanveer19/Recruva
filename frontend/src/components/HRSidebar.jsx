@@ -1,29 +1,14 @@
 import React, { useState } from "react";
-import {
-  Home,
-  Briefcase,
-  FileText,
-  Clock,
-  LogOut,
-  Menu,
-  X,
-} from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ACCESS_TOKEN } from "../constants";
 import LogoutPopup from "./LogoutPopup";
 
-export default function HRSidebar({ links = [] }) {
+export default function HRSidebar({ links = [], panelName }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
-
-  // const links = [
-  //   { name: "Dashboard", path: "/hr/dashboard", icon: <Home size={18} /> },
-  //   { name: "Open Jobs", path: "/OpenJobs", icon: <Briefcase size={18} /> },
-  //   { name: "Posted Jobs", path: "/posted-jobs", icon: <Clock size={18} /> },
-  //   { name: "Job Applications", path: "/applications", icon: <FileText size={18} /> },
-  // ];
 
   const confirmLogout = () => {
     localStorage.removeItem(ACCESS_TOKEN);
@@ -55,12 +40,15 @@ export default function HRSidebar({ links = [] }) {
             isOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          {/* Logo + close button */}
-          <div className="p-5 text-xl font-bold text-white tracking-wide border-b border-gray-800 flex items-center justify-between">
-            <span>Recruva</span>
+          <div className="p-4 text-xl font-bold text-white tracking-wide border-b border-gray-800 flex items-start justify-center">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold leading-tight">Recruva</h1>
+              <p className="font-medium leading-tight">{panelName}</p>
+            </div>
+
             <button
               onClick={() => setIsOpen(false)}
-              className="md:hidden text-white"
+              className="md:hidden text-white mt-1"
             >
               <X size={20} />
             </button>
@@ -108,8 +96,7 @@ export default function HRSidebar({ links = [] }) {
             © 2025 Recruva
           </div>
         </div>
-
-        {/* Ensure main content shifts right on desktop */}
+        
         <div className="md:ml-60"></div>
       </>
     </>
