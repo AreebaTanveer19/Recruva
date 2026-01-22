@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "./../../api";
 import HRSidebar from "./../../components/HRSidebar";
 import axios from "axios";
 import { ACCESS_TOKEN } from "./../../constants";
+import JobCardGrid from "../../components/JobCardGrid";
+const BASE_URL = import.meta.env.VITE_LINKEDIN_BASE_URL;
 
 function OpenJobs() {
   const [jobs, setJobs] = useState([]);
@@ -13,7 +15,7 @@ function OpenJobs() {
   const [postingJobId, setPostingJobId] = useState(null);
   const [linkedinLoading, setLinkedinLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterDept, setFilterDept] = useState(""); // filter by department
+  const [filterDept, setFilterDept] = useState("");
   const [filterLocation, setFilterLocation] = useState("");
 
   const filteredJobs = jobs.filter((job) => {
@@ -30,9 +32,6 @@ function OpenJobs() {
     return matchesSearch && matchesDept && matchesLocation;
   });
 
-  // ------------------------
-  // Fetch open jobs
-  // ------------------------
   useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -48,10 +47,6 @@ function OpenJobs() {
     fetchJobs();
   }, []);
 
-  // ------------------------
-  // Check LinkedIn connection
-  // ------------------------
-
   useEffect(() => {
     const checkLinkedInStatus = async () => {
       const token = localStorage.getItem(ACCESS_TOKEN);
@@ -63,14 +58,11 @@ function OpenJobs() {
       }
 
       try {
-        const res = await axios.get(
-          "http://localhost:3000/auth/linkedin/status",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const res = await axios.get(`${BASE_URL}/auth/linkedin/status`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         setIsLinkedInConnected(res.data.connected);
       } catch (err) {
@@ -89,7 +81,7 @@ function OpenJobs() {
   // ------------------------
   const connectLinkedIn = () => {
     const token = localStorage.getItem(ACCESS_TOKEN);
-    window.location.replace = `http://localhost:3000/auth/linkedin/auth?token=${token}`;
+    window.location.replace(`${BASE_URL}/auth/linkedin/auth?token=${token}`);
   };
 
   const postToLinkedIn = async (jobId) => {
@@ -98,13 +90,13 @@ function OpenJobs() {
       const token = localStorage.getItem(ACCESS_TOKEN);
 
       const res = await axios.post(
-        `http://localhost:3000/auth/linkedin/post/${jobId}`,
+        `${BASE_URL}/auth/linkedin/post/${jobId}`,
         {}, // empty body if not sending anything
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       alert(res.data.message || "Posted successfully!");
@@ -117,9 +109,6 @@ function OpenJobs() {
     }
   };
 
-  // ------------------------
-  // UI
-  // ------------------------
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 text-gray-900">
       <HRSidebar />
@@ -188,7 +177,7 @@ function OpenJobs() {
                       {" "}
                       {dept}{" "}
                     </option>
-                  )
+                  ),
                 )}{" "}
               </select>{" "}
               {/* Location Filter */}{" "}
@@ -205,7 +194,7 @@ function OpenJobs() {
                       {" "}
                       {loc}{" "}
                     </option>
-                  )
+                  ),
                 )}{" "}
               </select>{" "}
               {/* Clear Filters */}{" "}
@@ -221,57 +210,14 @@ function OpenJobs() {
                 Clear Filters{" "}
               </button>{" "}
             </div>
-
-            {/* Job Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-              {filteredJobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="bg-white border border-gray-300 rounded-xl p-6 shadow-sm hover:shadow-lg hover:border-gray-400 transition-all transform hover:-translate-y-1 flex flex-col"
-                >
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    {job.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm mb-2">
-      {job.department} • {job.location}
-    </p>
-
-    <p className="mt-3 text-gray-600 text-sm line-clamp-3 flex-1">
-      {job.description}
-    </p>
-
-    {/* Extra Job Details */}
-    <div className="mt-4 space-y-1 text-sm text-gray-700">
-      <p><span className="font-semibold">Employment Type:</span> {job.employmentType}</p>
-      <p><span className="font-semibold">Work Mode:</span> {job.workMode}</p>
-      <p><span className="font-semibold">Salary Range:</span> {job.salaryMin} - {job.salaryMax}</p>
-    </div>
-
-                  <div className="mt-5 flex flex-col sm:flex-col lg:flex-row gap-2">
-                    <button
-                      onClick={() => navigate(`/open-jobs/${job.id}`)}
-                      className="flex-1 bg-gray-900 text-white py-2 rounded-lg font-semibold hover:bg-black transition"
-                    >
-                      View Details
-                    </button>
-
-                    <button
-                      onClick={() => postToLinkedIn(job.id)}
-                      disabled={!isLinkedInConnected || postingJobId === job.id}
-                      className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-semibold transition ${
-                        isLinkedInConnected
-                          ? "bg-gray-800 hover:bg-black text-white"
-                          : "bg-gray-300 cursor-not-allowed text-gray-500"
-                      }`}
-                    >
-                      {postingJobId === job.id
-                        ? "Posting..."
-                        : "Post to LinkedIn"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <JobCardGrid
+            jobs={jobs}
+            isLinkedInConnected={isLinkedInConnected}
+            postingJobId={postingJobId}
+            postToLinkedIn={postToLinkedIn}
+            variant="hr"
+            detailRoute="open-jobs"
+            />
           </>
         )}
       </div>

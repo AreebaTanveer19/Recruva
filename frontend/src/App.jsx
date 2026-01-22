@@ -16,7 +16,7 @@ import ProfileDisplay from "./pages/candidate/ProfileDisplay";
 import PostedJobs from "./pages/HR/PostedJobs";
 import SidebarLayout from "./layouts/SidebarLayout";
 import ShortlistedCandidates from "./pages/DEPT/Shortlisted Candidates/ShortlistedCandidates";
-import InterviewsCalendar from "./pages/DEPT/components/Interview Scheduling/InterviewsCalendar";
+import InterviewsCalendar from "./pages/DEPT/Interview Scheduling/InterviewsCalendar";
 
 function App() {
   return (

@@ -1,10 +1,9 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const JobCardGrid = ({ jobs = [], isLinkedInConnected, postingJobId, postToLinkedIn }) => {
+const JobCardGrid = ({ jobs = [], isLinkedInConnected, postingJobId, postToLinkedIn,variant, detailRoute }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const route = location.pathname.includes("/hr") ? "hr" : "dept";
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -34,9 +33,9 @@ const JobCardGrid = ({ jobs = [], isLinkedInConnected, postingJobId, postToLinke
               <span className="font-semibold">Salary Range:</span> {job.salaryMin} - {job.salaryMax}
             </p>
 
-        {route === "dept" && (
+        {variant === "dept" && (
              <button
-                onClick={() => navigate(`/open-jobs/${job.id}`)}
+                onClick={() => navigate(`/${detailRoute}/${job.id}`)}
                 className="flex-1 w-full bg-gray-900 text-white py-2 rounded-lg font-semibold hover:bg-black transition"
               >
                 View Details
@@ -47,10 +46,10 @@ const JobCardGrid = ({ jobs = [], isLinkedInConnected, postingJobId, postToLinke
           </div>
 
           {/* Buttons (only if route is HR) */}
-          {route === "hr" && (
+          {variant === "hr" && (
             <div className="mt-5 flex flex-col sm:flex-col lg:flex-row gap-2">
                          <button
-                onClick={() => navigate(`/open-jobs/${job.id}`)}
+                onClick={() => navigate(`${detailRoute}/${job.id}`)}
                 className="flex-1 bg-gray-900 text-white py-2 rounded-lg font-semibold hover:bg-black transition"
               >
                 View Details
