@@ -1,5 +1,7 @@
 # Recruva - Next-Gen Recruitment Made Simple
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/460b438afced48bebd23a85389935f30)](https://app.codacy.com/gh/AreebaTanveer19/Recruva?utm_source=github.com&utm_medium=referral&utm_content=AreebaTanveer19/Recruva&utm_campaign=Badge_Grade)
+
 ## Project Overview
 Recruva is a modern Applicant Tracking System (ATS) designed to streamline the recruitment process for organizations. It helps hiring managers post jobs, track applicants, schedule interviews, and manage the hiring workflow efficiently. The system leverages AI-driven insights to match candidates with job requirements, reducing hiring delays and improving quality.
 
