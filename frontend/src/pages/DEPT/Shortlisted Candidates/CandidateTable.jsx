@@ -1,8 +1,8 @@
 import React from "react";
 import { CalendarIcon } from "@heroicons/react/24/solid";
-import { candidatesList, statusStyles } from "../data/candidateList";
+import { statusStyles } from "../data/candidateList";
 
-export function CandidateTable({ onScheduleInterview }) {
+export default function CandidateTable({ candidates ,onScheduleInterview }) {
   return (
     <div className="overflow-x-auto rounded-xl shadow-lg bg-white">
       <table className="min-w-full divide-y divide-gray-200">
@@ -26,7 +26,7 @@ export function CandidateTable({ onScheduleInterview }) {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {candidatesList.map((candidate) => (
+          {candidates.map((candidate) => (
             <tr
               key={candidate.id}
               className="hover:bg-gray-50 transition-colors"

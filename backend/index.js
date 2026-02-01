@@ -24,6 +24,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Use email routes
 app.use('/api', emailRoutes);

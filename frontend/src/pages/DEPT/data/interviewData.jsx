@@ -61,11 +61,34 @@ export const getModeLabel = (mode) => {
 
 
 export const interviewModes = [
-  { value: "google-meet", label: "Google Meet" },
-  { value: "on-site", label: "On-Site" },
+  { value: "google_meet", label: "Google Meet" },
+  { value: "on_site", label: "On-Site" },
 ];
 
 export const meetingLinkTemplates = {
-  "google-meet": "https://meet.google.com/xxx-xxxx-xxx",
+  "google_meet": "https://meet.google.com/xxx-xxxx-xxx",
   "on-site": "123 Office Street, Suite 456",
+};
+
+
+import { ACCESS_TOKEN } from "../../../constants";
+
+export const scheduleInterviewApi = async (payload) => {
+  const token = localStorage.getItem(ACCESS_TOKEN);
+
+  const res = await fetch("http://localhost:3000/api/interview/schedule-event", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`, 
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const text = await res.text(); 
+    console.error("API Error:", text);
+    throw new Error(`API request failed with status ${res.status}`);
+  }
+  return res.json();
 };

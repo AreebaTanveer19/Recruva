@@ -1,14 +1,17 @@
 const express = require("express");
 const router = express.Router();
+const { auth } = require("../middleware/auth")
 
 const {
   googleAuth,
   googleRedirect,
   scheduleInterview,
+  disconnectCalendar
 } = require("../controllers/interviewController");
 
-router.get("/google", googleAuth);
+router.get("/google-auth", auth, googleAuth); 
 router.get("/google/redirect", googleRedirect);
-router.get("/schedule-event", scheduleInterview);
+router.post("/schedule-event", auth, scheduleInterview); 
+router.post("/disconnect-calendar", auth, disconnectCalendar); 
 
 module.exports = router;

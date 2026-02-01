@@ -22,6 +22,13 @@ model User {
   linkedinId      String?  
   linkedinToken   String?  
   linkedinExpires DateTime?
+
+  googleAccessToken  String?
+  googleRefreshToken String?
+  googleTokenExpiry  DateTime?
+
+  scheduledInterviews Interview[] @relation("UserScheduledInterviews")
+
 }
 
 model Candidate {
@@ -97,4 +104,39 @@ model CvData {
 
   candidateId Int      @unique
   candidate   Candidate @relation(fields: [candidateId], references: [id])
+}
+
+model Interview {
+  id            Int      @id @default(autoincrement())
+
+  candidateEmail String
+  jobId         Int?
+  scheduledBy   Int      // User (Hiring Manager)
+
+  date          DateTime
+  startTime     DateTime
+  endTime       DateTime
+
+  mode          InterviewMode
+  meetLink      String?
+  notes         String?
+
+  status        InterviewStatus @default(scheduled)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+   scheduler     User @relation("UserScheduledInterviews", fields: [scheduledBy], references: [id])
+}
+
+enum InterviewMode {
+  google_meet
+  on_site
+}
+
+enum InterviewStatus {
+  pending
+  scheduled
+  interviewed
+
 }
