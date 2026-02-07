@@ -38,6 +38,7 @@ model Candidate {
   password  String
   createdAt DateTime @default(now())
   cvData    CvData?
+  resumes   Resume[]
 }
 
 model Job {
@@ -139,4 +140,16 @@ enum InterviewStatus {
   scheduled
   interviewed
 
+}
+
+model Resume {
+  id          Int      @id @default(autoincrement())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  parsedData  Json
+  uploadedAt  DateTime @default(now())
+  candidateId Int?
+  candidate   Candidate? @relation(fields: [candidateId], references: [id])
 }
