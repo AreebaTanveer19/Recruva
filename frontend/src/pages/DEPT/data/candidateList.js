@@ -2,7 +2,7 @@ export const candidatesList = [
   {
     id: "1",
     name: "Sarah Johnson",
-    email: "sarah.johnson@email.com",
+    email: "waleeja.ali13@gmail.com",
     position: "Senior Frontend Developer",
     status: "pending",
   },
@@ -37,7 +37,7 @@ export const candidatesList = [
   {
     id: "6",
     name: "James Wilson",
-    email: "james.w@email.com",
+    email: "waleeja.ali25@gmail.com",
     position: "Senior Frontend Developer",
     status: "pending",
   },

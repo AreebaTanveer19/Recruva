@@ -21,7 +21,7 @@ import {
   LocalizationProvider,
 } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-
+import dayjs from "dayjs";
 import CloseIcon from "@mui/icons-material/Close";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -50,24 +50,49 @@ export default function ScheduleInterviewModal({
   };
 
   const handleSubmit = () => {
-    if (!date || !time || !mode || !candidate) return;
+  if (!date || !time || !mode || !candidate) return;
 
-    onSchedule({
-      candidateId: candidate.id,
-      date,
-      time,
-      mode,
-      meetingLink,
-      notes,
-    });
+  // Format date and time
+  const formattedDate = dayjs(date).format("YYYY-MM-DD");
+  const formattedTime = dayjs(time).format("HH:mm");
 
-    setDate(null);
-    setTime(null);
-    setMode("");
-    setMeetingLink("");
-    setNotes("");
-    onClose();
-  };
+  onSchedule({
+    candidateEmail: candidate.email,
+    candidateId: candidate.id,
+    date: formattedDate,
+    startTime: formattedTime, // send as "HH:mm"
+    mode,
+    meetingLink,
+    notes,
+  });
+
+  setDate(null);
+  setTime(null);
+  setMode("");
+  setMeetingLink("");
+  setNotes("");
+  onClose();
+};
+
+  // const handleSubmit = () => {
+  //   if (!date || !time || !mode || !candidate) return;
+
+  //   onSchedule({
+  //     candidateId: candidate.id,
+  //     date,
+  //     time,
+  //     mode,
+  //     meetingLink,
+  //     notes,
+  //   });
+
+  //   setDate(null);
+  //   setTime(null);
+  //   setMode("");
+  //   setMeetingLink("");
+  //   setNotes("");
+  //   onClose();
+  // };
 
   const isFormValid = date && time && mode;
 
@@ -191,34 +216,6 @@ export default function ScheduleInterviewModal({
                   ))}
                 </Select>
               </FormControl>
-            </Box>
-
-            {/* MEETING LINK */}
-            <Box>
-              <Typography
-                variant="caption"
-                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
-              >
-                {mode === "on-site" ? (
-                  <PlaceIcon fontSize="small" />
-                ) : (
-                  <LinkIcon fontSize="small" />
-                )}
-                {mode === "on-site" ? "Office Location" : "Meeting Link"}
-              </Typography>
-
-              <TextField
-                fullWidth
-                size="small"
-                value={meetingLink}
-                onChange={(e) => setMeetingLink(e.target.value)}
-                placeholder={
-                  mode === "on-site"
-                    ? "Enter full office address"
-                    : "Paste meeting link"
-                }
-                sx={{ borderRadius: 2 }}
-              />
             </Box>
 
             {/* NOTES */}
