@@ -89,6 +89,29 @@ const CandidateJobDetails = () => {
     if (target) target.scrollIntoView({ behavior: 'smooth' });
   };
 
+// Update the handleFileUpload function in CandidateJobDetails.jsx
+const handleFileUpload = async (file) => {
+  const formData = new FormData();
+  formData.append('resume', file);
+  
+  try {
+    const response = await api.post(`${import.meta.env.VITE_API_URL}/resume/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      withCredentials: true // Important for sending cookies with the request
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Upload failed:', error);
+    // Provide more detailed error message
+    const errorMessage = error.response?.data?.message || 
+                        error.message || 
+                        'Failed to upload resume';
+    throw new Error(errorMessage);
+  }
+};
+
   const renderList = (items = [], title) => {
     if (!Array.isArray(items) || items.length === 0) return null;
     return (
@@ -255,12 +278,24 @@ const CandidateJobDetails = () => {
                     Share your updated profile and resume so the hiring team can review your application.
                   </p>
                 </div>
-                <button
-                  onClick={() => navigate('/candidate/profile')}
-                  className="mt-4 inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-50 sm:mt-0"
+                <input
+                  type="file"
+                  id="resume-upload"
+                  accept=".pdf,.doc,.docx"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      handleFileUpload(file);
+                    }
+                  }}
+                />
+                <label
+                  htmlFor="resume-upload"
+                  className="mt-4 inline-flex cursor-pointer items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-50 sm:mt-0"
                 >
-                  Go to profile
-                </button>
+                  Upload Resume
+                </label>
               </div>
             </section>
           </div>

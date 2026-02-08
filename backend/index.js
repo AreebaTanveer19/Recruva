@@ -10,7 +10,7 @@ const jobRoutes = require("./routes/job");
 const linkedinRoutes = require("./routes/linkedinRoutes.js");
 const interviewRoutes = require("./routes/interviewRoutes.js");
 const cvRoutes = require("./routes/cv");
-
+const resumeRoutes = require("./routes/resumeRoutes");
 const app = express();
 const port = process.env.PORT || 3000;
 const prisma = require("./config/db")
@@ -34,6 +34,7 @@ app.use("/api", jobRoutes);
 app.use("/auth/linkedin", linkedinRoutes);
 app.use("/api/cv", cvRoutes);
 app.use("/api/interview", interviewRoutes);
+app.use("/api/resume", resumeRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

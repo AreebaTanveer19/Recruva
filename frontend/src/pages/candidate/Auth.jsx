@@ -195,7 +195,7 @@ const AuthPage = () => {
         // Redirect to dashboard after a short delay
         setTimeout(() => {
           window.location.href = '/candidate/dashboard';
-        }, 2000);
+        }, 100);
       } else {
         throw new Error(data.message || 'Invalid OTP');
       }
