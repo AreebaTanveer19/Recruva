@@ -9,26 +9,21 @@ datasource db {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  password    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  role        Role     @default(DEPARTMENT)
-  
-  createdJobs Job[]    @relation("JobCreator")
-  postedJobs  Job[]    @relation("JobPosters")
-
-  linkedinId      String?  
-  linkedinToken   String?  
-  linkedinExpires DateTime?
-
-  googleAccessToken  String?
-  googleRefreshToken String?
-  googleTokenExpiry  DateTime?
-
+  id                  Int         @id @default(autoincrement())
+  email               String      @unique
+  password            String
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  role                Role        @default(DEPARTMENT)
+  linkedinExpires     DateTime?
+  linkedinId          String?
+  linkedinToken       String?
+  googleAccessToken   String?
+  googleRefreshToken  String?
+  googleTokenExpiry   DateTime?
   scheduledInterviews Interview[] @relation("UserScheduledInterviews")
-
+  createdJobs         Job[]       @relation("JobCreator")
+  postedJobs          Job[]       @relation("JobPosters")
 }
 
 model Candidate {
@@ -38,7 +33,7 @@ model Candidate {
   password  String
   createdAt DateTime @default(now())
   cvData    CvData?
-  resumes   Resume[]
+  resumes   Resume?
 }
 
 model Job {
@@ -55,6 +50,7 @@ model Job {
   deadline       DateTime?
   creator        User           @relation("JobCreator", fields: [createdBy], references: [id])
   details        JobDetails?
+  Resume         Resume?
   posters        User[]         @relation("JobPosters")
 }
 
@@ -69,12 +65,51 @@ model JobDetails {
   job              Job      @relation(fields: [jobId], references: [id])
 }
 
+model CvData {
+  id              Int       @id @default(autoincrement())
+  phone           String?
+  address         String?
+  education       Json?
+  work_experience Json?
+  skills          String[]
+  projects        Json?
+  certifications  Json?
+  candidateId     Int       @unique
+  candidate       Candidate @relation(fields: [candidateId], references: [id])
+}
+
+model Interview {
+  id             Int             @id @default(autoincrement())
+  candidateEmail String
+  jobId          Int?
+  scheduledBy    Int
+  date           DateTime
+  startTime      DateTime
+  endTime        DateTime
+  mode           InterviewMode
+  meetLink       String?
+  notes          String?
+  status         InterviewStatus @default(scheduled)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  scheduler      User            @relation("UserScheduledInterviews", fields: [scheduledBy], references: [id])
+}
+
+model Resume {
+  id           Int        @id @default(autoincrement())
+  originalName String
+  parsedData   Json
+  uploadedAt   DateTime   @default(now())
+  candidateId  Int?       @unique
+  job_ID       Int?       @unique
+  candidate    Candidate? @relation(fields: [candidateId], references: [id])
+  Job          Job?       @relation(fields: [job_ID], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
 
 enum Role {
   HR
   DEPARTMENT
 }
-
 
 enum EmploymentType {
   FullTime
@@ -93,43 +128,6 @@ enum JobStatus {
   Closed
 }
 
-model CvData {
-  id              Int      @id @default(autoincrement())
-  phone           String? 
-  address         String?
-  education       Json?
-  work_experience Json?
-  skills          String[]
-  projects        Json?
-  certifications  Json?
-
-  candidateId Int      @unique
-  candidate   Candidate @relation(fields: [candidateId], references: [id])
-}
-
-model Interview {
-  id            Int      @id @default(autoincrement())
-
-  candidateEmail String
-  jobId         Int?
-  scheduledBy   Int      // User (Hiring Manager)
-
-  date          DateTime
-  startTime     DateTime
-  endTime       DateTime
-
-  mode          InterviewMode
-  meetLink      String?
-  notes         String?
-
-  status        InterviewStatus @default(scheduled)
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-   scheduler     User @relation("UserScheduledInterviews", fields: [scheduledBy], references: [id])
-}
-
 enum InterviewMode {
   google_meet
   on_site
@@ -139,17 +137,4 @@ enum InterviewStatus {
   pending
   scheduled
   interviewed
-
-}
-
-model Resume {
-  id          Int      @id @default(autoincrement())
-  filename    String
-  originalName String
-  mimeType    String
-  size        Int
-  parsedData  Json
-  uploadedAt  DateTime @default(now())
-  candidateId Int?
-  candidate   Candidate? @relation(fields: [candidateId], references: [id])
 }
