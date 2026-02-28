@@ -107,8 +107,6 @@ model CvData {
   candidate   Candidate @relation(fields: [candidateId], references: [id])
 }
 
-<<<<<<< HEAD
-=======
 model Interview {
   id            Int      @id @default(autoincrement())
 
@@ -144,24 +142,14 @@ enum InterviewStatus {
 
 }
 
->>>>>>> 78b94b6c15df00c0a46fe91daa518b23dcc67532
 model Resume {
   id          Int      @id @default(autoincrement())
   filename    String
   originalName String
   mimeType    String
   size        Int
-<<<<<<< HEAD
-  parsedData  Json?
-  uploadedAt  DateTime @default(now())
-  candidateId Int?
-  candidate   Candidate? @relation(fields: [candidateId], references: [id])
-}
-
-=======
   parsedData  Json
   uploadedAt  DateTime @default(now())
   candidateId Int?
   candidate   Candidate? @relation(fields: [candidateId], references: [id])
 }
->>>>>>> 78b94b6c15df00c0a46fe91daa518b23dcc67532
