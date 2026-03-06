@@ -27,12 +27,12 @@ model User {
 }
 
 model Candidate {
-  id           Int           @id @default(autoincrement())
-  name         String
-  email        String        @unique
-  password     String
-  createdAt    DateTime      @default(now())
-  cvData       CvData?
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  cvData    CvData?
   resumes      Resume[]
   applications Application[]
 }
@@ -100,9 +100,10 @@ model Resume {
   id           Int           @id @default(autoincrement())
   originalName String
   parsedData   Json
-  uploadedAt   DateTime      @default(now())
-  candidateId  Int?
-  candidate    Candidate?    @relation(fields: [candidateId], references: [id])
+  pdfUrl       String
+  uploadedAt   DateTime   @default(now())
+  candidateId  Int?       
+  candidate    Candidate? @relation(fields: [candidateId], references: [id])
   applications Application[]
 }
 

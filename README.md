@@ -59,6 +59,9 @@ CORS_ORIGIN=http://localhost:5173
 
 DATABASE_URL=
 DIRECT_URL = 
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_RESUME_BUCKET=resumes
 
 JWT_SECRET = 
 ENCRYPTION_KEY=
@@ -72,6 +75,8 @@ CLIENT_ID =
 CLIENT_SECRET = 
 REDIRECT_URL = 
 API_KEY=
+GROQ_API_KEY=
+GROQ_RESUME_MODEL=openai/gpt-oss-120b
 ```
 ## How to run the project
 1. **Start the backend**

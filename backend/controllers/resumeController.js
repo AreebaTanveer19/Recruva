@@ -1,13 +1,22 @@
 // backend/controllers/resumeController.js
 const fs = require('fs').promises;
 const path = require('path');
-const { PrismaClient } = require('@prisma/client');
-const { extractTextFromFile } = require('../utils/fileParser');
-const { parseCVWithLLM } = require('../services/llmService');
+const prisma = require('../config/db');
+const { ingestUploadedResume, syncCandidateCvData } = require('../services/resumeIngestionService');
+const { deleteResumeObject, extractStoragePathFromSupabaseUrl } = require('../services/supabaseStorageService');
 
-const prisma = new PrismaClient();
+async function cleanupLocalUpload(file) {
+  if (!file?.path) {
+    return;
+  }
+
+  const localPath = path.resolve(__dirname, '..', file.path);
+  await fs.unlink(localPath).catch(() => {});
+}
 
 const uploadResume = async (req, res) => {
+  let storagePath;
+
   try {
     if (!req.file) {
       return res.status(400).json({ 
@@ -16,39 +25,28 @@ const uploadResume = async (req, res) => {
       });
     }
 
-    // Extract text from the uploaded file
-    const filePath = path.join(__dirname, '..', req.file.path);
-    const text = await extractTextFromFile(filePath, req.file.mimetype);
-
-    // Parse the extracted text using LLM
-    const parsedData = await parseCVWithLLM(text);
-    
-    // Validate the parsed data structure
-    if (!parsedData || typeof parsedData !== 'object') {
-      throw new Error('Invalid parsed data structure from LLM');
-    }
-    
-    // Ensure all required fields exist in correct order
-    const validatedData = {
-      basicInfo: parsedData.basicInfo || { name: '', email: '', phone: '', location: '' },
-      education: Array.isArray(parsedData.education) ? parsedData.education : [],
-      experience: Array.isArray(parsedData.experience) ? parsedData.experience : [],
-      projects: Array.isArray(parsedData.projects) ? parsedData.projects : [],
-      skills: Array.isArray(parsedData.skills) ? parsedData.skills : [],
-      certifications: Array.isArray(parsedData.certifications) ? parsedData.certifications : []
-    };
-
-    // Save to database
-    const resume = await prisma.resume.create({
-      data: {
-        originalName: req.file.originalname,
-        parsedData: validatedData,
-        candidateId: req.user.id
-      }
+    const ingestion = await ingestUploadedResume({
+      file: req.file,
+      candidateId: req.user.id,
     });
 
-    // Clean up the uploaded file
-    await fs.unlink(filePath).catch(console.error);
+    const { parsedData, pdfUrl } = ingestion;
+    storagePath = ingestion.storagePath;
+
+    const resume = await prisma.$transaction(async (tx) => {
+      const createdResume = await tx.resume.create({
+        data: {
+          originalName: req.file.originalname,
+          parsedData,
+          pdfUrl,
+          candidateId: req.user.id,
+        },
+      });
+
+      await syncCandidateCvData(tx, req.user.id, parsedData);
+
+      return createdResume;
+    });
 
     res.status(201).json({
       success: true,
@@ -57,18 +55,15 @@ const uploadResume = async (req, res) => {
 
   } catch (error) {
     console.error('Error uploading resume:', error);
-    
-    // Clean up file if it exists
-    if (req.file) {
-      const filePath = path.join(__dirname, '..', req.file.path);
-      await fs.unlink(filePath).catch(console.error);
-    }
+    await deleteResumeObject(storagePath);
 
     res.status(500).json({
       success: false,
       message: 'Failed to process resume',
       error: error.message
     });
+  } finally {
+    await cleanupLocalUpload(req.file);
   }
 };
 const getResume = async (req, res) => {
@@ -122,6 +117,16 @@ const deleteResume = async (req, res) => {
     await prisma.resume.delete({
       where: { id: parseInt(id) }
     });
+
+    // Best-effort cleanup for resumes stored in Supabase.
+    // We only store URL in DB, so derive the object path when possible.
+    if (resume.pdfUrl) {
+      const storagePath = extractStoragePathFromSupabaseUrl(resume.pdfUrl);
+      if (storagePath) {
+        await deleteResumeObject(storagePath);
+      }
+    }
+
     // If you're storing files on disk, you would delete them here
     // Example: await fs.unlink(path.join(__dirname, '..', 'uploads', resume.filename));
     res.status(200).json({
@@ -143,15 +148,17 @@ const deleteResume = async (req, res) => {
 const listResumes = async (req, res) => {
   try {
     const resumes = await prisma.resume.findMany({
-  where: { candidateId: req.user.id },
-  orderBy: { uploadedAt: 'desc' },
-  select: {
-    id: true,
-    originalName: true,
-    uploadedAt: true,
-    parsedData: true
-  }
-});
+      where: { candidateId: req.user.id },
+      orderBy: { uploadedAt: 'desc' },
+      select: {
+        id: true,
+        originalName: true,
+        pdfUrl: true,
+        uploadedAt: true,
+        parsedData: true,
+      },
+    });
+
     res.status(200).json({
       success: true,
       data: resumes
@@ -169,6 +176,5 @@ module.exports = {
   uploadResume,
   getResume,
   deleteResume,
-  listResumes
+  listResumes,
 };
-// ... rest of the controller functions (getResume, deleteResume) ...

@@ -1,8 +1,23 @@
 const fs = require('fs').promises;
 const path = require('path');
 const prisma = require('../config/db');
-const { extractTextFromFile } = require('../utils/fileParser');
 const { parseCVWithLLM } = require('../services/llmService');
+const {
+  ingestUploadedResume,
+  normalizeParsedResumeData,
+  syncCandidateCvData,
+  uploadProfileSnapshot,
+} = require('../services/resumeIngestionService');
+const { deleteResumeObject } = require('../services/supabaseStorageService');
+
+async function cleanupLocalUpload(file) {
+  if (!file?.path) {
+    return;
+  }
+
+  const localPath = path.resolve(__dirname, '..', file.path);
+  await fs.unlink(localPath).catch(() => {});
+}
 
 /**
  * Check if candidate has already applied to a job
@@ -60,6 +75,7 @@ const getCandidateResumes = async (req, res) => {
       select: {
         id: true,
         originalName: true,
+        pdfUrl: true,
         uploadedAt: true,
         parsedData: true,
       },
@@ -148,7 +164,7 @@ const applyWithExistingResume = async (req, res) => {
           select: { id: true, title: true, department: true },
         },
         resume: {
-          select: { id: true, originalName: true, uploadedAt: true },
+          select: { id: true, originalName: true, pdfUrl: true, uploadedAt: true },
         },
       },
     });
@@ -179,14 +195,24 @@ const applyWithExistingResume = async (req, res) => {
  * POST /api/application/apply/new
  */
 const applyWithNewResume = async (req, res) => {
+  let storagePath;
+
   try {
     const { jobId } = req.body;
     const candidateId = req.user.id;
+    const parsedJobId = parseInt(jobId, 10);
 
     if (!jobId) {
       return res.status(400).json({
         success: false,
         message: 'jobId is required',
+      });
+    }
+
+    if (Number.isNaN(parsedJobId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'jobId must be a valid number',
       });
     }
 
@@ -202,7 +228,7 @@ const applyWithNewResume = async (req, res) => {
       where: {
         candidateId_jobId: {
           candidateId,
-          jobId: parseInt(jobId),
+          jobId: parsedJobId,
         },
       },
     });
@@ -216,7 +242,7 @@ const applyWithNewResume = async (req, res) => {
 
     // Verify job exists and is open
     const job = await prisma.job.findFirst({
-      where: { id: parseInt(jobId), status: 'Open' },
+      where: { id: parsedJobId, status: 'Open' },
     });
 
     if (!job) {
@@ -226,34 +252,31 @@ const applyWithNewResume = async (req, res) => {
       });
     }
 
-    // Parse the uploaded resume
-    const filePath = path.join(__dirname, '..', req.file.path);
-    const text = await extractTextFromFile(filePath, req.file.mimetype);
-    const parsedData = await parseCVWithLLM(text);
+    const ingestion = await ingestUploadedResume({
+      file: req.file,
+      candidateId,
+    });
 
-    const validatedData = {
-      basicInfo: parsedData.basicInfo || { name: '', email: '', phone: '', location: '' },
-      education: Array.isArray(parsedData.education) ? parsedData.education : [],
-      experience: Array.isArray(parsedData.experience) ? parsedData.experience : [],
-      projects: Array.isArray(parsedData.projects) ? parsedData.projects : [],
-      skills: Array.isArray(parsedData.skills) ? parsedData.skills : [],
-      certifications: Array.isArray(parsedData.certifications) ? parsedData.certifications : [],
-    };
+    const { parsedData, pdfUrl } = ingestion;
+    storagePath = ingestion.storagePath;
 
     // Create resume and application in a transaction
     const result = await prisma.$transaction(async (tx) => {
       const resume = await tx.resume.create({
         data: {
           originalName: req.file.originalname,
-          parsedData: validatedData,
+          parsedData,
+          pdfUrl,
           candidateId,
         },
       });
 
+      await syncCandidateCvData(tx, candidateId, parsedData);
+
       const application = await tx.application.create({
         data: {
           candidateId,
-          jobId: parseInt(jobId),
+          jobId: parsedJobId,
           resumeId: resume.id,
         },
         include: {
@@ -264,16 +287,13 @@ const applyWithNewResume = async (req, res) => {
             select: { id: true, title: true, department: true },
           },
           resume: {
-            select: { id: true, originalName: true, uploadedAt: true },
+            select: { id: true, originalName: true, pdfUrl: true, uploadedAt: true },
           },
         },
       });
 
       return application;
     });
-
-    // Clean up uploaded file
-    await fs.unlink(filePath).catch(console.error);
 
     res.status(201).json({
       success: true,
@@ -283,11 +303,7 @@ const applyWithNewResume = async (req, res) => {
   } catch (error) {
     console.error('Error applying with new resume:', error);
 
-    // Clean up file on error
-    if (req.file) {
-      const filePath = path.join(__dirname, '..', req.file.path);
-      await fs.unlink(filePath).catch(console.error);
-    }
+    await deleteResumeObject(storagePath);
 
     if (error.code === 'P2002') {
       return res.status(400).json({
@@ -301,6 +317,8 @@ const applyWithNewResume = async (req, res) => {
       message: 'Failed to submit application',
       error: error.message,
     });
+  } finally {
+    await cleanupLocalUpload(req.file);
   }
 };
 
@@ -379,17 +397,24 @@ function convertProfileToText(cvData) {
  * POST /api/application/apply/profile
  */
 const applyWithProfileData = async (req, res) => {
+  let storagePath;
+
   try {
     const { jobId } = req.body;
     const candidateId = req.user.id;
+    const parsedJobId = parseInt(jobId, 10);
 
     if (!jobId) {
       return res.status(400).json({ success: false, message: 'jobId is required' });
     }
 
+    if (Number.isNaN(parsedJobId)) {
+      return res.status(400).json({ success: false, message: 'jobId must be a valid number' });
+    }
+
     // Check if already applied
     const existing = await prisma.application.findUnique({
-      where: { candidateId_jobId: { candidateId, jobId: parseInt(jobId) } },
+      where: { candidateId_jobId: { candidateId, jobId: parsedJobId } },
     });
 
     if (existing) {
@@ -398,7 +423,7 @@ const applyWithProfileData = async (req, res) => {
 
     // Verify job exists and is open
     const job = await prisma.job.findFirst({
-      where: { id: parseInt(jobId), status: 'Open' },
+      where: { id: parsedJobId, status: 'Open' },
     });
 
     if (!job) {
@@ -418,36 +443,38 @@ const applyWithProfileData = async (req, res) => {
     // Convert profile data to text and parse with LLM
     const profileText = convertProfileToText(cvData);
     const parsedData = await parseCVWithLLM(profileText);
+    const normalizedParsedData = normalizeParsedResumeData(parsedData);
 
-    const validatedData = {
-      basicInfo: parsedData.basicInfo || { name: '', email: '', phone: '', location: '' },
-      education: Array.isArray(parsedData.education) ? parsedData.education : [],
-      experience: Array.isArray(parsedData.experience) ? parsedData.experience : [],
-      projects: Array.isArray(parsedData.projects) ? parsedData.projects : [],
-      skills: Array.isArray(parsedData.skills) ? parsedData.skills : [],
-      certifications: Array.isArray(parsedData.certifications) ? parsedData.certifications : [],
-    };
+    const uploadResult = await uploadProfileSnapshot({
+      candidateId,
+      profileText,
+    });
+    const profilePdfUrl = uploadResult.pdfUrl;
+    storagePath = uploadResult.storagePath;
 
     // Create resume and application in a transaction
     const result = await prisma.$transaction(async (tx) => {
       const resume = await tx.resume.create({
         data: {
           originalName: 'Profile Data',
-          parsedData: validatedData,
+          parsedData: normalizedParsedData,
+          pdfUrl: profilePdfUrl,
           candidateId,
         },
       });
 
+      await syncCandidateCvData(tx, candidateId, normalizedParsedData);
+
       const application = await tx.application.create({
         data: {
           candidateId,
-          jobId: parseInt(jobId),
+          jobId: parsedJobId,
           resumeId: resume.id,
         },
         include: {
           candidate: { select: { id: true, name: true, email: true } },
           job: { select: { id: true, title: true, department: true } },
-          resume: { select: { id: true, originalName: true, uploadedAt: true } },
+          resume: { select: { id: true, originalName: true, pdfUrl: true, uploadedAt: true } },
         },
       });
 
@@ -461,6 +488,7 @@ const applyWithProfileData = async (req, res) => {
     });
   } catch (error) {
     console.error('Error applying with profile data:', error);
+    await deleteResumeObject(storagePath);
     if (error.code === 'P2002') {
       return res.status(400).json({ success: false, message: 'Already applied to this job' });
     }
@@ -496,6 +524,7 @@ const getMyApplications = async (req, res) => {
           select: {
             id: true,
             originalName: true,
+            pdfUrl: true,
             uploadedAt: true,
           },
         },
@@ -537,6 +566,7 @@ const getJobApplications = async (req, res) => {
           select: {
             id: true,
             originalName: true,
+            pdfUrl: true,
             uploadedAt: true,
             parsedData: true,
           },
@@ -594,7 +624,7 @@ const updateApplicationStatus = async (req, res) => {
           select: { id: true, title: true, department: true },
         },
         resume: {
-          select: { id: true, originalName: true, uploadedAt: true },
+          select: { id: true, originalName: true, pdfUrl: true, uploadedAt: true },
         },
       },
     });

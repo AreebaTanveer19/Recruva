@@ -1,173 +1,149 @@
 const axios = require('axios');
 
 /**
- * Parse CV text using LLM with strict JSON output
+ * Parse CV text using LLM with strict JSON output.
  * @param {string} cvText - Extracted text from CV
  * @returns {Promise<Object>} - Parsed CV data as JSON object
  */
 async function parseCVWithLLM(cvText) {
   try {
-    // Clean and prepare the text
-    const cleanCVText = cvText.substring(0, 8000);
+    const cleanCVText = String(cvText || '').slice(0, 12000);
 
-    const prompt = `You are a resume parser. Extract ALL information from following CV into a valid JSON object. 
-You MUST return ONLY raw JSON - no markdown, no code blocks, no explanations.
+    if (!cleanCVText.trim()) {
+      return getEmptyStructure();
+    }
 
-CRITICAL: Follow this exact structure:
+    const prompt = `Extract data from this resume and return ONLY valid JSON with this exact shape:
 {
   "basicInfo": { "name": "", "email": "", "phone": "", "location": "" },
-  "education": [
-    { "degree": "Bachelor of Science in Computer Science", "institution": "University Name", "year": "2020" }
-  ],
-  "experience": [
-    { "company": "Company Name", "position": "Job Title", "duration": "2020-Present", "description": "Job responsibilities and achievements" }
-  ],
-  "skills": ["JavaScript", "React", "Node.js"],
-  "projects": [
-    { "name": "Project Name", "description": "Project description", "technologies": "React, Node.js" }
-  ],
-  "certifications": [
-    { "name": "Certification Name", "issuer": "Issuing Organization", "date": "2023" }
-  ]
+  "education": [{ "degree": "", "institution": "", "year": "" }],
+  "experience": [{ "company": "", "position": "", "duration": "", "description": "" }],
+  "skills": [""],
+  "projects": [{ "name": "", "description": "", "technologies": "" }],
+  "certifications": [{ "name": "", "issuer": "", "date": "" }]
 }
 
-- For education: look for degrees, institutions, graduation years
-- For experience: find companies, positions, dates, descriptions
-- For skills: extract all technical skills, tools, technologies
-- For projects: find project names, descriptions, technologies used
-- For certifications: look for certification names, issuers, dates
-- Return ONLY JSON object - no surrounding text
+Rules:
+- Return only one JSON object (no markdown/code fences/explanations).
+- Keep unknown fields as empty strings.
+- Keep missing sections as empty arrays.
+- Extract as many real values as possible from the resume text.
 
-Resume text to parse:
+Resume text:
 ${cleanCVText}`;
 
-    // Make API call to LLM using correct endpoint
     const response = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
-        model: 'openai/gpt-oss-120b',
+        model: process.env.GROQ_RESUME_MODEL || 'openai/gpt-oss-120b',
         messages: [
           {
             role: 'system',
-            content: 'You are a resume parser. Return ONLY valid JSON without any markdown formatting or explanations. Follow exact structure provided.'
+            content: 'You are a strict JSON resume parser. Return only valid JSON.',
           },
           {
             role: 'user',
-            content: prompt
-          }
+            content: prompt,
+          },
         ],
-        max_tokens: 9000,
-        temperature: 0.1
+        temperature: 0.1,
+        max_tokens: 2500,
+        response_format: {
+          type: 'json_object',
+        },
       },
       {
         headers: {
           Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       }
     );
 
-    // Extract content from correct response structure
     const llmResponse = response.data.choices?.[0]?.message?.content;
 
     if (!llmResponse) {
       throw new Error('Empty response from LLM');
     }
 
-    // Parse the JSON response
-    const parsedData = parseJSONResponse(llmResponse);
-
-    // Validate and apply fallbacks if needed
-    const result = validateAndApplyFallbacks(parsedData, cvText);
-
-    return result;
+    return validateAndApplyFallbacks(parseJSONResponse(llmResponse), cleanCVText);
 
   } catch (error) {
-    // If LLM fails, try enhanced regex extraction
+    console.error('LLM parsing failed, using regex fallback:', error.message);
     return extractDataWithRegex(cvText);
   }
 }
 
 /**
- * Parse JSON response from LLM, handling potential formatting issues
+ * Parse JSON response from LLM, handling formatting noise.
  * @param {string} response - Raw response from LLM
  * @returns {Object} - Parsed JSON object
  */
 function parseJSONResponse(response) {
+  if (response && typeof response === 'object') {
+    return response;
+  }
+
+  if (typeof response !== 'string') {
+    return getEmptyStructure();
+  }
+
   try {
-    // Clean response - remove markdown code blocks if present
     let cleanResponse = response.trim();
-    
-    // Remove markdown code blocks (```json ... ```)
+
     cleanResponse = cleanResponse.replace(/^```json\s*/i, '');
     cleanResponse = cleanResponse.replace(/^```\s*/, '');
     cleanResponse = cleanResponse.replace(/\s*```$/, '');
-    
-    // Remove any leading/trailing whitespace again
     cleanResponse = cleanResponse.trim();
-    
-    // Try to parse directly
+
     return JSON.parse(cleanResponse);
   } catch (error) {
-    // Try to extract JSON from response using regex
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
+    const firstCurly = response.indexOf('{');
+    const lastCurly = response.lastIndexOf('}');
+
+    if (firstCurly !== -1 && lastCurly !== -1 && lastCurly > firstCurly) {
       try {
-        const parsed = JSON.parse(jsonMatch[0]);
-        return parsed;
-      } catch (e) {
-        // Continue to fallback
+        return JSON.parse(response.slice(firstCurly, lastCurly + 1));
+      } catch (parseError) {
+        return getEmptyStructure();
       }
     }
 
-    // If all fails, return empty structure
     return getEmptyStructure();
   }
 }
 
 /**
- * Validate parsed data and apply regex fallbacks for missing critical fields
+ * Validate parsed data and apply fallbacks for missing critical fields.
  * @param {Object} data - Parsed data from LLM
  * @param {string} originalText - Original CV text for regex extraction
  * @returns {Object} - Validated and enhanced data
  */
 function validateAndApplyFallbacks(data, originalText) {
-  // Start with ordered structure
-  const result = getOrderedStructure({});
+  const result = getOrderedStructure(data || {});
 
-  // Merge LLM data - preserve non-empty arrays from parsed data
-  if (data) {
-    // Basic info merge
-    result.basicInfo = { ...result.basicInfo, ...data.basicInfo };
-    
-    // Preserve arrays if they have content
-    result.education = Array.isArray(data.education) && data.education.length > 0 ? data.education : [];
-    result.experience = Array.isArray(data.experience) && data.experience.length > 0 ? data.experience : [];
-    result.projects = Array.isArray(data.projects) && data.projects.length > 0 ? data.projects : [];
-    result.skills = Array.isArray(data.skills) && data.skills.length > 0 ? data.skills : [];
-    result.certifications = Array.isArray(data.certifications) && data.certifications.length > 0 ? data.certifications : [];
-  }
+  const totalItems =
+    result.education.length +
+    result.experience.length +
+    result.projects.length +
+    result.skills.length +
+    result.certifications.length;
 
-  // If LLM returned mostly empty arrays, use regex extraction as fallback
-  const totalItems = result.education.length + result.experience.length + result.projects.length + result.skills.length + result.certifications.length;
-  
-  if (totalItems === 0) { // Only use regex fallback if absolutely nothing was extracted
+  if (totalItems === 0) {
     const regexData = extractDataWithRegex(originalText);
-    
-    // Merge regex data, but don't overwrite existing basic info
+
     result.education = result.education.length > 0 ? result.education : regexData.education;
     result.experience = result.experience.length > 0 ? result.experience : regexData.experience;
     result.projects = result.projects.length > 0 ? result.projects : regexData.projects;
     result.skills = result.skills.length > 0 ? result.skills : regexData.skills;
     result.certifications = result.certifications.length > 0 ? result.certifications : regexData.certifications;
-    
-    // Fill in missing basic info from regex
+
     if (!result.basicInfo.email) result.basicInfo.email = regexData.basicInfo.email;
     if (!result.basicInfo.phone) result.basicInfo.phone = regexData.basicInfo.phone;
     if (!result.basicInfo.name) result.basicInfo.name = regexData.basicInfo.name;
+    if (!result.basicInfo.location) result.basicInfo.location = regexData.basicInfo.location;
   }
 
-  // Apply regex fallbacks for missing critical info only
   if (!result.basicInfo.email) {
     const email = extractEmail(originalText);
     if (email) result.basicInfo.email = email;
@@ -183,189 +159,112 @@ function validateAndApplyFallbacks(data, originalText) {
     if (name) result.basicInfo.name = name;
   }
 
+  result.skills = [...new Set(result.skills.map((skill) => String(skill).trim()).filter(Boolean))];
+
   return result;
 }
 
 /**
- * Enhanced regex-based extraction as fallback
+ * Regex-based extraction fallback.
  * @param {string} text - CV text
  * @returns {Object} - Extracted information
  */
 function extractDataWithRegex(text) {
-  // Start with ordered structure
+  const sourceText = String(text || '');
+  const lines = sourceText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
   const result = getOrderedStructure({});
-  
-  // Basic info
-  result.basicInfo.email = extractEmail(text);
-  result.basicInfo.phone = extractPhone(text);
-  result.basicInfo.name = extractName(text);
-  
-  // Extract skills (improved patterns)
-  const skillsPatterns = [
-    /(?:skills|technical skills|core competencies|technologies|tools|frameworks)[:\s]*([^\n]*?)(?=\n\n|\n[A-Z]|\n[0-9]|\Z)/i,
-    /(?:skills|technical skills)[:\s]*\n((?:[^\n]*[,，;\/][^\n]*\n?)*)/i
-  ];
-  
-  for (const pattern of skillsPatterns) {
-    const match = text.match(pattern);
-    if (match && match[1]) {
-      const skillsText = match[1];
-      const skills = skillsText.split(/[,，;\/\n]/).map(s => s.trim()).filter(s => s.length > 2 && !s.match(/^\d+$/));
-      result.skills = [...result.skills, ...skills];
-    }
+
+  result.basicInfo.email = extractEmail(sourceText) || '';
+  result.basicInfo.phone = extractPhone(sourceText) || '';
+  result.basicInfo.name = extractName(sourceText) || '';
+
+  const skillsHeaderIndex = lines.findIndex((line) => /^(skills|technical skills|tech stack)\b/i.test(line));
+  if (skillsHeaderIndex >= 0) {
+    const nextLines = lines.slice(skillsHeaderIndex, skillsHeaderIndex + 8);
+    const skillText = nextLines.join(', ');
+    result.skills = skillText
+      .split(/[,|/]/)
+      .map((skill) => skill.replace(/^skills:?/i, '').trim())
+      .filter((skill) => skill.length > 1);
   }
-  
-  // Extract education (improved pattern)
-  const educationPatterns = [
-    /(?:education|academic background|qualifications)[:\s]*\n([\s\S]*?)(?=\n\s*\n|\nexperience|\nskills|\nprojects|\ncertifications|\Z)/i,
-    /(?:bachelor|master|phd|associate|diploma|certificate)[\s\S]*?(?:university|college|institute)[\s\S]*?(?:\d{4}|\d{2}|\Z)/gi
-  ];
-  
-  for (const pattern of educationPatterns) {
-    const matches = text.match(pattern);
-    if (matches) {
-      matches.forEach(match => {
-        const cleanMatch = match.trim();
-        if (cleanMatch.length > 20) {
-          // Try to extract degree and institution
-          const degreeMatch = cleanMatch.match(/(bachelor|master|phd|associate|diploma|certificate)[^\\n]*/i);
-          const institutionMatch = cleanMatch.match(/(university|college|institute|academy)[^\\n]*/i);
-          const yearMatch = cleanMatch.match(/\b(19|20)\d{2}\b/);
-          
-          result.education.push({
-            degree: degreeMatch ? degreeMatch[0] : "Degree not specified",
-            institution: institutionMatch ? institutionMatch[0] : cleanMatch.substring(0, 100),
-            year: yearMatch ? yearMatch[0] : ""
-          });
-        }
+
+  if (result.skills.length === 0) {
+    const commonTechKeywords = [
+      'javascript', 'typescript', 'react', 'next.js', 'node.js', 'express', 'python',
+      'java', 'sql', 'postgresql', 'mysql', 'mongodb', 'aws', 'docker', 'kubernetes',
+      'git', 'tailwind', 'redux', 'prisma'
+    ];
+
+    result.skills = commonTechKeywords
+      .filter((keyword) => new RegExp(`\\b${escapeRegExp(keyword)}\\b`, 'i').test(sourceText))
+      .map((keyword) => keyword.replace(/\b\w/g, (char) => char.toUpperCase()));
+  }
+
+  lines.forEach((line) => {
+    if (/(bachelor|master|phd|diploma|university|college)/i.test(line)) {
+      const yearMatch = line.match(/\b(19|20)\d{2}\b/);
+      result.education.push({
+        degree: line,
+        institution: line,
+        year: yearMatch ? yearMatch[0] : '',
       });
     }
-  }
-  
-  // Extract experience (much improved pattern)
-  const experiencePatterns = [
-    // Pattern for date ranges followed by job details
-    /(\d{4}\s*[-–]\s*(?:present|\d{4})|\d{4}\s*[-–]\s*present|present)[\s\S]*?(?=\n\d{4}|\n\s*\n|\n[A-Z][A-Z]|\Z)/gi,
-    // Pattern for "Experience" section
-    /(?:experience|work history|employment|professional experience)[:\s]*\n([\s\S]*?)(?=\n\s*\n|\n[A-Z][A-Z]|\nskills|\neducation|\nprojects|\ncertifications|\Z)/i,
-    // Pattern for job titles with companies
-    /(?:senior|junior|lead|principal|software|engineer|developer|manager|director)[^\\n]*[|\\-][^\\n]*\n[\s\S]*?(?=\n\n|\n\d|\n[A-Z]|\Z)/gi
-  ];
-  
-  for (const pattern of experiencePatterns) {
-    const matches = text.match(pattern);
-    if (matches) {
-      matches.forEach(match => {
-        const cleanMatch = match.trim();
-        if (cleanMatch.length > 30) {
-          // Try to extract company, position, and duration
-          const lines = cleanMatch.split('\n').filter(line => line.trim());
-          
-          let company = "Company not specified";
-          let position = "Position not specified";
-          let duration = "Duration not specified";
-          let description = "";
-          
-          // Extract duration from first line if it contains dates
-          const durationMatch = lines[0]?.match(/(\d{4}\s*[-–]\s*(?:present|\d{4})|present)/i);
-          if (durationMatch) {
-            duration = durationMatch[0];
-          }
-          
-          // Extract position from first line
-          if (lines[0] && !durationMatch) {
-            position = lines[0].trim();
-          } else if (lines[0] && durationMatch) {
-            const parts = lines[0].split(durationMatch[0]);
-            if (parts[0]) position = parts[0].replace(/[|\\-]/, '').trim();
-            if (parts[1]) company = parts[1].replace(/[|\\-]/, '').trim();
-          }
-          
-          // Extract company from second line if not found
-          if (company === "Company not specified" && lines[1]) {
-            company = lines[1].trim();
-          }
-          
-          // Description is everything else
-          description = lines.slice(1).join(' ').substring(0, 300);
-          
-          result.experience.push({
-            company: company || "Company not specified",
-            position: position || "Position not specified", 
-            duration: duration || "Duration not specified",
-            description: description || cleanMatch.substring(0, 200) + "..."
-          });
-        }
+
+    if (/(intern|engineer|developer|manager|analyst|consultant)/i.test(line) && /\b(19|20)\d{2}\b/.test(line)) {
+      result.experience.push({
+        company: '',
+        position: line,
+        duration: line.match(/\b(19|20)\d{2}\b[\s\-–to]*(present|\b(19|20)\d{2}\b)?/i)?.[0] || '',
+        description: '',
       });
     }
-  }
-  
-  // Extract projects (improved pattern)
-  const projectPatterns = [
-    /(?:projects|personal projects|portfolio)[:\s]*\n([\s\S]*?)(?=\n\s*\n|\nexperience|\nskills|\neducation|\ncertifications|\Z)/i,
-    /(?:project|application|system|platform|website)[^\\n]*\n[\s\S]*?(?=\n\n|\nproject|\n\d|\Z)/gi
-  ];
-  
-  for (const pattern of projectPatterns) {
-    const matches = text.match(pattern);
-    if (matches) {
-      matches.forEach(match => {
-        const cleanMatch = match.trim();
-        if (cleanMatch.length > 20) {
-          const lines = cleanMatch.split('\n').filter(line => line.trim());
-          
-          let projectName = "Project not specified";
-          let description = "";
-          let technologies = "";
-          
-          if (lines[0]) {
-            projectName = lines[0].trim();
-          }
-          
-          // Look for technologies in description
-          const techMatch = cleanMatch.match(/(?:technologies|tech stack|tools|built with)[:\s]*([^\n]*)/i);
-          if (techMatch) {
-            technologies = techMatch[1];
-          }
-          
-          description = lines.slice(1).join(' ').substring(0, 250);
-          
-          result.projects.push({
-            name: projectName,
-            description: description || "Project description not available",
-            technologies: technologies || "Technologies not specified"
-          });
-        }
+
+    if (/\b(project|built|developed)\b/i.test(line)) {
+      result.projects.push({
+        name: line.slice(0, 80),
+        description: line,
+        technologies: '',
       });
     }
-  }
-  
-  // Extract certifications (improved pattern)
-  const certificationPatterns = [
-    /(?:certifications|certificates|credentials)[:\s]*\n([\s\S]*?)(?=\n\s*\n|\nexperience|\nskills|\neducation|\nprojects|\Z)/i,
-    /(certified|aws|google|microsoft|oracle|cisco|pmp)[\s\S]*?(?:\d{4}|\Z)/gi
-  ];
-  
-  for (const pattern of certificationPatterns) {
-    const matches = text.match(pattern);
-    if (matches) {
-      matches.forEach(match => {
-        const cleanMatch = match.trim();
-        if (cleanMatch.length > 10) {
-          result.certifications.push({
-            name: cleanMatch,
-            issuer: "Issuer not specified",
-            date: ""
-          });
-        }
+
+    if (/(certified|certification|aws|google cloud|azure)/i.test(line)) {
+      result.certifications.push({
+        name: line,
+        issuer: '',
+        date: line.match(/\b(19|20)\d{2}\b/)?.[0] || '',
       });
     }
-  }
-  
-  // Remove duplicates and clean up
-  result.skills = [...new Set(result.skills)].filter(skill => skill.length > 2);
+  });
+
+  result.education = dedupeObjectArray(result.education, 'degree');
+  result.experience = dedupeObjectArray(result.experience, 'position');
+  result.projects = dedupeObjectArray(result.projects, 'name');
+  result.certifications = dedupeObjectArray(result.certifications, 'name');
+  result.skills = [...new Set(result.skills.map((skill) => skill.trim()).filter((skill) => skill.length > 1))];
   
   return result;
+}
+
+function dedupeObjectArray(items, key) {
+  const seen = new Set();
+
+  return items.filter((item) => {
+    const value = (item?.[key] || '').toLowerCase();
+    if (!value || seen.has(value)) {
+      return false;
+    }
+
+    seen.add(value);
+    return true;
+  });
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -436,18 +335,23 @@ function getEmptyStructure() {
 }
 
 function getOrderedStructure(data) {
+  const safeData = data && typeof data === 'object' ? data : {};
+  const safeBasicInfo = safeData.basicInfo && typeof safeData.basicInfo === 'object' ? safeData.basicInfo : {};
+
   return {
-    basicInfo: data.basicInfo || {
-      name: '',
-      email: '',
-      phone: '',
-      location: ''
+    basicInfo: {
+      name: typeof safeBasicInfo.name === 'string' ? safeBasicInfo.name.trim() : '',
+      email: typeof safeBasicInfo.email === 'string' ? safeBasicInfo.email.trim() : '',
+      phone: typeof safeBasicInfo.phone === 'string' ? safeBasicInfo.phone.trim() : '',
+      location: typeof safeBasicInfo.location === 'string' ? safeBasicInfo.location.trim() : ''
     },
-    education: Array.isArray(data.education) ? data.education : [],
-    experience: Array.isArray(data.experience) ? data.experience : [],
-    projects: Array.isArray(data.projects) ? data.projects : [],
-    skills: Array.isArray(data.skills) ? data.skills : [],
-    certifications: Array.isArray(data.certifications) ? data.certifications : []
+    education: Array.isArray(safeData.education) ? safeData.education : [],
+    experience: Array.isArray(safeData.experience) ? safeData.experience : [],
+    projects: Array.isArray(safeData.projects) ? safeData.projects : [],
+    skills: Array.isArray(safeData.skills)
+      ? safeData.skills.map((skill) => String(skill).trim()).filter(Boolean)
+      : [],
+    certifications: Array.isArray(safeData.certifications) ? safeData.certifications : []
   };
 }
 
