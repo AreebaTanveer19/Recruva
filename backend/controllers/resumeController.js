@@ -41,10 +41,7 @@ const uploadResume = async (req, res) => {
     // Save to database
     const resume = await prisma.resume.create({
       data: {
-        filename: req.file.filename,
         originalName: req.file.originalname,
-        mimeType: req.file.mimetype,
-        size: req.file.size,
         parsedData: validatedData,
         candidateId: req.user.id
       }
@@ -151,8 +148,6 @@ const listResumes = async (req, res) => {
   select: {
     id: true,
     originalName: true,
-    mimeType: true,
-    size: true,
     uploadedAt: true,
     parsedData: true
   }

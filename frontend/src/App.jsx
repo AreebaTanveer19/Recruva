@@ -17,6 +17,8 @@ import PostedJobs from "./pages/HR/PostedJobs";
 import SidebarLayout from "./layouts/SidebarLayout";
 import ShortlistedCandidates from "./pages/DEPT/Shortlisted Candidates/ShortlistedCandidates";
 import InterviewsCalendar from "./pages/DEPT/Interview Scheduling/InterviewsCalendar";
+import MyApplications from "./pages/candidate/MyApplications";
+import JobApplications from "./pages/HR/JobApplications";
 
 function App() {
   return (
@@ -60,6 +62,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/candidate/applications"
+          element={
+            <ProtectedRoute allowedRoles={["candidate"]}>
+              <MyApplications />
+            </ProtectedRoute>
+          }
+        />
 
         {/* HR */}
 
@@ -74,8 +84,10 @@ function App() {
           <Route path="dashboard" element={<HRDashboard />} />
           <Route path="open-jobs" element={<OpenJobs />} />
           <Route path="open-jobs/:id" element={<JobDetails />} />
+          <Route path="open-jobs/:id/applications" element={<JobApplications />} />
           <Route path="posted-jobs" element={<PostedJobs />} />
           <Route path="posted-jobs/:id" element={<JobDetails />} />
+          <Route path="posted-jobs/:id/applications" element={<JobApplications />} />
         </Route>
 
         {/* Department */}

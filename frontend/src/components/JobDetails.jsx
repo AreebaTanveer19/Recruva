@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { ArrowLeft, Users } from "lucide-react";
 import api from "./../api";
 import { ACCESS_TOKEN } from "../constants";
 import { jwtDecode } from "jwt-decode";
