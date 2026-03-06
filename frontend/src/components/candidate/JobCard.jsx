@@ -61,20 +61,12 @@ const JobCard = ({ job }) => {
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
         <span className="text-xs uppercase tracking-[0.3em] text-slate-400">Posted {formatDate(job.createdAt)}</span>
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => navigate(`/candidate/job/${job.id}`)}
-            className="rounded-full border border-slate-200 bg-white/80 px-5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-white"
-          >
-            View details
-          </button>
-          <button
-            onClick={() => navigate(`/candidate/job/${job.id}#apply`)}
-            className="rounded-full bg-white/95 px-5 py-2 text-sm font-semibold text-indigo-600 shadow-lg shadow-indigo-200/60 transition hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-indigo-200"
-          >
-            Apply now
-          </button>
-        </div>
+        <button
+          onClick={() => navigate(`/candidate/job/${job.id}`)}
+          className="rounded-full border border-slate-200 bg-white/80 px-5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-white"
+        >
+          View details
+        </button>
       </div>
     </div>
   );

@@ -305,6 +305,170 @@ const applyWithNewResume = async (req, res) => {
 };
 
 /**
+ * Check if candidate has previous resumes
+ * GET /api/application/has-previous-resume
+ */
+const checkHasPreviousResume = async (req, res) => {
+  try {
+    const candidateId = req.user.id;
+    const resumeCount = await prisma.resume.count({ where: { candidateId } });
+    res.json({ success: true, hasPrevious: resumeCount > 0 });
+  } catch (error) {
+    console.error('Error checking previous resumes:', error);
+    res.status(500).json({ success: false, message: 'Failed to check previous resumes' });
+  }
+};
+
+/**
+ * Convert profile CvData to text for LLM parsing
+ */
+function convertProfileToText(cvData) {
+  let text = '';
+
+  if (cvData.candidate?.name) text += `${cvData.candidate.name}\n`;
+  if (cvData.candidate?.email) text += `Email: ${cvData.candidate.email}\n`;
+  if (cvData.phone) text += `Phone: ${cvData.phone}\n`;
+  if (cvData.address) text += `Address: ${cvData.address}\n`;
+  text += '\n';
+
+  if (Array.isArray(cvData.education) && cvData.education.length > 0) {
+    text += 'EDUCATION\n';
+    cvData.education.forEach((edu) => {
+      text += `${edu.degree || ''} - ${edu.institution || ''} (${edu.year || ''})\n`;
+    });
+    text += '\n';
+  }
+
+  if (Array.isArray(cvData.work_experience) && cvData.work_experience.length > 0) {
+    text += 'EXPERIENCE\n';
+    cvData.work_experience.forEach((exp) => {
+      text += `${exp.role || exp.position || ''} at ${exp.company || ''}\n`;
+      if (exp.startDate || exp.endDate) text += `${exp.startDate || ''} - ${exp.endDate || 'Present'}\n`;
+      if (exp.description) text += `${exp.description}\n`;
+      text += '\n';
+    });
+  }
+
+  if (Array.isArray(cvData.skills) && cvData.skills.length > 0) {
+    text += 'SKILLS\n';
+    text += cvData.skills.join(', ') + '\n\n';
+  }
+
+  if (Array.isArray(cvData.projects) && cvData.projects.length > 0) {
+    text += 'PROJECTS\n';
+    cvData.projects.forEach((proj) => {
+      text += `${proj.title || proj.name || ''}\n`;
+      if (proj.description) text += `${proj.description}\n`;
+      if (proj.link) text += `Link: ${proj.link}\n`;
+      text += '\n';
+    });
+  }
+
+  if (Array.isArray(cvData.certifications) && cvData.certifications.length > 0) {
+    text += 'CERTIFICATIONS\n';
+    cvData.certifications.forEach((cert) => {
+      text += `${cert.name || ''} - ${cert.authority || cert.issuer || ''} (${cert.year || cert.date || ''})\n`;
+    });
+  }
+
+  return text;
+}
+
+/**
+ * Apply with candidate profile data (CvData)
+ * POST /api/application/apply/profile
+ */
+const applyWithProfileData = async (req, res) => {
+  try {
+    const { jobId } = req.body;
+    const candidateId = req.user.id;
+
+    if (!jobId) {
+      return res.status(400).json({ success: false, message: 'jobId is required' });
+    }
+
+    // Check if already applied
+    const existing = await prisma.application.findUnique({
+      where: { candidateId_jobId: { candidateId, jobId: parseInt(jobId) } },
+    });
+
+    if (existing) {
+      return res.status(400).json({ success: false, message: 'Already applied to this job' });
+    }
+
+    // Verify job exists and is open
+    const job = await prisma.job.findFirst({
+      where: { id: parseInt(jobId), status: 'Open' },
+    });
+
+    if (!job) {
+      return res.status(404).json({ success: false, message: 'Job not found or no longer accepting applications' });
+    }
+
+    // Fetch profile data
+    const cvData = await prisma.cvData.findUnique({
+      where: { candidateId },
+      include: { candidate: { select: { name: true, email: true } } },
+    });
+
+    if (!cvData) {
+      return res.status(400).json({ success: false, message: 'No profile data found. Please fill in your profile first.' });
+    }
+
+    // Convert profile data to text and parse with LLM
+    const profileText = convertProfileToText(cvData);
+    const parsedData = await parseCVWithLLM(profileText);
+
+    const validatedData = {
+      basicInfo: parsedData.basicInfo || { name: '', email: '', phone: '', location: '' },
+      education: Array.isArray(parsedData.education) ? parsedData.education : [],
+      experience: Array.isArray(parsedData.experience) ? parsedData.experience : [],
+      projects: Array.isArray(parsedData.projects) ? parsedData.projects : [],
+      skills: Array.isArray(parsedData.skills) ? parsedData.skills : [],
+      certifications: Array.isArray(parsedData.certifications) ? parsedData.certifications : [],
+    };
+
+    // Create resume and application in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      const resume = await tx.resume.create({
+        data: {
+          originalName: 'Profile Data',
+          parsedData: validatedData,
+          candidateId,
+        },
+      });
+
+      const application = await tx.application.create({
+        data: {
+          candidateId,
+          jobId: parseInt(jobId),
+          resumeId: resume.id,
+        },
+        include: {
+          candidate: { select: { id: true, name: true, email: true } },
+          job: { select: { id: true, title: true, department: true } },
+          resume: { select: { id: true, originalName: true, uploadedAt: true } },
+        },
+      });
+
+      return application;
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Application submitted successfully',
+      data: result,
+    });
+  } catch (error) {
+    console.error('Error applying with profile data:', error);
+    if (error.code === 'P2002') {
+      return res.status(400).json({ success: false, message: 'Already applied to this job' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to submit application', error: error.message });
+  }
+};
+
+/**
  * Get all applications for the authenticated candidate
  * GET /api/application/my-applications
  */
@@ -453,8 +617,10 @@ const updateApplicationStatus = async (req, res) => {
 module.exports = {
   checkApplicationStatus,
   getCandidateResumes,
+  checkHasPreviousResume,
   applyWithExistingResume,
   applyWithNewResume,
+  applyWithProfileData,
   getMyApplications,
   getJobApplications,
   updateApplicationStatus,

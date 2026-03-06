@@ -6,8 +6,10 @@ const { upload } = require('../middleware/upload');
 const {
   checkApplicationStatus,
   getCandidateResumes,
+  checkHasPreviousResume,
   applyWithExistingResume,
   applyWithNewResume,
+  applyWithProfileData,
   getMyApplications,
   getJobApplications,
   updateApplicationStatus,
@@ -16,8 +18,10 @@ const {
 // Candidate routes
 router.get('/check-status/:jobId', auth, checkApplicationStatus);
 router.get('/resumes', auth, getCandidateResumes);
+router.get('/has-previous-resume', auth, checkHasPreviousResume);
 router.post('/apply/existing', auth, applyWithExistingResume);
 router.post('/apply/new', auth, upload.single('resume'), applyWithNewResume);
+router.post('/apply/profile', auth, applyWithProfileData);
 router.get('/my-applications', auth, getMyApplications);
 
 // HR-only routes

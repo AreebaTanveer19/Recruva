@@ -12,6 +12,12 @@ export const getCandidateResumes = async () => {
   return response.data;
 };
 
+// Check if candidate has any previous resumes
+export const checkHasPreviousResume = async () => {
+  const response = await api.get('/application/has-previous-resume');
+  return response.data;
+};
+
 // Apply with an existing resume
 export const applyWithExistingResume = async (jobId, resumeId) => {
   const response = await api.post('/application/apply/existing', { jobId, resumeId });
@@ -26,6 +32,12 @@ export const applyWithNewResume = async (jobId, file) => {
   const response = await api.post('/application/apply/new', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return response.data;
+};
+
+// Apply with profile data (CvData)
+export const applyWithProfileData = async (jobId) => {
+  const response = await api.post('/application/apply/profile', { jobId });
   return response.data;
 };
 

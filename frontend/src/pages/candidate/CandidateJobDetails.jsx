@@ -14,13 +14,18 @@ import {
   CheckCircle2,
   Loader2,
   X,
+  User,
+  ChevronRight,
+  History,
 } from 'lucide-react';
 import api from '../../api';
 import {
   checkApplicationStatus,
   getCandidateResumes,
+  checkHasPreviousResume,
   applyWithExistingResume,
   applyWithNewResume,
+  applyWithProfileData,
 } from '../../applicationApi';
 
 const Background = ({ children }) => (
@@ -76,12 +81,17 @@ const CandidateJobDetails = () => {
   // application state
   const [canApply, setCanApply] = useState(null);
   const [existingApplication, setExistingApplication] = useState(null);
-  const [resumes, setResumes] = useState([]);
-  const [showResumePanel, setShowResumePanel] = useState(false);
-  const [selectedResumeId, setSelectedResumeId] = useState(null);
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState('');
   const [applySuccess, setApplySuccess] = useState('');
+
+  // multi-step apply dialog state
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [applyStep, setApplyStep] = useState('choose-source'); // 'choose-source' | 'resume-options' | 'select-resume' | 'upload-resume'
+  const [hasProfileData, setHasProfileData] = useState(false);
+  const [hasPreviousResume, setHasPreviousResume] = useState(false);
+  const [resumes, setResumes] = useState([]);
+  const [selectedResumeId, setSelectedResumeId] = useState(null);
 
   /* fetch job */
   useEffect(() => {
@@ -103,7 +113,7 @@ const CandidateJobDetails = () => {
     })();
   }, [id]);
 
-  /* check application status */
+  /* check application status + profile + previous resume */
   useEffect(() => {
     if (!id) return;
     (async () => {
@@ -114,15 +124,76 @@ const CandidateJobDetails = () => {
         if (err.response?.status === 400) {
           setCanApply(false);
           setExistingApplication(err.response.data.application);
+        } else {
+          // On server error or network issue, assume not yet applied
+          setCanApply(true);
         }
+      }
+
+      // Check if candidate has profile data
+      try {
+        const cvRes = await api.get('/cv');
+        setHasProfileData(!!(cvRes.data?.data));
+      } catch {
+        setHasProfileData(false);
+      }
+
+      // Check if candidate has previous resumes
+      try {
+        const prevRes = await checkHasPreviousResume();
+        setHasPreviousResume(prevRes.hasPrevious);
+      } catch {
+        setHasPreviousResume(false);
       }
     })();
   }, [id]);
 
-  /* open resume picker */
-  const handleApplyWithCV = async () => {
+  /* open the apply modal */
+  const handleApplyClick = () => {
     setApplyError('');
-    setShowResumePanel(true);
+    setApplyStep('choose-source');
+    setSelectedResumeId(null);
+    setShowApplyModal(true);
+  };
+
+  /* close modal */
+  const closeModal = () => {
+    setShowApplyModal(false);
+    setApplyStep('choose-source');
+    setApplyError('');
+    setSelectedResumeId(null);
+  };
+
+  /* Step 1: User chose "Apply with Profile Data" */
+  const handleChooseProfile = async () => {
+    setApplying(true);
+    setApplyError('');
+    try {
+      await applyWithProfileData(Number(id));
+      setApplySuccess('Application submitted successfully!');
+      setCanApply(false);
+      closeModal();
+    } catch (err) {
+      setApplyError(err.response?.data?.message || 'Failed to submit application');
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  /* Step 1: User chose "Upload Resume" */
+  const handleChooseResume = async () => {
+    if (hasPreviousResume) {
+      // Has previous resumes — ask if they want to reuse
+      setApplyStep('resume-options');
+    } else {
+      // First time — go directly to upload
+      setApplyStep('upload-resume');
+    }
+  };
+
+  /* Step 2 (resume-options): User chose "Use previous resume" */
+  const handleUsePreviousResume = async () => {
+    setApplyStep('select-resume');
     try {
       const data = await getCandidateResumes();
       setResumes(data.data || []);
@@ -131,8 +202,13 @@ const CandidateJobDetails = () => {
     }
   };
 
-  /* submit with existing resume */
-  const handleApplyExisting = async () => {
+  /* Step 2 (resume-options): User chose "Upload new resume" */
+  const handleUploadNewResume = () => {
+    setApplyStep('upload-resume');
+  };
+
+  /* Submit with selected existing resume */
+  const handleSubmitExistingResume = async () => {
     if (!selectedResumeId) return;
     setApplying(true);
     setApplyError('');
@@ -140,7 +216,7 @@ const CandidateJobDetails = () => {
       await applyWithExistingResume(Number(id), selectedResumeId);
       setApplySuccess('Application submitted successfully!');
       setCanApply(false);
-      setShowResumePanel(false);
+      closeModal();
     } catch (err) {
       setApplyError(err.response?.data?.message || 'Failed to submit application');
     } finally {
@@ -148,7 +224,7 @@ const CandidateJobDetails = () => {
     }
   };
 
-  /* submit with new file */
+  /* Submit with new file upload */
   const handleNewFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -158,21 +234,13 @@ const CandidateJobDetails = () => {
       await applyWithNewResume(Number(id), file);
       setApplySuccess('Application submitted successfully!');
       setCanApply(false);
-      setShowResumePanel(false);
+      closeModal();
     } catch (err) {
       setApplyError(err.response?.data?.message || 'Failed to submit application');
     } finally {
       setApplying(false);
     }
   };
-
-  /* navigate to profile-form application */
-  const handleApplyWithProfile = () => {
-    navigate(`/candidate/profile?applyJobId=${id}`);
-  };
-
-  const scrollToApply = () =>
-    document.getElementById('apply-section')?.scrollIntoView({ behavior: 'smooth' });
 
   /* ─── render helpers ─── */
   const renderList = (items = [], title) => {
@@ -334,7 +402,15 @@ const CandidateJobDetails = () => {
               {applySuccess && (
                 <div className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-5 py-4">
                   <CheckCircle2 size={20} className="text-green-600" />
-                  <p className="text-sm font-medium text-green-800">{applySuccess}</p>
+                  <div>
+                    <p className="text-sm font-medium text-green-800">{applySuccess}</p>
+                    <button
+                      onClick={() => navigate('/candidate/applications')}
+                      className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-green-700 hover:text-green-900 transition"
+                    >
+                      View My Applications <ChevronRight size={14} />
+                    </button>
+                  </div>
                 </div>
               )}
               {canApply === false && !applySuccess && (
@@ -345,81 +421,250 @@ const CandidateJobDetails = () => {
                     {existingApplication && (
                       <p className="mt-1 text-xs text-yellow-700">Status: <StatusBadge status={existingApplication.status} /></p>
                     )}
+                    <button
+                      onClick={() => navigate('/candidate/applications')}
+                      className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-yellow-700 hover:text-yellow-900 transition"
+                    >
+                      View My Applications <ChevronRight size={14} />
+                    </button>
                   </div>
                 </div>
               )}
               {canApply === true && !applySuccess && (
                 <div className="rounded-xl border border-blue-100 bg-blue-50 px-6 py-5">
                   <h3 className="text-sm font-semibold text-slate-900">Ready to apply?</h3>
-                  <p className="mt-1 text-sm text-slate-700">Choose how you'd like to submit your application.</p>
-                  {applyError && (
-                    <div className="mt-3 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700">{applyError}</div>
-                  )}
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    <button onClick={handleApplyWithCV} disabled={applying} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
-                      <Upload size={16} /> Apply with CV Upload
-                    </button>
-                    <button onClick={handleApplyWithProfile} disabled={applying} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50">
-                      <FileText size={16} /> Apply with Profile Form
+                  <p className="mt-1 text-sm text-slate-700">Click below to start your application.</p>
+                  <div className="mt-4">
+                    <button onClick={handleApplyClick} disabled={applying} className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
+                      <Briefcase size={16} /> Apply Now
                     </button>
                   </div>
                 </div>
               )}
-              {showResumePanel && canApply && (
-                <Card className="p-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-slate-900">Select a resume or upload a new one</h3>
-                    <button onClick={() => setShowResumePanel(false)} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"><X size={16} /></button>
-                  </div>
-                  {resumes.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Your resumes</p>
-                      {resumes.map((r) => (
-                        <label key={r.id} className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${selectedResumeId === r.id ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}>
-                          <input type="radio" name="resume" className="accent-blue-600" checked={selectedResumeId === r.id} onChange={() => setSelectedResumeId(r.id)} />
-                          <FileText size={18} className="text-slate-400" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-900 truncate">{r.originalName}</p>
-                            <p className="text-xs text-slate-500">Uploaded {new Date(r.uploadedAt).toLocaleDateString()}</p>
-                          </div>
-                        </label>
-                      ))}
-                      <button onClick={handleApplyExisting} disabled={!selectedResumeId || applying} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50">
-                        {applying ? (<><Loader2 size={16} className="animate-spin" /> Submitting…</>) : 'Submit Application'}
-                      </button>
-                    </div>
-                  )}
-                  {resumes.length > 0 && (
-                    <div className="my-4 flex items-center gap-3"><div className="h-px flex-1 bg-slate-200" /><span className="text-xs text-slate-400">or</span><div className="h-px flex-1 bg-slate-200" /></div>
-                  )}
-                  <div>
-                    <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleNewFileUpload} />
-                    <button onClick={() => fileInputRef.current?.click()} disabled={applying} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm font-medium text-slate-600 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50">
-                      {applying ? (<><Loader2 size={16} className="animate-spin" /> Processing & submitting…</>) : (<><Upload size={18} /> Upload new resume (PDF, DOC, DOCX — max 5 MB)</>)}
+            </section>
+
+            {/* ─── Apply Modal ─── */}
+            {showApplyModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                <div className="relative w-full max-w-lg rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                    <h2 className="text-base font-semibold text-slate-900">
+                      {applyStep === 'choose-source' && 'How would you like to apply?'}
+                      {applyStep === 'resume-options' && 'Resume options'}
+                      {applyStep === 'select-resume' && 'Select a resume'}
+                      {applyStep === 'upload-resume' && 'Upload your resume'}
+                    </h2>
+                    <button onClick={closeModal} className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                      <X size={18} />
                     </button>
                   </div>
-                </Card>
-              )}
-            </section>
+
+                  {/* Modal Body */}
+                  <div className="px-6 py-5">
+                    {applyError && (
+                      <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-700">{applyError}</div>
+                    )}
+
+                    {/* Step 1: Choose source */}
+                    {applyStep === 'choose-source' && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-slate-600 mb-4">Choose how you'd like to submit your application for this position.</p>
+
+                        {hasProfileData && (
+                          <button
+                            onClick={handleChooseProfile}
+                            disabled={applying}
+                            className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-50"
+                          >
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                              {applying ? <Loader2 size={20} className="animate-spin" /> : <User size={20} />}
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-semibold text-slate-900">Apply with Profile Data</p>
+                              <p className="text-xs text-slate-500 mt-0.5">Use the information from your saved profile to apply</p>
+                            </div>
+                            <ChevronRight size={16} className="text-slate-400" />
+                          </button>
+                        )}
+
+                        <button
+                          onClick={handleChooseResume}
+                          disabled={applying}
+                          className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-50"
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                            <Upload size={20} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-slate-900">Upload a Resume</p>
+                            <p className="text-xs text-slate-500 mt-0.5">Upload a PDF, DOC, or DOCX file</p>
+                          </div>
+                          <ChevronRight size={16} className="text-slate-400" />
+                        </button>
+
+                        {!hasProfileData && (
+                          <p className="text-xs text-slate-400 mt-2 text-center">
+                            Want to apply with your profile?{' '}
+                            <button onClick={() => navigate('/candidate/profile')} className="text-blue-600 hover:underline">
+                              Fill in your profile first
+                            </button>
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Step 2: Resume options (has previous resume) */}
+                    {applyStep === 'resume-options' && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-slate-600 mb-4">You have previously uploaded resumes. Would you like to reuse one or upload a new one?</p>
+
+                        <button
+                          onClick={handleUsePreviousResume}
+                          disabled={applying}
+                          className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-50"
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+                            <History size={20} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-slate-900">Use a Previous Resume</p>
+                            <p className="text-xs text-slate-500 mt-0.5">Select from your previously uploaded resumes</p>
+                          </div>
+                          <ChevronRight size={16} className="text-slate-400" />
+                        </button>
+
+                        <button
+                          onClick={handleUploadNewResume}
+                          disabled={applying}
+                          className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-50"
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                            <Upload size={20} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-slate-900">Upload a New Resume</p>
+                            <p className="text-xs text-slate-500 mt-0.5">Upload a fresh PDF, DOC, or DOCX file</p>
+                          </div>
+                          <ChevronRight size={16} className="text-slate-400" />
+                        </button>
+
+                        <button
+                          onClick={() => setApplyStep('choose-source')}
+                          className="mt-2 text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
+                        >
+                          <ArrowLeft size={12} /> Back
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Step 3a: Select previous resume */}
+                    {applyStep === 'select-resume' && (
+                      <div className="space-y-3">
+                        {resumes.length === 0 ? (
+                          <p className="text-sm text-slate-500 text-center py-4">Loading resumes...</p>
+                        ) : (
+                          <>
+                            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Your resumes</p>
+                            <div className="max-h-60 overflow-y-auto space-y-2">
+                              {resumes.map((r) => (
+                                <label
+                                  key={r.id}
+                                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${selectedResumeId === r.id ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-slate-300'}`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name="resume"
+                                    className="accent-blue-600"
+                                    checked={selectedResumeId === r.id}
+                                    onChange={() => setSelectedResumeId(r.id)}
+                                  />
+                                  <FileText size={18} className="text-slate-400" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-900 truncate">{r.originalName}</p>
+                                    <p className="text-xs text-slate-500">Uploaded {new Date(r.uploadedAt).toLocaleDateString()}</p>
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
+                            <button
+                              onClick={handleSubmitExistingResume}
+                              disabled={!selectedResumeId || applying}
+                              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+                            >
+                              {applying ? (<><Loader2 size={16} className="animate-spin" /> Submitting…</>) : 'Submit Application'}
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => setApplyStep('resume-options')}
+                          className="mt-2 text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
+                        >
+                          <ArrowLeft size={12} /> Back
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Step 3b: Upload new resume */}
+                    {applyStep === 'upload-resume' && (
+                      <div className="space-y-4">
+                        <p className="text-sm text-slate-600">Upload your resume and we'll parse it automatically.</p>
+                        <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleNewFileUpload} />
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={applying}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm font-medium text-slate-600 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50 transition"
+                        >
+                          {applying ? (
+                            <><Loader2 size={18} className="animate-spin" /> Processing & submitting…</>
+                          ) : (
+                            <><Upload size={22} /> <span>Click to upload (PDF, DOC, DOCX — max 5 MB)</span></>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => setApplyStep(hasPreviousResume ? 'resume-options' : 'choose-source')}
+                          className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
+                        >
+                          <ArrowLeft size={12} /> Back
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4 lg:pl-2">
             <div className="sticky top-4 space-y-4">
-              {canApply === true && !applySuccess ? (
+              {canApply === null && !applySuccess ? (
+                <Card className="p-5">
+                  <div className="flex items-center gap-2">
+                    <Loader2 size={18} className="animate-spin text-slate-400" />
+                    <h3 className="text-sm font-semibold text-slate-500">Checking status…</h3>
+                  </div>
+                </Card>
+              ) : canApply === true && !applySuccess ? (
                 <Card className="p-5">
                   <h3 className="text-sm font-semibold text-slate-900">Apply now</h3>
                   <p className="mt-2 text-sm text-slate-500">Submit your application to join the {job.department} team at Recruva.</p>
-                  <button onClick={scrollToApply} className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Start application</button>
+                  <button onClick={handleApplyClick} className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Apply Now</button>
                 </Card>
-              ) : (
+              ) : canApply === false || applySuccess ? (
                 <Card className="p-5">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 size={18} className="text-green-600" />
                     <h3 className="text-sm font-semibold text-slate-900">{applySuccess ? 'Applied' : 'Already applied'}</h3>
                   </div>
                   <p className="mt-2 text-sm text-slate-500">Your application is being reviewed by the hiring team.</p>
+                  <button
+                    onClick={() => navigate('/candidate/applications')}
+                    className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition"
+                  >
+                    View My Applications <ChevronRight size={14} />
+                  </button>
                 </Card>
-              )}
+              ) : null}
 
               <Card className="p-5">
                 <h3 className="text-sm font-semibold text-slate-900">Role summary</h3>
