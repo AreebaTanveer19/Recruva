@@ -87,7 +87,7 @@ function App() {
           <Route path="open-jobs/:id/applications" element={<JobApplications />} />
           <Route path="posted-jobs" element={<PostedJobs />} />
           <Route path="posted-jobs/:id" element={<JobDetails />} />
-          <Route path="posted-jobs/:id/applications" element={<JobApplications />} />
+          <Route path="applications" element={<JobApplications />} />
         </Route>
 
         {/* Department */}
