@@ -8,6 +8,12 @@ import { toast } from 'react-toastify';
 import { ACCESS_TOKEN } from '../../constants';
 import { debounce } from 'lodash';
 
+const Background = ({ children }) => (
+  <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
+    {children}
+  </div>
+);
+
 const DEFAULT_FILTERS = {
   employmentType: '',
   workMode: '',
@@ -141,15 +147,6 @@ const CandidateDashboard = () => {
     appliedFilters.workMode, 
     appliedFilters.location
   ].filter(Boolean).length;
-
- const Background = ({ children }) => (
-  <div className="min-h-screen bg-white">
-    <div className="relative flex min-h-screen flex-col lg:flex-row">
-      {children}
-    </div>
-  </div>
-);
-
 
   // Loading state is now handled inline with the job listings
 

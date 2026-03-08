@@ -5,7 +5,6 @@ const { parseCVWithLLM } = require('../services/llmService');
 const {
   ingestUploadedResume,
   normalizeParsedResumeData,
-  syncCandidateCvData,
   uploadProfileSnapshot,
 } = require('../services/resumeIngestionService');
 const { deleteResumeObject } = require('../services/supabaseStorageService');
@@ -70,7 +69,7 @@ const getCandidateResumes = async (req, res) => {
     const candidateId = req.user.id;
 
     const resumes = await prisma.resume.findMany({
-      where: { candidateId },
+      where: { candidateId, originalName: { not: 'Profile Data' } },
       orderBy: { uploadedAt: 'desc' },
       select: {
         id: true,
@@ -271,8 +270,6 @@ const applyWithNewResume = async (req, res) => {
         },
       });
 
-      await syncCandidateCvData(tx, candidateId, parsedData);
-
       const application = await tx.application.create({
         data: {
           candidateId,
@@ -329,7 +326,7 @@ const applyWithNewResume = async (req, res) => {
 const checkHasPreviousResume = async (req, res) => {
   try {
     const candidateId = req.user.id;
-    const resumeCount = await prisma.resume.count({ where: { candidateId } });
+    const resumeCount = await prisma.resume.count({ where: { candidateId, originalName: { not: 'Profile Data' } } });
     res.json({ success: true, hasPrevious: resumeCount > 0 });
   } catch (error) {
     console.error('Error checking previous resumes:', error);
@@ -400,7 +397,7 @@ const applyWithProfileData = async (req, res) => {
   let storagePath;
 
   try {
-    const { jobId } = req.body;
+    const { jobId, reparse } = req.body;
     const candidateId = req.user.id;
     const parsedJobId = parseInt(jobId, 10);
 
@@ -428,6 +425,36 @@ const applyWithProfileData = async (req, res) => {
 
     if (!job) {
       return res.status(404).json({ success: false, message: 'Job not found or no longer accepting applications' });
+    }
+
+    // If reparse is false, try to reuse the most recent profile-based resume
+    if (reparse === false) {
+      const previousProfileResume = await prisma.resume.findFirst({
+        where: { candidateId, originalName: 'Profile Data' },
+        orderBy: { uploadedAt: 'desc' },
+      });
+
+      if (previousProfileResume) {
+        const result = await prisma.application.create({
+          data: {
+            candidateId,
+            jobId: parsedJobId,
+            resumeId: previousProfileResume.id,
+          },
+          include: {
+            candidate: { select: { id: true, name: true, email: true } },
+            job: { select: { id: true, title: true, department: true } },
+            resume: { select: { id: true, originalName: true, pdfUrl: true, uploadedAt: true } },
+          },
+        });
+
+        return res.status(201).json({
+          success: true,
+          message: 'Application submitted successfully',
+          data: result,
+        });
+      }
+      // If no previous profile resume exists, fall through to re-parse
     }
 
     // Fetch profile data
@@ -462,8 +489,6 @@ const applyWithProfileData = async (req, res) => {
           candidateId,
         },
       });
-
-      await syncCandidateCvData(tx, candidateId, normalizedParsedData);
 
       const application = await tx.application.create({
         data: {

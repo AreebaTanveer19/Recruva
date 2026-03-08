@@ -37,6 +37,8 @@ const AuthPage = () => {
   const [authMode, setAuthMode] = useState('form'); // 'form', 'otp', 'verified'
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [userEmail, setUserEmail] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isSigningUp, setIsSigningUp] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
@@ -220,6 +222,7 @@ const AuthPage = () => {
 
   // Handle login with direct authentication
   const handleLoginDirect = async (data) => {
+    setIsLoggingIn(true);
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/candidate/login`, {
         method: 'POST',
@@ -253,14 +256,18 @@ const AuthPage = () => {
     } catch (error) {
       console.error('Login error:', error);
       showError('Login failed. Please try again.');
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
   // Handle signup with OTP
-  const handleSignupWithOtp = (data) => {
+  const handleSignupWithOtp = async (data) => {
+    setIsSigningUp(true);
     setCurrentAction('register');
     setPendingRegistration({ name: data.username, password: data.password });
-    sendOtp(data.email, 'register', data.username, data.password);
+    await sendOtp(data.email, 'register', data.username, data.password);
+    setIsSigningUp(false);
   };
 
   // Error popup functions
@@ -518,12 +525,22 @@ const AuthPage = () => {
 
                 <motion.button
                   type="submit"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30"
+                  whileHover={{ scale: isLoggingIn ? 1 : 1.02 }}
+                  whileTap={{ scale: isLoggingIn ? 1 : 0.98 }}
+                  disabled={isLoggingIn}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30 transition disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Login
-                  <FaArrowRight />
+                  {isLoggingIn ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Logging in...
+                    </>
+                  ) : (
+                    <>
+                      Login
+                      <FaArrowRight />
+                    </>
+                  )}
                 </motion.button>
 
                 <p className="text-center text-sm text-slate-500">
@@ -601,12 +618,22 @@ const AuthPage = () => {
 
                 <motion.button
                   type="submit"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30"
+                  whileHover={{ scale: isSigningUp ? 1 : 1.02 }}
+                  whileTap={{ scale: isSigningUp ? 1 : 0.98 }}
+                  disabled={isSigningUp}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30 transition disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Start verification
-                  <FaArrowRight />
+                  {isSigningUp ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Signing up...
+                    </>
+                  ) : (
+                    <>
+                      Start verification
+                      <FaArrowRight />
+                    </>
+                  )}
                 </motion.button>
 
                 <p className="text-center text-sm text-slate-500">

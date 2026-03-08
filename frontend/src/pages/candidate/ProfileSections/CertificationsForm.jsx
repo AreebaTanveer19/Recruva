@@ -41,14 +41,14 @@ const CertificationsForm = ({ formData, onChange, onAdd, onRemove }) => {
                 name={`certifications[${index}].name`}
                 value={cert.name}
                 onChange={onChange}
-                required
+                // required
               />
               <FormField
                 label="Issuing Organization"
                 name={`certifications[${index}].authority`}
                 value={cert.authority}
                 onChange={onChange}
-                required
+                // required
               />
               <FormField
                 label="Year Obtained"
@@ -57,7 +57,7 @@ const CertificationsForm = ({ formData, onChange, onAdd, onRemove }) => {
                 value={cert.year}
                 onChange={onChange}
                 placeholder="e.g., 2023"
-                required
+                // required
               />
               <FormField
                 label="Credential ID (Optional)"

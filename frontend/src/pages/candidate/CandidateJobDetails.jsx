@@ -17,6 +17,8 @@ import {
   User,
   ChevronRight,
   History,
+  ExternalLink,
+  RefreshCw,
 } from 'lucide-react';
 import api from '../../api';
 import {
@@ -87,7 +89,7 @@ const CandidateJobDetails = () => {
 
   // multi-step apply dialog state
   const [showApplyModal, setShowApplyModal] = useState(false);
-  const [applyStep, setApplyStep] = useState('choose-source'); // 'choose-source' | 'resume-options' | 'select-resume' | 'upload-resume'
+  const [applyStep, setApplyStep] = useState('choose-source'); // 'choose-source' | 'profile-confirm' | 'resume-options' | 'select-resume' | 'upload-resume'
   const [hasProfileData, setHasProfileData] = useState(false);
   const [hasPreviousResume, setHasPreviousResume] = useState(false);
   const [resumes, setResumes] = useState([]);
@@ -164,12 +166,34 @@ const CandidateJobDetails = () => {
     setSelectedResumeId(null);
   };
 
-  /* Step 1: User chose "Apply with Profile Data" */
-  const handleChooseProfile = async () => {
+  /* Step 1: User chose "Apply with Profile Data" → ask if profile changed */
+  const handleChooseProfile = () => {
+    setApplyError('');
+    setApplyStep('profile-confirm');
+  };
+
+  /* Profile confirm: user says YES (profile changed) → re-parse */
+  const handleProfileChanged = async () => {
     setApplying(true);
     setApplyError('');
     try {
-      await applyWithProfileData(Number(id));
+      await applyWithProfileData(Number(id), true);
+      setApplySuccess('Application submitted successfully!');
+      setCanApply(false);
+      closeModal();
+    } catch (err) {
+      setApplyError(err.response?.data?.message || 'Failed to submit application');
+    } finally {
+      setApplying(false);
+    }
+  };
+
+  /* Profile confirm: user says NO (profile not changed) → reuse existing */
+  const handleProfileNotChanged = async () => {
+    setApplying(true);
+    setApplyError('');
+    try {
+      await applyWithProfileData(Number(id), false);
       setApplySuccess('Application submitted successfully!');
       setCanApply(false);
       closeModal();
@@ -451,6 +475,7 @@ const CandidateJobDetails = () => {
                   <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
                     <h2 className="text-base font-semibold text-slate-900">
                       {applyStep === 'choose-source' && 'How would you like to apply?'}
+                      {applyStep === 'profile-confirm' && 'Profile data confirmation'}
                       {applyStep === 'resume-options' && 'Resume options'}
                       {applyStep === 'select-resume' && 'Select a resume'}
                       {applyStep === 'upload-resume' && 'Upload your resume'}
@@ -511,6 +536,48 @@ const CandidateJobDetails = () => {
                             </button>
                           </p>
                         )}
+                      </div>
+                    )}
+
+                    {/* Profile confirm step */}
+                    {applyStep === 'profile-confirm' && (
+                      <div className="space-y-4">
+                        <p className="text-sm text-slate-600">Have you updated your profile data since your last application?</p>
+
+                        <button
+                          onClick={handleProfileChanged}
+                          disabled={applying}
+                          className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-50"
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+                            {applying ? <Loader2 size={20} className="animate-spin" /> : <RefreshCw size={20} />}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-slate-900">Yes, updated my profile</p>
+                            <p className="text-xs text-slate-500 mt-0.5">I've updated my profile use the latest data</p>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={handleProfileNotChanged}
+                          disabled={applying}
+                          className="flex w-full items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-green-300 hover:bg-green-50 disabled:opacity-50"
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-600">
+                            {applying ? <Loader2 size={20} className="animate-spin" /> : <CheckCircle2 size={20} />}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-slate-900">No, use existing data</p>
+                            <p className="text-xs text-slate-500 mt-0.5">My profile is the same — apply with the already available data</p>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => setApplyStep('choose-source')}
+                          className="mt-2 text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
+                        >
+                          <ArrowLeft size={12} /> Back
+                        </button>
                       </div>
                     )}
 
@@ -584,6 +651,19 @@ const CandidateJobDetails = () => {
                                     <p className="text-sm font-medium text-slate-900 truncate">{r.originalName}</p>
                                     <p className="text-xs text-slate-500">Uploaded {new Date(r.uploadedAt).toLocaleDateString()}</p>
                                   </div>
+                                  {r.pdfUrl && (
+                                    <a
+                                      href={r.pdfUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 transition"
+                                      title="Preview resume"
+                                    >
+                                      <ExternalLink size={14} />
+                                      Preview
+                                    </a>
+                                  )}
                                 </label>
                               ))}
                             </div>

@@ -36,8 +36,8 @@ export const applyWithNewResume = async (jobId, file) => {
 };
 
 // Apply with profile data (CvData)
-export const applyWithProfileData = async (jobId) => {
-  const response = await api.post('/application/apply/profile', { jobId });
+export const applyWithProfileData = async (jobId, reparse = true) => {
+  const response = await api.post('/application/apply/profile', { jobId, reparse });
   return response.data;
 };
 
