@@ -2,11 +2,11 @@ import { useEffect, useState, useMemo } from "react";
 import api from "./../../api";
 
 const STATUS_COLORS = {
-  PENDING:     "bg-yellow-100 text-yellow-800 border border-yellow-300",
-  REVIEWED:    "bg-blue-100 text-blue-800 border border-blue-300",
-  SHORTLISTED: "bg-green-100 text-green-800 border border-green-300",
-  REJECTED:    "bg-red-100 text-red-800 border border-red-300",
-  HIRED:       "bg-purple-100 text-purple-800 border border-purple-300",
+  pending:     "bg-yellow-100 text-yellow-800 border border-yellow-300",
+  reviewed:    "bg-blue-100 text-blue-800 border border-blue-300",
+  shortlisted: "bg-green-100 text-green-800 border border-green-300",
+  rejected:    "bg-red-100 text-red-800 border border-red-300",
+  accepted:       "bg-purple-100 text-purple-800 border border-purple-300",
 };
 
 const STATUSES = ["PENDING", "REVIEWED", "SHORTLISTED", "REJECTED", "HIRED"];
@@ -17,6 +17,9 @@ function AllJobApplications() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterJobId, setFilterJobId] = useState("");
+  const [filterDept, setFilterDept] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -34,6 +37,20 @@ function AllJobApplications() {
     fetchApplications();
   }, []);
 
+  // Derive unique departments and jobs from data
+  const departments = useMemo(
+    () => [...new Set(applications.map((a) => a.job.department))].sort(),
+    [applications]
+  );
+
+  const jobs = useMemo(
+    () =>
+      [...new Map(applications.map((a) => [a.job.id, a.job])).values()].sort(
+        (a, b) => a.title.localeCompare(b.title)
+      ),
+    [applications]
+  );
+
   const filteredApplications = useMemo(() => {
     return applications.filter((app) => {
       const matchesSearch =
@@ -43,18 +60,28 @@ function AllJobApplications() {
 
       const matchesStatus = !filterStatus || app.status === filterStatus;
 
-      const matchesJobId =
-        !filterJobId || app.job.id === Number(filterJobId);
+      const matchesJobId = !filterJobId || app.job.id === Number(filterJobId);
 
-      return matchesSearch && matchesStatus && matchesJobId;
+      const matchesDept = !filterDept || app.job.department === filterDept;
+
+      const appliedAt = new Date(app.appliedAt);
+      const matchesDateFrom = !filterDateFrom || appliedAt >= new Date(filterDateFrom);
+      const matchesDateTo = !filterDateTo || appliedAt <= new Date(filterDateTo + "T23:59:59");
+
+      return matchesSearch && matchesStatus && matchesJobId && matchesDept && matchesDateFrom && matchesDateTo;
     });
-  }, [applications, search, filterStatus, filterJobId]);
+  }, [applications, search, filterStatus, filterJobId, filterDept, filterDateFrom, filterDateTo]);
 
   const clearFilters = () => {
     setSearch("");
     setFilterStatus("");
     setFilterJobId("");
+    setFilterDept("");
+    setFilterDateFrom("");
+    setFilterDateTo("");
   };
+
+  const hasActiveFilters = search || filterStatus || filterJobId || filterDept || filterDateFrom || filterDateTo;
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 text-gray-900">
@@ -64,56 +91,92 @@ function AllJobApplications() {
         </h2>
 
         {/* Search & Filters */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-3 items-stretch md:items-center flex-wrap">
-          <input
-            type="text"
-            placeholder="Search by name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 px-4 py-2 rounded-xl bg-white border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
-          />
+        <div className="mb-4 flex flex-col gap-3">
+          {/* Row 1: search + status + clear */}
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch md:items-center flex-wrap">
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 px-4 py-2 rounded-xl bg-white border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
+            />
 
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
-          >
-            <option value="">All Statuses</option>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
+            >
+              <option value="">All Statuses</option>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
 
-          <input
-            type="number"
-            placeholder="Filter by Job ID"
-            value={filterJobId}
-            onChange={(e) => setFilterJobId(e.target.value)}
-            className="w-40 px-4 py-2 rounded-xl bg-white border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
-          />
+            <button
+              onClick={clearFilters}
+              disabled={!hasActiveFilters}
+              className="px-4 py-2 rounded-xl bg-gray-900 hover:bg-black text-white font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Clear Filters
+            </button>
+          </div>
 
-          <button
-            onClick={clearFilters}
-            className="px-4 py-2 rounded-xl bg-gray-900 hover:bg-black text-white font-semibold transition"
-          >
-            Clear Filters
-          </button>
+          {/* Row 2: dept + job + date range */}
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch md:items-center flex-wrap">
+            <select
+              value={filterDept}
+              onChange={(e) => {
+                setFilterDept(e.target.value);
+                setFilterJobId(""); // reset job when dept changes
+              }}
+              className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
+            >
+              <option value="">All Departments</option>
+              {departments.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+
+            <select
+              value={filterJobId}
+              onChange={(e) => setFilterJobId(e.target.value)}
+              className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
+            >
+              <option value="">All Jobs</option>
+              {jobs
+                .filter((j) => !filterDept || j.department === filterDept)
+                .map((j) => (
+                  <option key={j.id} value={j.id}>{j.title}</option>
+                ))}
+            </select>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
+              />
+              <span className="text-gray-500 text-sm">to</span>
+              <input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Result count */}
         {!loading && (
           <p className="text-sm text-gray-500 mb-3">
             Showing{" "}
-            <span className="font-semibold text-gray-700">
-              {filteredApplications.length}
-            </span>{" "}
-            of{" "}
-            <span className="font-semibold text-gray-700">
-              {applications.length}
-            </span>{" "}
-            applications
+            <span className="font-semibold text-gray-700">{filteredApplications.length}</span>
+            {" "}of{" "}
+            <span className="font-semibold text-gray-700">{applications.length}</span>
+            {" "}applications
           </p>
         )}
 
