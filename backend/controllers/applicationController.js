@@ -669,6 +669,54 @@ const updateApplicationStatus = async (req, res) => {
   }
 };
 
+const getAllJobApplications = async (req, res) => {
+  try {
+    const applications = await prisma.application.findMany({
+      orderBy: {
+        appliedAt: 'desc'
+      },
+      select: {
+        id: true,
+        status: true,
+        appliedAt: true,
+        candidate: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        job: {
+          select: {
+            id: true,
+            title: true,
+            department: true
+          }
+        },
+        resume: {
+          select: {
+            id: true,
+            originalName: true,
+            pdfUrl: true
+          }
+        }
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      applications
+    });
+
+  } catch (error) {
+    console.error('Error fetching job applications:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch applications'
+    });
+  }
+};
+
 module.exports = {
   checkApplicationStatus,
   getCandidateResumes,
@@ -679,4 +727,5 @@ module.exports = {
   getMyApplications,
   getJobApplications,
   updateApplicationStatus,
+  getAllJobApplications,
 };
