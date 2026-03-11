@@ -27,14 +27,16 @@ model User {
 }
 
 model Candidate {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  cvData    CvData?
-  resumes      Resume[]
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  password     String
+  googleId     String?  @unique
+  authProvider String   @default("local")
+  createdAt    DateTime      @default(now())
   applications Application[]
+  cvData       CvData?
+  resumes      Resume[]
 }
 
 model Job {
@@ -49,10 +51,10 @@ model Job {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   deadline       DateTime?
+  applications   Application[]
   creator        User           @relation("JobCreator", fields: [createdBy], references: [id])
   details        JobDetails?
   posters        User[]         @relation("JobPosters")
-  applications   Application[]
 }
 
 model JobDetails {
@@ -100,11 +102,11 @@ model Resume {
   id           Int           @id @default(autoincrement())
   originalName String
   parsedData   Json
+  uploadedAt   DateTime      @default(now())
+  candidateId  Int?
   pdfUrl       String
-  uploadedAt   DateTime   @default(now())
-  candidateId  Int?       
-  candidate    Candidate? @relation(fields: [candidateId], references: [id])
   applications Application[]
+  candidate    Candidate?    @relation(fields: [candidateId], references: [id])
 }
 
 model Application {
