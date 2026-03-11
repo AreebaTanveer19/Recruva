@@ -13,6 +13,7 @@ const {
   getMyApplications,
   getJobApplications,
   updateApplicationStatus,
+  getAllJobApplications,
   getPreviousProfileData,
 } = require('../controllers/applicationController');
 
@@ -29,5 +30,6 @@ router.get('/my-applications', auth, getMyApplications);
 // HR-only routes
 router.get('/job/:jobId', auth, roleCheck('HR'), getJobApplications);
 router.patch('/:id/status', auth, roleCheck('HR'), updateApplicationStatus);
+router.get('/',auth,roleCheck('HR'),getAllJobApplications);
 
 module.exports = router;

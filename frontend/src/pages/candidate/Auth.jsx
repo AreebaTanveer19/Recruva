@@ -51,6 +51,9 @@ const AuthPage = () => {
   
   // Google auth state
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [googleAuthInitiated, setGoogleAuthInitiated] = useState(
+    () => sessionStorage.getItem('googleAuthInitiated') === 'true'
+  );
 
   // Error popup state
   const [showErrorPopup, setShowErrorPopup] = useState(false);
@@ -92,7 +95,7 @@ const AuthPage = () => {
   // Handle Supabase auth state change (Google OAuth redirect)
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
+      if (event === 'SIGNED_IN' && session?.user && googleAuthInitiated) {
         const user = session.user;
         const providerIdentity = user.identities?.find(i => i.provider === 'google');
         if (!providerIdentity) return;
@@ -112,14 +115,17 @@ const AuthPage = () => {
           const result = await response.json();
 
           if (result.success) {
+            sessionStorage.removeItem('googleAuthInitiated');
             localStorage.setItem(ACCESS_TOKEN, result.token);
             localStorage.setItem('candidateData', JSON.stringify(result.candidate));
             window.location.href = '/candidate/dashboard';
           } else {
+            sessionStorage.removeItem('googleAuthInitiated');
             showError(result.message || 'Google authentication failed.');
           }
         } catch (err) {
           console.error('Google auth backend error:', err);
+          sessionStorage.removeItem('googleAuthInitiated');
           showError('Google authentication failed. Please try again.');
         } finally {
           setIsGoogleLoading(false);
@@ -128,11 +134,13 @@ const AuthPage = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [googleAuthInitiated]);
 
   // Google sign-in handler
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
+    setGoogleAuthInitiated(true);
+    sessionStorage.setItem('googleAuthInitiated', 'true');
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

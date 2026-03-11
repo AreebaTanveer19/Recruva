@@ -1,277 +1,268 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft,
-  User,
-  FileText,
-  ChevronDown,
-  ChevronUp,
-  Mail,
-  Calendar,
-} from 'lucide-react';
-import { getJobApplications, updateApplicationStatus } from '../../applicationApi';
-import api from '../../api';
-
-const STATUS_OPTIONS = ['pending', 'reviewed', 'shortlisted', 'rejected', 'accepted'];
+import { useEffect, useState, useMemo } from "react";
+import api from "./../../api";
 
 const STATUS_COLORS = {
-  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  reviewed: 'bg-blue-100 text-blue-800 border-blue-200',
-  shortlisted: 'bg-green-100 text-green-800 border-green-200',
-  rejected: 'bg-red-100 text-red-800 border-red-200',
-  accepted: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  pending:     "bg-yellow-100 text-yellow-800 border border-yellow-300",
+  reviewed:    "bg-blue-100 text-blue-800 border border-blue-300",
+  shortlisted: "bg-green-100 text-green-800 border border-green-300",
+  rejected:    "bg-red-100 text-red-800 border border-red-300",
+  accepted:       "bg-purple-100 text-purple-800 border border-purple-300",
 };
 
-const JobApplications = () => {
-  const { jobId } = useParams();
-  const navigate = useNavigate();
+const STATUSES = ["PENDING", "REVIEWED", "SHORTLISTED", "REJECTED", "HIRED"];
+
+function AllJobApplications() {
   const [applications, setApplications] = useState([]);
-  const [jobTitle, setJobTitle] = useState('');
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState(null);
-  const [updatingId, setUpdatingId] = useState(null);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterJobId, setFilterJobId] = useState("");
+  const [filterDept, setFilterDept] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
 
   useEffect(() => {
-    (async () => {
+    const fetchApplications = async () => {
+      setLoading(true);
       try {
-        // Fetch job title
-        const jobRes = await api.get('/openJobs');
-        const jobs = jobRes.data?.jobs || jobRes.data || [];
-        const job = jobs.find((j) => j.id === Number(jobId));
-        setJobTitle(job?.title || `Job #${jobId}`);
-
-        // Fetch applications
-        const data = await getJobApplications(jobId);
-        setApplications(data.data || []);
-      } catch (err) {
-        console.error('Error fetching job applications:', err);
+        const res = await api.get("/application/");
+        setApplications(res.data.applications);
+      } catch (error) {
+        console.error("Error fetching applications:", error);
+        setApplications([]);
       } finally {
         setLoading(false);
       }
-    })();
-  }, [jobId]);
+    };
+    fetchApplications();
+  }, []);
 
-  const handleStatusChange = async (applicationId, newStatus) => {
-    setUpdatingId(applicationId);
-    try {
-      const data = await updateApplicationStatus(applicationId, newStatus);
-      setApplications((prev) =>
-        prev.map((a) => (a.id === applicationId ? { ...a, status: data.data.status } : a))
-      );
-    } catch (err) {
-      console.error('Error updating status:', err);
-    } finally {
-      setUpdatingId(null);
-    }
+  // Derive unique departments and jobs from data
+  const departments = useMemo(
+    () => [...new Set(applications.map((a) => a.job.department))].sort(),
+    [applications]
+  );
+
+  const jobs = useMemo(
+    () =>
+      [...new Map(applications.map((a) => [a.job.id, a.job])).values()].sort(
+        (a, b) => a.title.localeCompare(b.title)
+      ),
+    [applications]
+  );
+
+  const filteredApplications = useMemo(() => {
+    return applications.filter((app) => {
+      const matchesSearch =
+        !search ||
+        app.candidate.name.toLowerCase().includes(search.toLowerCase()) ||
+        app.candidate.email.toLowerCase().includes(search.toLowerCase());
+
+      const matchesStatus = !filterStatus || app.status === filterStatus;
+
+      const matchesJobId = !filterJobId || app.job.id === Number(filterJobId);
+
+      const matchesDept = !filterDept || app.job.department === filterDept;
+
+      const appliedAt = new Date(app.appliedAt);
+      const matchesDateFrom = !filterDateFrom || appliedAt >= new Date(filterDateFrom);
+      const matchesDateTo = !filterDateTo || appliedAt <= new Date(filterDateTo + "T23:59:59");
+
+      return matchesSearch && matchesStatus && matchesJobId && matchesDept && matchesDateFrom && matchesDateTo;
+    });
+  }, [applications, search, filterStatus, filterJobId, filterDept, filterDateFrom, filterDateTo]);
+
+  const clearFilters = () => {
+    setSearch("");
+    setFilterStatus("");
+    setFilterJobId("");
+    setFilterDept("");
+    setFilterDateFrom("");
+    setFilterDateTo("");
   };
 
-  const toggleExpand = (id) => setExpandedId((prev) => (prev === id ? null : id));
-
-  /* Render parsed resume data sections */
-  const renderParsedData = (parsedData) => {
-    if (!parsedData) return <p className="text-sm text-slate-400 italic">No parsed data available</p>;
-
-    return (
-      <div className="space-y-4">
-        {/* Basic Info */}
-        {parsedData.basicInfo && (
-          <div>
-            <h5 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Basic Info</h5>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              {Object.entries(parsedData.basicInfo).map(([key, val]) => (
-                <div key={key}>
-                  <span className="text-slate-400 capitalize">{key}: </span>
-                  <span className="text-slate-700">{val || '—'}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Education */}
-        {parsedData.education?.length > 0 && (
-          <div>
-            <h5 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Education</h5>
-            <div className="space-y-1.5">
-              {parsedData.education.map((edu, i) => (
-                <div key={i} className="text-sm text-slate-700">
-                  <strong>{edu.degree}</strong> — {edu.institution} ({edu.year})
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Experience */}
-        {parsedData.experience?.length > 0 && (
-          <div>
-            <h5 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Experience</h5>
-            <div className="space-y-2">
-              {parsedData.experience.map((exp, i) => (
-                <div key={i} className="text-sm text-slate-700">
-                  <strong>{exp.position}</strong> at {exp.company} ({exp.duration})
-                  {exp.description && <p className="mt-0.5 text-slate-500">{exp.description}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Skills */}
-        {parsedData.skills?.length > 0 && (
-          <div>
-            <h5 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Skills</h5>
-            <div className="flex flex-wrap gap-1.5">
-              {parsedData.skills.map((skill, i) => (
-                <span key={i} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">
-                  {skill}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Projects */}
-        {parsedData.projects?.length > 0 && (
-          <div>
-            <h5 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Projects</h5>
-            <div className="space-y-1.5">
-              {parsedData.projects.map((proj, i) => (
-                <div key={i} className="text-sm text-slate-700">
-                  <strong>{proj.name}</strong>{proj.technologies && ` (${proj.technologies})`}
-                  {proj.description && <p className="mt-0.5 text-slate-500">{proj.description}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Certifications */}
-        {parsedData.certifications?.length > 0 && (
-          <div>
-            <h5 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Certifications</h5>
-            <div className="space-y-1">
-              {parsedData.certifications.map((cert, i) => (
-                <div key={i} className="text-sm text-slate-700">
-                  {cert.name} — {cert.issuer} ({cert.date})
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
+  const hasActiveFilters = search || filterStatus || filterJobId || filterDept || filterDateFrom || filterDateTo;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900"
-      >
-        <ArrowLeft size={16} /> Back
-      </button>
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 text-gray-900">
+      <div className="flex-1 py-10 px-4 sm:px-6 md:px-8 overflow-y-auto bg-gray-100">
+        <h2 className="text-3xl font-semibold mb-6 text-center text-gray-900">
+          All Job Applications
+        </h2>
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Applications for {jobTitle}</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          {applications.length} application{applications.length !== 1 ? 's' : ''} received
-        </p>
-      </div>
+        {/* Search & Filters */}
+        <div className="mb-4 flex flex-col gap-3">
+          {/* Row 1: search + status + clear */}
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch md:items-center flex-wrap">
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 px-4 py-2 rounded-xl bg-white border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
+            />
 
-      {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl border border-slate-200 bg-slate-100" />
-          ))}
-        </div>
-      ) : applications.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm">
-          <User size={48} className="mx-auto text-slate-300" />
-          <h3 className="mt-4 text-base font-semibold text-slate-900">No applications yet</h3>
-          <p className="mt-2 text-sm text-slate-500">
-            No candidates have applied to this position yet.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {applications.map((app) => (
-            <div
-              key={app.id}
-              className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden"
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
             >
-              {/* Header row */}
-              <div
-                className="flex items-center justify-between gap-4 p-5 cursor-pointer hover:bg-slate-50"
-                onClick={() => toggleExpand(app.id)}
-              >
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 font-semibold text-sm">
-                    {app.candidate?.name?.[0]?.toUpperCase() || '?'}
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-slate-900 truncate">
-                      {app.candidate?.name || 'Unknown'}
-                    </h3>
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
-                      <span className="inline-flex items-center gap-1">
-                        <Mail size={12} /> {app.candidate?.email}
-                      </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar size={12} /> {new Date(app.appliedAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+              <option value="">All Statuses</option>
+              {STATUSES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
 
-                <div className="flex items-center gap-3">
-                  {/* Status dropdown */}
-                  <select
-                    value={app.status}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      handleStatusChange(app.id, e.target.value);
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    disabled={updatingId === app.id}
-                    className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium capitalize cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${STATUS_COLORS[app.status] || ''} ${updatingId === app.id ? 'opacity-50' : ''}`}
-                  >
-                    {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+            <button
+              onClick={clearFilters}
+              disabled={!hasActiveFilters}
+              className="px-4 py-2 rounded-xl bg-gray-900 hover:bg-black text-white font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Clear Filters
+            </button>
+          </div>
 
-                  {expandedId === app.id ? (
-                    <ChevronUp size={18} className="text-slate-400" />
-                  ) : (
-                    <ChevronDown size={18} className="text-slate-400" />
-                  )}
-                </div>
-              </div>
+          {/* Row 2: dept + job + date range */}
+          <div className="flex flex-col sm:flex-row gap-3 items-stretch md:items-center flex-wrap">
+            <select
+              value={filterDept}
+              onChange={(e) => {
+                setFilterDept(e.target.value);
+                setFilterJobId(""); // reset job when dept changes
+              }}
+              className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
+            >
+              <option value="">All Departments</option>
+              {departments.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
 
-              {/* Expanded detail */}
-              {expandedId === app.id && (
-                <div className="border-t border-slate-100 bg-slate-50 p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <FileText size={16} className="text-slate-400" />
-                    <span className="text-sm font-medium text-slate-700">
-                      {app.resume?.originalName || 'Resume'}
-                    </span>
-                    {app.resume?.uploadedAt && (
-                      <span className="text-xs text-slate-400">
-                        (uploaded {new Date(app.resume.uploadedAt).toLocaleDateString()})
-                      </span>
-                    )}
-                  </div>
-                  {renderParsedData(app.resume?.parsedData)}
-                </div>
-              )}
+            <select
+              value={filterJobId}
+              onChange={(e) => setFilterJobId(e.target.value)}
+              className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
+            >
+              <option value="">All Jobs</option>
+              {jobs
+                .filter((j) => !filterDept || j.department === filterDept)
+                .map((j) => (
+                  <option key={j.id} value={j.id}>{j.title}</option>
+                ))}
+            </select>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
+              />
+              <span className="text-gray-500 text-sm">to</span>
+              <input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="px-4 py-2 rounded-xl bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition"
+              />
             </div>
-          ))}
+          </div>
         </div>
-      )}
+
+        {/* Result count */}
+        {!loading && (
+          <p className="text-sm text-gray-500 mb-3">
+            Showing{" "}
+            <span className="font-semibold text-gray-700">{filteredApplications.length}</span>
+            {" "}of{" "}
+            <span className="font-semibold text-gray-700">{applications.length}</span>
+            {" "}applications
+          </p>
+        )}
+
+        {/* Table */}
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <p className="text-lg animate-pulse">Loading applications...</p>
+          </div>
+        ) : filteredApplications.length === 0 ? (
+          <div className="flex items-center justify-center h-64 text-gray-600">
+            <p>No applications found.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-2xl shadow-sm bg-white border border-gray-200">
+            <table className="min-w-full text-sm text-gray-800">
+              <thead>
+                <tr className="bg-gray-900 text-white text-left">
+                  <th className="px-5 py-3 font-semibold">Candidate</th>
+                  <th className="px-5 py-3 font-semibold">Email</th>
+                  <th className="px-5 py-3 font-semibold">Job</th>
+                  <th className="px-5 py-3 font-semibold">Department</th>
+                  <th className="px-5 py-3 font-semibold">Status</th>
+                  <th className="px-5 py-3 font-semibold">Applied At</th>
+                  <th className="px-5 py-3 font-semibold">Resume</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredApplications.map((app, idx) => (
+                  <tr
+                    key={app.id}
+                    className={`border-t border-gray-100 transition hover:bg-gray-50 ${
+                      idx % 2 === 0 ? "bg-white" : "bg-gray-50/60"
+                    }`}
+                  >
+                    <td className="px-5 py-4 font-medium whitespace-nowrap">
+                      {app.candidate.name}
+                    </td>
+                    <td className="px-5 py-4 text-gray-600 whitespace-nowrap">
+                      {app.candidate.email}
+                    </td>
+                    <td className="px-5 py-4 max-w-[150px]">
+                      {app.job.title}
+                    </td>
+                    <td className="px-5 py-4 text-gray-600 max-w-[120px]">
+                      {app.job.department}
+                    </td>
+                    <td className="px-5 py-4">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                          STATUS_COLORS[app.status] ||
+                          "bg-gray-100 text-gray-700 border border-gray-300"
+                        }`}
+                      >
+                        {app.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-gray-500 whitespace-nowrap">
+                      {new Date(app.appliedAt).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </td>
+                    <td className="px-5 py-4">
+                      {app.resume?.pdfUrl ? (
+                        <a
+                          href={app.resume.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-gray-900 underline underline-offset-2 font-medium hover:text-black transition"
+                        >
+                          {app.resume.originalName || "View Resume"}
+                        </a>
+                      ) : (
+                        <span className="text-gray-400 italic">N/A</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
-};
+}
 
-export default JobApplications;
+export default AllJobApplications;
