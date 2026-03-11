@@ -31,9 +31,9 @@ model Candidate {
   name         String
   email        String        @unique
   password     String?
-  googleId     String?  @unique
-  authProvider String   @default("local")
   createdAt    DateTime      @default(now())
+  authProvider String        @default("local")
+  googleId     String?       @unique
   applications Application[]
   cvData       CvData?
   resumes      Resume[]
