@@ -25,7 +25,10 @@ const JobCard = ({ job }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="rounded-[28px] border border-white/60 bg-[#f7f7f9] p-6 shadow-[0_25px_60px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:shadow-[0_35px_80px_rgba(15,23,42,0.16)]">
+    <div
+      onClick={() => navigate(`/candidate/job/${job.id}`)}
+      className="cursor-pointer rounded-[28px] border border-white/60 bg-[#f7f7f9] p-6 shadow-[0_25px_60px_rgba(15,23,42,0.08)] transition hover:-translate-y-1 hover:shadow-[0_35px_80px_rgba(15,23,42,0.16)]"
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-400">{job.department} dept.</p>

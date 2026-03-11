@@ -228,10 +228,81 @@ const verifyCandidateEmail = async (req, res) => {
   }
 };
 
+// Google OAuth login/signup via Supabase
+const googleAuthCandidate = async (req, res) => {
+  const { email, name, googleId } = req.body;
+
+  if (!email || !googleId) {
+    return res.status(400).json({
+      success: false,
+      message: "Email and Google ID are required"
+    });
+  }
+
+  try {
+    // Check if candidate exists by email or googleId
+    let candidate = await prisma.candidate.findFirst({
+      where: {
+        OR: [
+          { email },
+          { googleId }
+        ]
+      }
+    });
+
+    if (candidate) {
+      // Update googleId and authProvider if not set (linking existing account)
+      if (!candidate.googleId) {
+        candidate = await prisma.candidate.update({
+          where: { id: candidate.id },
+          data: { googleId, authProvider: "google" }
+        });
+      }
+    } else {
+      // Create new candidate
+      candidate = await prisma.candidate.create({
+        data: {
+          name: name || email.split("@")[0],
+          email,
+          googleId,
+          authProvider: "google"
+        }
+      });
+    }
+
+    // Generate JWT token
+    const token = generateToken({
+      id: candidate.id,
+      email: candidate.email,
+      name: candidate.name,
+      role: "candidate"
+    });
+
+    res.json({
+      success: true,
+      message: "Google authentication successful",
+      token,
+      candidate: {
+        id: candidate.id,
+        name: candidate.name,
+        email: candidate.email
+      }
+    });
+  } catch (err) {
+    console.error("Google auth error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Google authentication failed",
+      error: err.message
+    });
+  }
+};
+
 module.exports = {
   registerCandidate,
   loginCandidate,
   getCandidateProfile,
   updateCandidateProfile,
-  verifyCandidateEmail
+  verifyCandidateEmail,
+  googleAuthCandidate
 };

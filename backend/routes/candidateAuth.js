@@ -4,7 +4,8 @@ const {
   loginCandidate, 
   getCandidateProfile, 
   updateCandidateProfile,
-  verifyCandidateEmail 
+  verifyCandidateEmail,
+  googleAuthCandidate
 } = require("../controllers/candidateAuthController");
 const { auth } = require("../middleware/auth");
 
@@ -14,6 +15,7 @@ const router = express.Router();
 router.post("/register", registerCandidate);
 router.post("/login", loginCandidate);
 router.post("/verify-email", verifyCandidateEmail);
+router.post("/google-auth", googleAuthCandidate);
 
 // Protected routes (require authentication)
 router.get("/profile", auth, getCandidateProfile);

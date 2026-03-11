@@ -41,6 +41,12 @@ export const applyWithProfileData = async (jobId, reparse = true) => {
   return response.data;
 };
 
+// Get previous profile snapshot and current data for comparison
+export const getPreviousProfileData = async () => {
+  const response = await api.get('/application/previous-profile-data');
+  return response.data;
+};
+
 // Get candidate's applications
 export const getMyApplications = async () => {
   const response = await api.get('/application/my-applications');

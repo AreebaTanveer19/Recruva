@@ -669,6 +669,57 @@ const updateApplicationStatus = async (req, res) => {
   }
 };
 
+/**
+ * Get the most recent "Profile Data" resume snapshot and current CvData
+ * GET /api/application/previous-profile-data
+ */
+const getPreviousProfileData = async (req, res) => {
+  try {
+    const candidateId = req.user.id;
+
+    // Get the most recent "Profile Data" resume
+    const previousResume = await prisma.resume.findFirst({
+      where: { candidateId, originalName: 'Profile Data' },
+      orderBy: { uploadedAt: 'desc' },
+      select: { parsedData: true, uploadedAt: true },
+    });
+
+    // Get current CvData
+    const currentCv = await prisma.cvData.findUnique({
+      where: { candidateId },
+      include: { candidate: { select: { name: true, email: true } } },
+    });
+
+    const currentData = currentCv
+      ? {
+          name: currentCv.candidate?.name,
+          email: currentCv.candidate?.email,
+          phone: currentCv.phone,
+          address: currentCv.address,
+          education: currentCv.education || [],
+          work_experience: currentCv.work_experience || [],
+          skills: currentCv.skills || [],
+          projects: currentCv.projects || [],
+          certifications: currentCv.certifications || [],
+        }
+      : null;
+
+    res.json({
+      success: true,
+      previousData: previousResume?.parsedData || null,
+      previousSubmittedAt: previousResume?.uploadedAt || null,
+      currentData,
+    });
+  } catch (error) {
+    console.error('Error fetching previous profile data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch previous profile data',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   checkApplicationStatus,
   getCandidateResumes,
@@ -679,4 +730,5 @@ module.exports = {
   getMyApplications,
   getJobApplications,
   updateApplicationStatus,
+  getPreviousProfileData,
 };

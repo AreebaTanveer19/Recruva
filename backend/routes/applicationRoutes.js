@@ -13,12 +13,14 @@ const {
   getMyApplications,
   getJobApplications,
   updateApplicationStatus,
+  getPreviousProfileData,
 } = require('../controllers/applicationController');
 
 // Candidate routes
 router.get('/check-status/:jobId', auth, checkApplicationStatus);
 router.get('/resumes', auth, getCandidateResumes);
 router.get('/has-previous-resume', auth, checkHasPreviousResume);
+router.get('/previous-profile-data', auth, getPreviousProfileData);
 router.post('/apply/existing', auth, applyWithExistingResume);
 router.post('/apply/new', auth, upload.single('resume'), applyWithNewResume);
 router.post('/apply/profile', auth, applyWithProfileData);

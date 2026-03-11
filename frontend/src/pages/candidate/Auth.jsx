@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
-import { FaUser, FaEnvelope, FaLock, FaArrowRight, FaCheck, FaTimes } from 'react-icons/fa';
-import { ACCESS_TOKEN, } from "./../../constants";
+import { FaUser, FaEnvelope, FaLock, FaArrowRight, FaCheck, FaTimes, FaGoogle } from 'react-icons/fa';
+import { ACCESS_TOKEN } from './../../constants';
+import { supabase } from '../../supabaseClient';
 
 const InputField = ({
   icon: Icon,
@@ -48,6 +49,9 @@ const AuthPage = () => {
   const [currentAction, setCurrentAction] = useState('verify'); // 'verify' or 'register'
   const [pendingRegistration, setPendingRegistration] = useState(null);
   
+  // Google auth state
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
   // Error popup state
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -84,6 +88,68 @@ const AuthPage = () => {
   });
 
   const password = watch('password');
+
+  // Handle Supabase auth state change (Google OAuth redirect)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const user = session.user;
+        const providerIdentity = user.identities?.find(i => i.provider === 'google');
+        if (!providerIdentity) return;
+
+        setIsGoogleLoading(true);
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/candidate/google-auth`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: user.email,
+              name: user.user_metadata?.full_name || user.email.split('@')[0],
+              googleId: providerIdentity.id,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            localStorage.setItem(ACCESS_TOKEN, result.token);
+            localStorage.setItem('candidateData', JSON.stringify(result.candidate));
+            window.location.href = '/candidate/dashboard';
+          } else {
+            showError(result.message || 'Google authentication failed.');
+          }
+        } catch (err) {
+          console.error('Google auth backend error:', err);
+          showError('Google authentication failed. Please try again.');
+        } finally {
+          setIsGoogleLoading(false);
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Google sign-in handler
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/candidate/auth',
+        },
+      });
+      if (error) {
+        showError(error.message || 'Failed to start Google sign-in.');
+        setIsGoogleLoading(false);
+      }
+    } catch (err) {
+      console.error('Google OAuth error:', err);
+      showError('Failed to start Google sign-in.');
+      setIsGoogleLoading(false);
+    }
+  };
 
   // Timer for OTP resend
   React.useEffect(() => {
@@ -543,6 +609,32 @@ const AuthPage = () => {
                   )}
                 </motion.button>
 
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
+                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-4 text-slate-400 tracking-wider">or</span></div>
+                </div>
+
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: isGoogleLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: isGoogleLoading ? 1 : 0.98 }}
+                  onClick={handleGoogleSignIn}
+                  disabled={isGoogleLoading}
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-3 font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isGoogleLoading ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <FaGoogle className="text-lg" />
+                      Continue with Google
+                    </>
+                  )}
+                </motion.button>
+
                 <p className="text-center text-sm text-slate-500">
                   Need an account?{' '}
                   <button type="button" onClick={() => handleFormTab('signup')} className="font-semibold text-indigo-600 hover:text-indigo-500">
@@ -632,6 +724,32 @@ const AuthPage = () => {
                     <>
                       Start verification
                       <FaArrowRight />
+                    </>
+                  )}
+                </motion.button>
+
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
+                  <div className="relative flex justify-center text-xs uppercase"><span className="bg-white px-4 text-slate-400 tracking-wider">or</span></div>
+                </div>
+
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: isGoogleLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: isGoogleLoading ? 1 : 0.98 }}
+                  onClick={handleGoogleSignIn}
+                  disabled={isGoogleLoading}
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-3 font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isGoogleLoading ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <FaGoogle className="text-lg" />
+                      Sign up with Google
                     </>
                   )}
                 </motion.button>
