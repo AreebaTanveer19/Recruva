@@ -1,7 +1,7 @@
 # Recruva - Next-Gen Recruitment Made Simple
 
 ## Project Overview
-Recruva is a modern Applicant Tracking System (ATS) designed to streamline the recruitment process for organizations. It helps hiring managers post jobs, track applicants, schedule interviews, and manage the hiring workflow efficiently. The system leverages AI-driven insights to match candidates with job requirements, reducing hiring delays and improving quality.
+Recruva is a modern Recruitment System designed to streamline the recruitment process for organizations. It helps hiring managers post jobs, track applicants, schedule interviews, and manage the hiring workflow efficiently. The system leverages AI-driven insights to match candidates with job requirements, reducing hiring delays and improving quality.
 
 ---
 
@@ -28,7 +28,7 @@ Traditional recruitment processes are often slow, inefficient, and prone to bias
 - **Frontend:** React.js, Tailwind CSS, MaterialUI
 - **Backend:** Node.js, Express.js  
 - **Database:** PostgreSQL (via Prisma ORM)  
-- **AI & Automation:** Semantic skill analysis, candidate-job matching algorithms  
+- **AI & Automation:** Gen-AI, Semantic skill analysis, candidate-job matching algorithms  
 - **Other Tools:** GitHub for version control
 
 ---
