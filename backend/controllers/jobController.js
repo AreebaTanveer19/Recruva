@@ -1,4 +1,5 @@
 const prisma = require("../config/db");
+const { extractKeywords } = require("../services/extractKeywordsService");
 
 const createJob = async (req, res) => {
   try {
@@ -53,7 +54,7 @@ const createJob = async (req, res) => {
       where: { id: job.id },
       data:  { keywords }
     });
-    
+
     res.status(201).json({
       message: "Job created successfully",
       job
