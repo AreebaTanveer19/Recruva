@@ -43,6 +43,17 @@ const createJob = async (req, res) => {
       include: { details: true } 
     });
 
+     const keywords = await extractKeywords(
+      job.title,
+      job.details.description,
+      job.details.requirements
+    );
+
+    await prisma.job.update({
+      where: { id: job.id },
+      data:  { keywords }
+    });
+    
     res.status(201).json({
       message: "Job created successfully",
       job
