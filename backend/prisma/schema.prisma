@@ -47,6 +47,7 @@ model Job {
   employmentType EmploymentType
   workMode       WorkMode
   status         JobStatus      @default(Open)
+  keywords       String[]       @default([])
   createdBy      Int
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -55,6 +56,7 @@ model Job {
   creator        User           @relation("JobCreator", fields: [createdBy], references: [id])
   details        JobDetails?
   posters        User[]         @relation("JobPosters")
+  jobQuestions   JobQuestion[]
 }
 
 model JobDetails {
@@ -124,6 +126,31 @@ model Application {
   @@unique([candidateId, jobId])
 }
 
+
+model QuestionBank {
+  id           Int           @id @default(autoincrement())
+  question     String        @unique
+  briefAnswer String? 
+  difficulty   String        
+  category     String        
+  tags         String[]
+  createdAt    DateTime      @default(now())
+
+  jobQuestions JobQuestion[]
+}
+
+model JobQuestion {
+  id         Int          @id @default(autoincrement())
+  jobId      Int
+  questionId Int
+  status     JobQuestionStatus @default(pending)
+  addedAt    DateTime     @default(now())
+  job        Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  question   QuestionBank @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, questionId])
+}
+
 enum ApplicationStatus {
   pending
   reviewed
@@ -163,4 +190,9 @@ enum InterviewStatus {
   pending
   scheduled
   interviewed
+}
+
+enum JobQuestionStatus {
+  pending
+  saved
 }
