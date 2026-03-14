@@ -19,6 +19,7 @@ import ShortlistedCandidates from "./pages/DEPT/Shortlisted Candidates/Shortlist
 import InterviewsCalendar from "./pages/DEPT/Interview Scheduling/InterviewsCalendar";
 import MyApplications from "./pages/candidate/MyApplications";
 import JobApplications from "./pages/HR/JobApplications";
+import InterviewSession from "./pages/DEPT/Interview Questions/interviewSession";
 
 function App() {
   return (
@@ -108,6 +109,7 @@ function App() {
             element={<ShortlistedCandidates />}
           />
           <Route path="interviews" element={<InterviewsCalendar />} />
+          <Route path="interview-session" element={<InterviewSession />} />
         </Route>
       </Routes>
     </Router>

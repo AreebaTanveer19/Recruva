@@ -41,6 +41,11 @@ const SidebarLayout = () => {
       path: "/dept/dashboard/interviews",
       icon: <MdGroups size={20} />,
     },
+    {
+      name: "Interview Session",
+      path: "/dept/dashboard/interview-session",
+      icon: <MdGroups size={20} />,
+    },
   ];
   return (
     <div>
