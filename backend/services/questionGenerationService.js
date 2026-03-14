@@ -5,7 +5,37 @@ const { extractKeywords } = require("./extractKeywordsService");
 const prisma = new PrismaClient();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const QUESTIONS_PER_DIFFICULTY = 5; 
+const QUESTIONS_PER_DIFFICULTY = 5;
+
+// Helper: extract significant words from a question for comparison
+function getSignificantWords(text) {
+  const stopWords = new Set(["what", "is", "the", "a", "an", "of", "in", "and", "or", "how", "do", "does", "can", "you", "for", "to", "are", "with", "this", "that", "your", "explain", "describe", "define", "give", "between"]);
+  return new Set(
+    text.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w))
+  );
+}
+
+// Helper: check if two questions are too similar
+function isTooSimilar(q1, q2, threshold = 0.4) {
+  const words1 = getSignificantWords(q1);
+  const words2 = getSignificantWords(q2);
+  const smaller = Math.min(words1.size, words2.size);
+  if (smaller === 0) return false;
+  let overlap = 0;
+  for (const w of words1) { if (words2.has(w)) overlap++; }
+  return (overlap / smaller) >= threshold;
+}
+
+// Helper: filter out similar questions, keeping the first unique ones
+function deduplicateQuestions(questions, limit) {
+  const picked = [];
+  for (const q of questions) {
+    if (picked.length >= limit) break;
+    const isDuplicate = picked.some(p => isTooSimilar(p.question, q.question));
+    if (!isDuplicate) picked.push(q);
+  }
+  return picked;
+}
 
 // STEP 1: Search existing bank 
 
@@ -25,9 +55,9 @@ async function searchQuestionBank(keywords, jobId) {
   });
 
   return {
-    easy:   results.filter(q => q.difficulty === "easy").slice(0, QUESTIONS_PER_DIFFICULTY),
-    medium: results.filter(q => q.difficulty === "medium").slice(0, QUESTIONS_PER_DIFFICULTY),
-    hard:   results.filter(q => q.difficulty === "hard").slice(0, QUESTIONS_PER_DIFFICULTY),
+    easy:   deduplicateQuestions(results.filter(q => q.difficulty === "easy"), QUESTIONS_PER_DIFFICULTY),
+    medium: deduplicateQuestions(results.filter(q => q.difficulty === "medium"), QUESTIONS_PER_DIFFICULTY),
+    hard:   deduplicateQuestions(results.filter(q => q.difficulty === "hard"), QUESTIONS_PER_DIFFICULTY),
   };
 }
 
@@ -47,6 +77,9 @@ async function generateMissingQuestions(jobDescription, requirements, keywords, 
 
   const gapList = gaps.map(g => `- ${g.count} ${g.difficulty} questions`).join("\n");
 
+  const existingQuestions = [...found.easy, ...found.medium, ...found.hard]
+    .map(q => q.question).join("\n- ");
+
   const prompt = `Generate interview questions for this job posting.
 
 Job Description: ${jobDescription}
@@ -55,6 +88,9 @@ Requirements: ${requirements.slice(0, 5).join(", ")}
 
 Generate exactly:
 ${gapList}
+
+IMPORTANT: Do NOT generate questions similar to these existing ones:
+- ${existingQuestions}
 
 Difficulty guide:
 - easy: basic concepts, definitions, junior level
