@@ -9,7 +9,7 @@ const STATUS_COLORS = {
   accepted:       "bg-purple-100 text-purple-800 border border-purple-300",
 };
 
-const STATUSES = ["PENDING", "REVIEWED", "SHORTLISTED", "REJECTED", "HIRED"];
+const STATUSES = ["pending", "reviewed", "shortlisted", "rejected", "accepted"];
 
 function AllJobApplications() {
   const [applications, setApplications] = useState([]);

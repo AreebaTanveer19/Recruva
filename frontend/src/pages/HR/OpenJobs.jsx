@@ -208,7 +208,7 @@ function OpenJobs() {
               </button>{" "}
             </div>
             <JobCardGrid
-            jobs={jobs}
+            jobs={filteredJobs}
             isLinkedInConnected={isLinkedInConnected}
             postingJobId={postingJobId}
             postToLinkedIn={postToLinkedIn}
