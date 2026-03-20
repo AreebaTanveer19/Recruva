@@ -1,6 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Box, Typography, IconButton, Button, Paper, Snackbar, Alert } from "@mui/material";
+import {
+  Box,
+  Typography,
+  IconButton,
+  Button,
+  Paper,
+  Snackbar,
+  Alert,
+} from "@mui/material";
 import VideocamIcon from "@mui/icons-material/Videocam";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import RemoveIcon from "@mui/icons-material/Remove";
@@ -25,17 +33,23 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
   };
 
   const openMeet = () => {
-    window.open(meetLink, "_blank", "width=1200,height=800,toolbar=no,menubar=no");
+    window.open(
+      meetLink,
+      "_blank",
+      "width=1200,height=800,toolbar=no,menubar=no",
+    );
   };
 
-  const copyLink = () => {
-    navigator.clipboard.writeText(meetLink);
-    setToastOpen(true);
-  };
+  // const copyLink = () => {
+  //   navigator.clipboard.writeText(meetLink);
+  //   setToastOpen(true);
+  // };
 
   /* ── Pulsing green dot ── */
   const PulseDot = ({ size = 10 }) => (
-    <Box sx={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+    <Box
+      sx={{ position: "relative", width: size, height: size, flexShrink: 0 }}
+    >
       <Box
         sx={{
           position: "absolute",
@@ -45,7 +59,7 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
           opacity: 0.75,
           animation: "ping 1.2s cubic-bezier(0,0,0.2,1) infinite",
           "@keyframes ping": {
-            "0%":   { transform: "scale(1)", opacity: 0.75 },
+            "0%": { transform: "scale(1)", opacity: 0.75 },
             "75%, 100%": { transform: "scale(2)", opacity: 0 },
           },
         }}
@@ -69,7 +83,13 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
         <motion.div
           drag
           dragMomentum={false}
-          style={{ position: "fixed", top: 16, right: 16, zIndex: 1300, cursor: "grab" }}
+          style={{
+            position: "fixed",
+            top: 76,
+            right: 24,
+            zIndex: 1300,
+            cursor: "grab",
+          }}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
         >
@@ -90,10 +110,18 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
             <Typography variant="caption" fontWeight={600} color="text.primary">
               {candidateName}
             </Typography>
-            <Typography variant="caption" fontFamily="monospace" color="text.secondary">
+            <Typography
+              variant="caption"
+              fontFamily="monospace"
+              color="text.secondary"
+            >
               {formatTime(elapsed)}
             </Typography>
-            <IconButton size="small" onClick={() => setMinimized(false)} sx={{ p: 0.25 }}>
+            <IconButton
+              size="small"
+              onClick={() => setMinimized(false)}
+              sx={{ p: 0.25 }}
+            >
               <OpenInFullIcon sx={{ fontSize: 12 }} />
             </IconButton>
           </Paper>
@@ -105,7 +133,11 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
           onClose={() => setToastOpen(false)}
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
-          <Alert severity="success" onClose={() => setToastOpen(false)} sx={{ width: "100%" }}>
+          <Alert
+            severity="success"
+            onClose={() => setToastOpen(false)}
+            sx={{ width: "100%" }}
+          >
             Google Meet link copied to clipboard.
           </Alert>
         </Snackbar>
@@ -119,14 +151,26 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
       <motion.div
         drag
         dragMomentum={false}
-        style={{ position: "fixed", top: 16, right: 16, zIndex: 1300, width: 288, cursor: "grab" }}
+        style={{
+          position: "fixed",
+          top: 76,
+          right: 24,
+          zIndex: 1300,
+          width: 350,
+          cursor: "grab",
+        }}
         initial={{ scale: 0.9, opacity: 0, y: -20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
       >
         <Paper
           elevation={6}
-          sx={{ borderRadius: 3, border: 1, borderColor: "divider", overflow: "hidden" }}
+          sx={{
+            borderRadius: 3,
+            border: 1,
+            borderColor: "divider",
+            overflow: "hidden",
+          }}
         >
           {/* Header */}
           <Box
@@ -142,17 +186,27 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <PulseDot size={10} />
-              <Typography variant="caption" fontWeight={600} color="success.main">
+              <Typography
+                variant="caption"
+                fontWeight={600}
+                color="success.main"
+              >
                 Live Interview
               </Typography>
             </Box>
-            <IconButton size="small" onClick={() => setMinimized(true)} sx={{ p: 0.25 }}>
+            <IconButton
+              size="small"
+              onClick={() => setMinimized(true)}
+              sx={{ p: 0.25 }}
+            >
               <RemoveIcon sx={{ fontSize: 14 }} />
             </IconButton>
           </Box>
 
           {/* Body */}
-          <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}>
+          <Box
+            sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.5 }}
+          >
             {/* Candidate info */}
             <Box>
               <Typography variant="body2" fontWeight={600} color="text.primary">
@@ -176,7 +230,11 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
               }}
             >
               <AccessTimeIcon sx={{ fontSize: 14, color: "text.secondary" }} />
-              <Typography variant="body2" fontFamily="monospace" fontWeight={600}>
+              <Typography
+                variant="body2"
+                fontFamily="monospace"
+                fontWeight={600}
+              >
                 {formatTime(elapsed)}
               </Typography>
             </Box>
@@ -189,19 +247,35 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
                 size="small"
                 startIcon={<VideocamIcon />}
                 onClick={openMeet}
-                sx={{ bgcolor: "hsl(214, 82%, 51%)", "&:hover": { bgcolor: "hsl(214, 82%, 44%)" } }}
+                sx={{
+                  bgcolor: "#000",
+                  "&:hover": { bgcolor: "#222" },
+                  py: 1,
+                  px: 2,
+                }}
               >
                 Open Google Meet
               </Button>
-              <Button
+              {/* <Button
                 variant="outlined"
                 fullWidth
                 size="small"
                 startIcon={<ContentCopyIcon />}
                 onClick={copyLink}
+                sx={{
+                  borderColor: "#000",
+                  color: "#000",
+                  "&:hover": {
+                    borderColor: "#222",
+                    color: "#222",
+                    bgcolor: "transparent",
+                  },
+                  py: 1,
+                  px: 2,
+                }}
               >
                 Copy Link
-              </Button>
+              </Button> */}
             </Box>
           </Box>
         </Paper>
@@ -213,7 +287,11 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
         onClose={() => setToastOpen(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
-        <Alert severity="success" onClose={() => setToastOpen(false)} sx={{ width: "100%" }}>
+        <Alert
+          severity="success"
+          onClose={() => setToastOpen(false)}
+          sx={{ width: "100%" }}
+        >
           Google Meet link copied to clipboard.
         </Alert>
       </Snackbar>

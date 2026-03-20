@@ -1,96 +1,79 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
+import api from "../../../api";
 import { motion } from "framer-motion";
 import {
   Box,
   Typography,
   Button,
-  LinearProgress,
   AppBar,
   Toolbar,
   Paper,
+  Select,
+  MenuItem,
 } from "@mui/material";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { FloatingMeetingWindow } from "../../../components/FloatingMeetingWindow"
-import { DifficultySection } from "../../../components/DifficultySection";
-import { FinishInterviewModal } from "../../../components/FinishInterviewModal";
-import { interviewCandidate, interviewQuestions } from "../data/interviewMockData";
+
+import { FloatingMeetingWindow } from "../../../components/dept/FloatingMeetingWindow";
+import { TopicSection } from "../../../components/dept/TopicSection";
+import { FinishInterviewModal } from "../../../components/dept/FinishInterviewModal";
+
+import { interviewCandidate } from "../data/interviewMockData";
+import { fetchOpenJobs } from "../../../helper";
 
 export default function InterviewSession() {
-  const [askedIds, setAskedIds] = useState(new Set());
-  const [notes, setNotes] = useState({});
+  const [jobs, setJobs]               = useState([]);
+  const [selectedJob, setSelectedJob] = useState("");
+  const [grouped, setGrouped]         = useState({});
   const [showSummary, setShowSummary] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
+  const [elapsed, setElapsed]         = useState(0);
+
   const questionRefs = useRef({});
+
+  /* ---------------- Fetch Jobs ---------------- */
+
+  useEffect(() => {
+    const loadJobs = async () => {
+      try {
+        const jobsData = await fetchOpenJobs();
+        setJobs(jobsData);
+      } catch (err) {
+        console.error("Error fetching jobs:", err);
+      }
+    };
+    loadJobs();
+  }, []);
+
+  /* ---------------- Fetch Questions ---------------- */
+
+  useEffect(() => {
+    if (!selectedJob) return;
+
+    const fetchQuestions = async () => {
+      try {
+        const res = await api.post(`/jobs/${selectedJob}/generate-questions`);
+        setGrouped(res.data.questions.grouped || {});
+      } catch (err) {
+        console.error("Error fetching questions", err);
+      }
+    };
+
+    fetchQuestions();
+  }, [selectedJob]);
+
+  /* ---------------- Timer ---------------- */
 
   useEffect(() => {
     const interval = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const easyQs = useMemo(
-    () => interviewQuestions.filter((q) => q.difficulty === "easy"),
-    []
-  );
-  const mediumQs = useMemo(
-    () => interviewQuestions.filter((q) => q.difficulty === "medium"),
-    []
-  );
-  const hardQs = useMemo(
-    () => interviewQuestions.filter((q) => q.difficulty === "hard"),
-    []
-  );
+  /* ---------------- Flat list for finish modal ---------------- */
 
-  const allOrderedIds = useMemo(
-    () => [...easyQs, ...mediumQs, ...hardQs].map((q) => q.id),
-    [easyQs, mediumQs, hardQs]
-  );
-
-  const toggleAsked = useCallback(
-    (id) => {
-      setAskedIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(id)) {
-          next.delete(id);
-        } else {
-          next.add(id);
-          const currentIdx = allOrderedIds.indexOf(id);
-          for (let i = currentIdx + 1; i < allOrderedIds.length; i++) {
-            const nextId = allOrderedIds[i];
-            if (!next.has(nextId) && questionRefs.current[nextId]) {
-              setTimeout(() => {
-                questionRefs.current[nextId]?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center",
-                });
-              }, 150);
-              break;
-            }
-          }
-        }
-        return next;
-      });
-    },
-    [allOrderedIds]
-  );
-
-  const updateNote = useCallback((id, note) => {
-    setNotes((prev) => ({ ...prev, [id]: note }));
-  }, []);
-
-  const askedCount = askedIds.size;
-  const totalCount = interviewQuestions.length;
-  const progressPercent = totalCount > 0 ? (askedCount / totalCount) * 100 : 0;
+  const allQuestions = useMemo(() => Object.values(grouped).flat(), [grouped]);
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100vh",
-        bgcolor: "background.default",
-      }}
-    >
-      {/* Floating meeting window */}
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: "background.default" }}>
+
+      {/* Floating Meeting Window */}
       <FloatingMeetingWindow
         candidateName={interviewCandidate.name}
         jobTitle={interviewCandidate.jobTitle}
@@ -98,32 +81,12 @@ export default function InterviewSession() {
       />
 
       {/* Header */}
-      <AppBar
-        position="sticky"
-        elevation={0}
-        sx={{
-          bgcolor: "background.paper",
-          borderBottom: 1,
-          borderColor: "divider",
-          backdropFilter: "blur(8px)",
-          zIndex: (theme) => theme.zIndex.appBar,
-        }}
-      >
-        <Toolbar
-          sx={{
-            minHeight: 56,
-            display: "flex",
-            justifyContent: "space-between",
-            px: 3,
-          }}
-        >
-          {/* Left: Title & candidate */}
+      <AppBar position="sticky" elevation={0} sx={{ bgcolor: "background.paper", borderBottom: 1, borderColor: "divider" }}>
+        <Toolbar sx={{ minHeight: 56, display: "flex", justifyContent: "space-between", px: 3 }}>
+
+          {/* Left */}
           <Box>
-            <Typography
-              variant="subtitle2"
-              fontWeight={600}
-              color="text.primary"
-            >
+            <Typography variant="subtitle2" fontWeight={600}>
               {interviewCandidate.jobTitle}
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -131,107 +94,56 @@ export default function InterviewSession() {
             </Typography>
           </Box>
 
-          {/* Right: Progress */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Typography variant="caption" color="text.secondary">
-              {askedCount}/{totalCount} questions
-            </Typography>
-            <LinearProgress
-              variant="determinate"
-              value={progressPercent}
-              sx={{ width: 128, height: 8, borderRadius: 4 }}
-            />
-          </Box>
+          {/* Right */}
+          <Select
+            size="small"
+            value={selectedJob}
+            onChange={(e) => {
+              setSelectedJob(e.target.value);
+              setGrouped({});
+            }}
+            displayEmpty
+          >
+            <MenuItem value="">Select Job</MenuItem>
+            {jobs.map((job) => (
+              <MenuItem key={job.id} value={job.id}>{job.title}</MenuItem>
+            ))}
+          </Select>
+
         </Toolbar>
       </AppBar>
 
-      {/* Main content */}
+      {/* Main Content */}
       <Box component="main" sx={{ flex: 1, overflowY: "auto", p: 3 }}>
-        <Box sx={{ maxWidth: 768, mx: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
-          <DifficultySection
-            title="Easy"
-            difficulty="easy"
-            questions={easyQs}
-            askedIds={askedIds}
-            notes={notes}
-            onToggleAsked={toggleAsked}
-            onNoteChange={updateNote}
-            questionRefs={questionRefs}
-          />
-          <DifficultySection
-            title="Medium"
-            difficulty="medium"
-            questions={mediumQs}
-            askedIds={askedIds}
-            notes={notes}
-            onToggleAsked={toggleAsked}
-            onNoteChange={updateNote}
-            questionRefs={questionRefs}
-          />
-          <DifficultySection
-            title="Hard"
-            difficulty="hard"
-            questions={hardQs}
-            askedIds={askedIds}
-            notes={notes}
-            onToggleAsked={toggleAsked}
-            onNoteChange={updateNote}
-            questionRefs={questionRefs}
-          />
+        <Box sx={{ maxWidth: 768, ml: 4, display: "flex", flexDirection: "column", gap: 1 }}>
+
+          {Object.keys(grouped).length === 0 ? (
+            <Typography variant="body2" color="text.disabled" sx={{ textAlign: "center", mt: 8 }}>
+              {selectedJob ? "Loading questions..." : "Select a job to load questions"}
+            </Typography>
+          ) : (
+            Object.entries(grouped).map(([topic, questions]) => (
+              <TopicSection
+                key={topic}
+                topic={topic}
+                questions={questions}
+                questionRefs={questionRefs}
+              />
+            ))
+          )}
+
         </Box>
       </Box>
 
-      {/* Bottom bar */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        style={{ position: "sticky", bottom: 0, zIndex: 10 }}
-      >
-        <Paper
-          elevation={0}
-          square
-          sx={{
-            borderTop: 1,
-            borderColor: "divider",
-            bgcolor: "background.paper",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              height: 56,
-              px: 3,
-              maxWidth: 768,
-              mx: "auto",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 0.5,
-                }}
-              >
-                <CheckCircleIcon
-                  sx={{ fontSize: 14, color: "success.main" }}
-                />
-                <Typography variant="caption" color="text.secondary">
-                  {askedCount} asked
-                </Typography>
-              </Box>
-              <Typography variant="caption" color="text.secondary">
-                {totalCount - askedCount} remaining
-              </Typography>
-            </Box>
-
+      {/* Bottom Bar */}
+      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} style={{ position: "sticky", bottom: 0 }}>
+        <Paper elevation={0} square sx={{ borderTop: 1, borderColor: "divider", bgcolor: "background.paper" }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", height: 56, px: 3 }}>
             <Button
               variant="contained"
               size="small"
               onClick={() => setShowSummary(true)}
+              sx={{ bgcolor: "#000", color: "#fff", "&:hover": { bgcolor: "#222" }, borderRadius: 1.5, px: 2.5 }}
             >
               Finish Interview
             </Button>
@@ -242,11 +154,10 @@ export default function InterviewSession() {
       <FinishInterviewModal
         open={showSummary}
         onOpenChange={setShowSummary}
-        questions={interviewQuestions}
-        askedIds={askedIds}
-        notes={notes}
+        questions={allQuestions}
         elapsed={elapsed}
       />
+
     </Box>
   );
 }

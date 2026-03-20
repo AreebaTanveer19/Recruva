@@ -168,19 +168,29 @@ async function populateJobQuestions(jobId, jobTitle, jobDescription, requirement
     }
 
     // Search bank
-    const found = await searchQuestionBank(keywords, jobId);
-    console.log(` Found — easy: ${found.easy.length}, medium: ${found.medium.length}, hard: ${found.hard.length}`);
+    // const found = await searchQuestionBank(keywords, jobId);
+    // console.log(` Found — easy: ${found.easy.length}, medium: ${found.medium.length}, hard: ${found.hard.length}`);
 
-    // Fill gaps
-    const generated = await generateMissingQuestions(jobDescription, requirements, keywords, found);
+    // // Fill gaps
+    // const generated = await generateMissingQuestions(jobDescription, requirements, keywords, found);
 
-    // Combine all
-    const allQuestions = [
-      ...found.easy,
-      ...found.medium,
-      ...found.hard,
-      ...generated,
-    ];
+    // // Combine all
+    // const allQuestions = [
+    //   ...found.easy,
+    //   ...found.medium,
+    //   ...found.hard,
+    //   ...generated,
+    // ];
+
+// Always generate fresh from LLM — skip bank search
+    const generated = await generateMissingQuestions(jobDescription, requirements, keywords, {
+      easy:   [],
+      medium: [],
+      hard:   [],
+    });
+
+    const allQuestions = [...generated];
+
 
     // Link to job
     await prisma.jobQuestion.createMany({

@@ -30,19 +30,19 @@ const SidebarLayout = () => {
       path: "/dept/dashboard",
       icon: <MdDashboard size={20} />,
     },
-    { name: "Jobs", path: "/dept/dashboard/jobs", icon: <MdWork size={20} /> },
+    { name: "Job Openings", path: "/dept/dashboard/jobs", icon: <MdWork size={20} /> },
     {
-      name: "Shortlisted",
+      name: "Selected Candidates",
       path: "/dept/dashboard/shortlisted-candidates",
       icon: <MdPeople size={20} />,
     },
     {
-      name: "Interviews",
+      name: "Scheduled Interviews",
       path: "/dept/dashboard/interviews",
       icon: <MdGroups size={20} />,
     },
     {
-      name: "Interview Session",
+      name: "Conduct Interview",
       path: "/dept/dashboard/interview-session",
       icon: <MdGroups size={20} />,
     },

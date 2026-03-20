@@ -3,67 +3,184 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // TITLE → KEYWORD MAP
 
+// const TITLE_KEYWORD_MAP = {
+//   // Frontend
+//   "react":          ["React", "Frontend", "JavaScript"],
+//   "angular":        ["Angular", "Frontend", "TypeScript"],
+//   "vue":            ["Vue", "Frontend", "JavaScript"],
+//   "frontend":       ["Frontend", "JavaScript"],
+//   "ui":             ["Frontend"],
+
+//   // Backend
+//   "node":           ["Node.js", "Backend", "JavaScript", "REST API"],
+//   "express":        ["Node.js", "Backend", "REST API"],
+//   "django":         ["Python", "Django", "Backend"],
+//   "flask":          ["Python", "Flask", "Backend"],
+//   "spring":         ["Java", "Spring Boot", "Backend"],
+//   "laravel":        ["PHP", "Laravel", "Backend"],
+//   "backend":        ["Backend", "REST API", "Databases"],
+
+//   // Fullstack
+//   "fullstack":      ["React", "Node.js", "Databases", "REST API"],
+//   "full stack":     ["React", "Node.js", "Databases", "REST API"],
+//   "full-stack":     ["React", "Node.js", "Databases", "REST API"],
+//   "mern":           ["MongoDB", "React", "Node.js", "REST API"],
+//   "mean":           ["MongoDB", "Angular", "Node.js", "REST API"],
+
+//   // Mobile
+//   "mobile":         ["React Native", "Mobile", "JavaScript"],
+//   "android":        ["Android", "Java", "Kotlin", "Mobile"],
+//   "ios":            ["iOS", "Swift", "Mobile"],
+//   "flutter":        ["Flutter", "Dart", "Mobile"],
+//   "react native":   ["React Native", "Mobile", "JavaScript"],
+
+//   // DevOps / Cloud
+//   "devops":         ["Docker", "Kubernetes", "CI/CD", "Linux"],
+//   "cloud":          ["AWS", "Cloud", "DevOps"],
+//   "aws":            ["AWS", "Cloud", "DevOps"],
+//   "azure":          ["Azure", "Cloud", "DevOps"],
+//   "docker":         ["Docker", "DevOps", "Kubernetes"],
+//   "kubernetes":     ["Kubernetes", "DevOps", "Docker"],
+
+//   // Data / AI / ML
+//   "data":           ["Python", "SQL", "Data Structures"],
+//   "machine learning": ["Machine Learning", "Python", "DSA"],
+//   "ml":             ["Machine Learning", "Python", "DSA"],
+//   "ai":             ["Machine Learning", "Python", "Algorithms"],
+//   "data science":   ["Python", "SQL", "Machine Learning"],
+//   "data engineer":  ["Python", "SQL", "ETL", "Databases"],
+
+//   // Languages
+//   "python":         ["Python", "Backend"],
+//   "java":           ["Java", "OOP", "Backend"],
+//   "golang":         ["Go", "Backend", "Concurrency"],
+//   "rust":           ["Rust", "Systems Programming"],
+//   "typescript":     ["TypeScript", "JavaScript", "Frontend"],
+//   "php":            ["PHP", "Backend"],
+
+//   // Other
+//   "security":       ["Cybersecurity", "Networking", "Linux"],
+//   "blockchain":     ["Blockchain", "Solidity", "Web3"],
+//   "qa":             ["Testing", "QA", "Automation"],
+//   "embedded":       ["C", "C++", "Embedded Systems"],
+//   "game":           ["C++", "Unity", "Game Development"],
+// };
+
 const TITLE_KEYWORD_MAP = {
-  // Frontend
-  "react":          ["React", "Frontend", "JavaScript"],
-  "angular":        ["Angular", "Frontend", "TypeScript"],
-  "vue":            ["Vue", "Frontend", "JavaScript"],
-  "frontend":       ["Frontend", "JavaScript", "HTML", "CSS"],
-  "ui":             ["Frontend", "HTML", "CSS", "JavaScript"],
+  // ─── Frontend ────────────────────────────────────────────────
+  "react":             ["React", "JavaScript", "Frontend", "HTML", "CSS"],
+  "angular":           ["Angular", "TypeScript", "Frontend", "RxJS", "HTML"],
+  "vue":               ["Vue", "JavaScript", "Frontend", "HTML", "CSS"],
+  "svelte":            ["Svelte", "JavaScript", "Frontend", "HTML"],
+  "next":              ["Next.js", "React", "JavaScript", "SSR", "Frontend"],
+  "nuxt":              ["Nuxt.js", "Vue", "JavaScript", "SSR", "Frontend"],
+  "frontend":          ["JavaScript", "HTML", "CSS", "Frontend", "REST API"],
+  "ui":                ["Frontend", "HTML", "CSS", "Accessibility"],
+  "ux":                ["Frontend", "Accessibility", "Design Systems"],
 
-  // Backend
-  "node":           ["Node.js", "Backend", "JavaScript", "REST API"],
-  "express":        ["Node.js", "Backend", "REST API"],
-  "django":         ["Python", "Django", "Backend"],
-  "flask":          ["Python", "Flask", "Backend"],
-  "spring":         ["Java", "Spring Boot", "Backend"],
-  "laravel":        ["PHP", "Laravel", "Backend"],
-  "backend":        ["Backend", "REST API", "Databases"],
+  // ─── Backend ─────────────────────────────────────────────────
+  "node":              ["Node.js", "JavaScript", "Backend", "REST API", "Databases"],
+  "express":           ["Node.js", "Express", "Backend", "REST API", "Middleware"],
+  "nestjs":            ["NestJS", "TypeScript", "Node.js", "Backend", "REST API"],
+  "django":            ["Django", "Python", "Backend", "REST API", "ORM"],
+  "flask":             ["Flask", "Python", "Backend", "REST API"],
+  "fastapi":           ["FastAPI", "Python", "Backend", "REST API", "Async"],
+  "spring":            ["Spring Boot", "Java", "Backend", "REST API", "Microservices"],
+  "laravel":           ["Laravel", "PHP", "Backend", "REST API", "ORM"],
+  "rails":             ["Ruby on Rails", "Ruby", "Backend", "REST API", "MVC"],
+  "dotnet":            [".NET", "C#", "Backend", "REST API", "Microservices"],
+  "asp.net":           ["ASP.NET", "C#", "Backend", "REST API"],
+  "golang":            ["Go", "Backend", "Concurrency", "Microservices", "REST API"],
+  "rust":              ["Rust", "Systems Programming", "Concurrency", "Backend"],
+  "backend":           ["Backend", "REST API", "Databases", "Authentication", "Caching"],
 
-  // Fullstack
-  "fullstack":      ["React", "Node.js", "Databases", "REST API"],
-  "full stack":     ["React", "Node.js", "Databases", "REST API"],
-  "full-stack":     ["React", "Node.js", "Databases", "REST API"],
-  "mern":           ["MongoDB", "React", "Node.js", "REST API"],
-  "mean":           ["MongoDB", "Angular", "Node.js", "REST API"],
+  // ─── Fullstack ────────────────────────────────────────────────
+  "fullstack":         ["JavaScript", "React", "Node.js", "Databases", "REST API"],
+  "full stack":        ["JavaScript", "React", "Node.js", "Databases", "REST API"],
+  "full-stack":        ["JavaScript", "React", "Node.js", "Databases", "REST API"],
+  "mern":              ["MongoDB", "Express", "React", "Node.js", "REST API"],
+  "mean":              ["MongoDB", "Express", "Angular", "Node.js", "REST API"],
+  "mevn":              ["MongoDB", "Express", "Vue", "Node.js", "REST API"],
+  "t3":                ["Next.js", "TypeScript", "Prisma", "tRPC", "Tailwind"],
 
-  // Mobile
-  "mobile":         ["React Native", "Mobile", "JavaScript"],
-  "android":        ["Android", "Java", "Kotlin", "Mobile"],
-  "ios":            ["iOS", "Swift", "Mobile"],
-  "flutter":        ["Flutter", "Dart", "Mobile"],
-  "react native":   ["React Native", "Mobile", "JavaScript"],
+  // ─── Mobile ───────────────────────────────────────────────────
+  "mobile":            ["React Native", "Mobile", "JavaScript", "iOS", "Android"],
+  "android":           ["Android", "Kotlin", "Java", "Mobile", "Jetpack Compose"],
+  "ios":               ["iOS", "Swift", "SwiftUI", "Mobile", "Xcode"],
+  "flutter":           ["Flutter", "Dart", "Mobile", "iOS", "Android"],
+  "react native":      ["React Native", "JavaScript", "Mobile", "iOS", "Android"],
+  "kotlin":            ["Kotlin", "Android", "Mobile", "Coroutines"],
+  "swift":             ["Swift", "iOS", "SwiftUI", "Mobile"],
 
-  // DevOps / Cloud
-  "devops":         ["Docker", "Kubernetes", "CI/CD", "Linux"],
-  "cloud":          ["AWS", "Cloud", "DevOps"],
-  "aws":            ["AWS", "Cloud", "DevOps"],
-  "azure":          ["Azure", "Cloud", "DevOps"],
-  "docker":         ["Docker", "DevOps", "Kubernetes"],
-  "kubernetes":     ["Kubernetes", "DevOps", "Docker"],
+  // ─── DevOps / Cloud / Infrastructure ─────────────────────────
+  "devops":            ["CI/CD", "Docker", "Kubernetes", "Linux", "Monitoring"],
+  "cloud":             ["AWS", "Cloud Architecture", "DevOps", "Serverless", "IaC"],
+  "aws":               ["AWS", "Cloud Architecture", "Serverless", "DevOps", "IaC"],
+  "azure":             ["Azure", "Cloud Architecture", "DevOps", "IaC"],
+  "gcp":               ["GCP", "Cloud Architecture", "DevOps", "Serverless"],
+  "docker":            ["Docker", "Containers", "DevOps", "Kubernetes", "CI/CD"],
+  "kubernetes":        ["Kubernetes", "Containers", "DevOps", "Docker", "Microservices"],
+  "terraform":         ["Terraform", "IaC", "DevOps", "Cloud Architecture"],
+  "sre":               ["SRE", "Linux", "Monitoring", "Incident Management", "DevOps"],
+  "platform":          ["DevOps", "Kubernetes", "CI/CD", "IaC", "Cloud Architecture"],
 
-  // Data / AI / ML
-  "data":           ["Python", "SQL", "Data Structures"],
-  "machine learning": ["Machine Learning", "Python", "DSA"],
-  "ml":             ["Machine Learning", "Python", "DSA"],
-  "ai":             ["Machine Learning", "Python", "Algorithms"],
-  "data science":   ["Python", "SQL", "Machine Learning"],
-  "data engineer":  ["Python", "SQL", "ETL", "Databases"],
+  // ─── Databases ────────────────────────────────────────────────
+  "database":          ["Databases", "SQL", "Query Optimization", "Indexing", "ORM"],
+  "dba":               ["Databases", "SQL", "Query Optimization", "Replication", "Backup"],
+  "postgres":          ["PostgreSQL", "SQL", "Databases", "Query Optimization"],
+  "mysql":             ["MySQL", "SQL", "Databases", "Query Optimization"],
+  "mongodb":           ["MongoDB", "NoSQL", "Databases", "Aggregation"],
+  "redis":             ["Redis", "Caching", "Databases", "Pub/Sub"],
+  "elasticsearch":     ["Elasticsearch", "Search", "Databases", "Indexing"],
+  "cassandra":         ["Cassandra", "NoSQL", "Databases", "Distributed Systems"],
 
-  // Languages
-  "python":         ["Python", "Backend"],
-  "java":           ["Java", "OOP", "Backend"],
-  "golang":         ["Go", "Backend", "Concurrency"],
-  "rust":           ["Rust", "Systems Programming"],
-  "typescript":     ["TypeScript", "JavaScript", "Frontend"],
-  "php":            ["PHP", "Backend"],
+  // ─── Data / AI / ML ──────────────────────────────────────────
+  "data scientist":    ["Python", "Machine Learning", "Statistics", "SQL", "Data Visualization"],
+  "data analyst":      ["SQL", "Python", "Data Visualization", "Excel", "Statistics"],
+  "data engineer":     ["Python", "SQL", "ETL", "Databases", "Distributed Systems"],
+  "machine learning":  ["Machine Learning", "Python", "Deep Learning", "Statistics", "DSA"],
+  "ml engineer":       ["Machine Learning", "Python", "MLOps", "Deep Learning", "APIs"],
+  "ai engineer":       ["Machine Learning", "Python", "LLMs", "Prompt Engineering", "APIs"],
+  "mlops":             ["MLOps", "Python", "Docker", "CI/CD", "Cloud Architecture"],
+  "nlp":               ["NLP", "Python", "Machine Learning", "Deep Learning", "Transformers"],
+  "computer vision":   ["Computer Vision", "Python", "Deep Learning", "OpenCV"],
+  "data":              ["Python", "SQL", "Data Structures", "Statistics"],
+  "ml":                ["Machine Learning", "Python", "Deep Learning", "DSA"],
+  "ai":                ["Machine Learning", "Python", "LLMs", "Deep Learning"],
 
-  // Other
-  "security":       ["Cybersecurity", "Networking", "Linux"],
-  "blockchain":     ["Blockchain", "Solidity", "Web3"],
-  "qa":             ["Testing", "QA", "Automation"],
-  "embedded":       ["C", "C++", "Embedded Systems"],
-  "game":           ["C++", "Unity", "Game Development"],
+  // ─── Languages (role-agnostic) ────────────────────────────────
+  "python":            ["Python", "OOP", "Backend", "Scripting"],
+  "java":              ["Java", "OOP", "Backend", "Spring Boot", "Multithreading"],
+  "typescript":        ["TypeScript", "JavaScript", "OOP", "Frontend", "Backend"],
+  "javascript":        ["JavaScript", "Node.js", "Frontend", "Async", "OOP"],
+  "php":               ["PHP", "Backend", "Laravel", "OOP"],
+  "c#":                ["C#", ".NET", "OOP", "Backend"],
+  "cpp":               ["C++", "OOP", "Systems Programming", "Memory Management"],
+  "scala":             ["Scala", "Functional Programming", "Backend", "Spark"],
+
+  // ─── Architecture / Systems ───────────────────────────────────
+  "microservices":     ["Microservices", "REST API", "Docker", "Kubernetes", "Event-Driven"],
+  "architect":         ["System Design", "Microservices", "Databases", "Cloud Architecture", "Security"],
+  "system design":     ["System Design", "Databases", "Caching", "Load Balancing", "Scalability"],
+  "distributed":       ["Distributed Systems", "Databases", "Concurrency", "Consistency", "Networking"],
+
+  // ─── Security ─────────────────────────────────────────────────
+  "security":          ["Cybersecurity", "Authentication", "Networking", "Linux", "Penetration Testing"],
+  "cybersecurity":     ["Cybersecurity", "Networking", "Linux", "Penetration Testing", "Cryptography"],
+  "appsec":            ["Cybersecurity", "Authentication", "OWASP", "Secure Coding"],
+
+  // ─── QA / Testing ─────────────────────────────────────────────
+  "qa":                ["Testing", "QA", "Automation", "CI/CD", "Test Design"],
+  "sdet":              ["Testing", "Automation", "QA", "CI/CD", "Scripting"],
+  "test":              ["Testing", "QA", "Test Design", "Automation"],
+
+  // ─── Specialised ──────────────────────────────────────────────
+  "blockchain":        ["Blockchain", "Solidity", "Web3", "Smart Contracts", "Cryptography"],
+  "web3":              ["Web3", "Blockchain", "Solidity", "Smart Contracts", "JavaScript"],
+  "game":              ["C++", "Unity", "Game Development", "Graphics", "Physics"],
+  "graphics":          ["OpenGL", "WebGL", "C++", "Shaders", "Graphics"],
+  "embedded":          ["C", "C++", "Embedded Systems", "RTOS", "Hardware Interfaces"],
+  "firmware":          ["C", "C++", "Embedded Systems", "RTOS", "Debugging"],
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -79,16 +196,31 @@ const IGNORE_WORDS = [
 
 // LOCAL EXTRACTION
 
+function matchesKey(text, key) {
+  if (key.length <= 4) {
+    const regex = new RegExp(`\\b${key}\\b`, "i");
+    return regex.test(text);
+  }
+  return text.includes(key);
+}
+
+
 function extractKeywordsLocally(jobTitle = "", requirements = []) {
   const keywords = new Set();
 
   // 1. Match from job title
   const titleLower = jobTitle.toLowerCase();
+  // AFTER
   for (const [key, tags] of Object.entries(TITLE_KEYWORD_MAP)) {
-    if (titleLower.includes(key)) {
+    if (matchesKey(titleLower, key)) {
       tags.forEach(t => keywords.add(t));
     }
   }
+  // for (const [key, tags] of Object.entries(TITLE_KEYWORD_MAP)) {
+  //   if (titleLower.includes(key)) {
+  //     tags.forEach(t => keywords.add(t));
+  //   }
+  // }
 
   // 2. Extract from requirements array
   requirements.forEach(req => {
@@ -114,17 +246,18 @@ function extractKeywordsLocally(jobTitle = "", requirements = []) {
     }
 
     // Long sentences — try to pull known tech names from them
-    if (wordCount > 3) {
-      for (const [key, tags] of Object.entries(TITLE_KEYWORD_MAP)) {
-        if (cleaned.includes(key)) {
-          tags.forEach(t => keywords.add(t));
-        }
-      }
-    }
+    // if (wordCount > 3) {
+    //   for (const [key, tags] of Object.entries(TITLE_KEYWORD_MAP)) {
+    //     if (cleaned.includes(key)) {
+    //       tags.forEach(t => keywords.add(t));
+    //     }
+    //   }
+    // }
   });
 
   return [...keywords];
 }
+
 
 
 // LLM EXTRACTION 
@@ -197,13 +330,25 @@ const extractKeywords = async (jobTitle = "", jobDescription = "", requirements 
   console.log(`🔍 Local extraction found ${localKeywords.length} keywords:`, localKeywords);
 
   // If local found enough keywords — use them, skip LLM
-  if (localKeywords.length >= 4) {
-    console.log(" Local extraction sufficient — 0 API calls used");
+
+  // AFTER
+  const titleMatched = Object.keys(TITLE_KEYWORD_MAP)
+    .some(k => jobTitle.toLowerCase().includes(k));
+
+  if (titleMatched && localKeywords.length >= 4) {
+    console.log("Local extraction sufficient — 0 API calls used");
     return localKeywords;
   }
 
-  // Step 2 — Local didn't find enough, fall back to LLM
-  console.log(`Only ${localKeywords.length} keywords locally — falling back to LLM`);
+  // Step 2 — Title not recognized or insufficient keywords — fall back to LLM
+  console.log(`Title not recognized or insufficient keywords — falling back to LLM`);
+  // if (localKeywords.length >= 4) {
+  //   console.log(" Local extraction sufficient — 0 API calls used");
+  //   return localKeywords;
+  // }
+
+  // // Step 2 — Local didn't find enough, fall back to LLM
+  // console.log(`Only ${localKeywords.length} keywords locally — falling back to LLM`);
   const llmKeywords = await extractKeywordsViaLLM(jobDescription, requirements);
   console.log(`LLM extraction found ${llmKeywords.length} keywords:`, llmKeywords);
 
