@@ -1,47 +1,13 @@
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
-export const interviewsData = [
-  {
-    id: "1",
-    candidateName: "Sarah Johnson",
-    position: "Senior Frontend Developer",
-    date: new Date(),
-    time: "10:00 AM",
-    mode: "google_meet",
-    meetingLink: "https://meet.google.com/abc-defg-hij",
-  },
-  {
-    id: "2",
-    candidateName: "Michael Chen",
-    position: "Product Manager",
-    date: new Date(),
-    time: "2:00 PM",
-    mode: "google_meet",
-    meetingLink: "https://meet.google.com/xyz-uvwx-yz",
-  },
-  {
-    id: "3",
-    candidateName: "Emily Davis",
-    position: "UX Designer",
-    date: new Date(Date.now() + 86400000),
-    time: "11:00 AM",
-    mode: "onsite",
-  },
-  {
-    id: "4",
-    candidateName: "James Wilson",
-    position: "Backend Engineer",
-    date: new Date(Date.now() + 86400000 * 2),
-    time: "3:30 PM",
-    mode: "google_meet",
-    meetingLink: "https://meet.google.com/xyz-uvwx-yz",
-  },
-];
+
 
 export const getModeIcon = (mode) => {
   switch (mode) {
     case "google_meet":
-    case "onsite":
+      return <AccessTimeIcon className="!text-[16px]" />; // or video icon later
+    case "on_site":
       return <LocationOnIcon className="!text-[16px]" />;
     default:
       return null;
@@ -52,13 +18,12 @@ export const getModeLabel = (mode) => {
   switch (mode) {
     case "google_meet":
       return "Google Meet";
-    case "onsite":
+    case "on_site":
       return "On-Site";
     default:
       return "";
   }
 };
-
 
 export const interviewModes = [
   { value: "google_meet", label: "Google Meet" },
@@ -67,7 +32,7 @@ export const interviewModes = [
 
 export const meetingLinkTemplates = {
   "google_meet": "https://meet.google.com/xxx-xxxx-xxx",
-  "on-site": "123 Office Street, Suite 456",
+  "on_site": "123 Office Street, Suite 456",
 };
 
 
@@ -91,4 +56,19 @@ export const scheduleInterviewApi = async (payload) => {
     throw new Error(`API request failed with status ${res.status}`);
   }
   return res.json();
+};
+
+// services/interviewApi.js
+
+import api from "../../../api";
+
+export const fetchInterviews = async () => {
+  try {
+    const res = await api.get("/interview");
+    return res.data.data;
+
+  } catch (error) {
+    console.error("Error fetching interviews:", error);
+    throw error;
+  }
 };

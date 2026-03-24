@@ -1,19 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { LocalizationProvider, DateCalendar } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import { interviewsData , getModeIcon, getModeLabel} from "../data/interviewData.jsx";
+import {
+  getModeIcon,
+  getModeLabel,
+  fetchInterviews,
+} from "../data/interviewData.jsx";
 import { formatDate } from "../../../helper.js";
 
 export default function InterviewsCalendar() {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [interviewsData, setInterviewsData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const loadInterviews = async () => {
+      try {
+        const data = await fetchInterviews();
+
+        // 🔥 transform backend data for your UI
+        const formatted = data.map((i) => ({
+          id: i.id,
+          date: new Date(i.date),
+          time: `${new Date(i.startTime).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })} - ${new Date(i.endTime).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}`,
+          candidateName: i.candidateName, // temp name
+          position: "Software Engineering", // you can replace later with job title
+          mode: i.mode === "google_meet" ? "google_meet" : "on_site",
+          meetingLink: i.meetLink,
+        }));
+
+        setInterviewsData(formatted);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadInterviews();
+  }, []);
   const filteredInterviews = interviewsData.filter(
-    (interview) => interview.date.toDateString() === selectedDate.toDateString()
+    (interview) =>
+      interview.date.toDateString() === selectedDate.toDateString(),
   );
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-gray-300 border-t-black rounded-full animate-spin"></div>
 
+          <p className="text-gray-700 text-lg font-medium">
+            Loading interviews...
+          </p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="flex min-h-screen bg-gray-50">
       <main className="flex-1 p-8">
@@ -59,8 +112,8 @@ export default function InterviewsCalendar() {
                     onClick={() =>
                       setSelectedDate(
                         new Date(
-                          selectedDate.setDate(selectedDate.getDate() - 1)
-                        )
+                          selectedDate.setDate(selectedDate.getDate() - 1),
+                        ),
                       )
                     }
                   >
@@ -76,8 +129,8 @@ export default function InterviewsCalendar() {
                     onClick={() =>
                       setSelectedDate(
                         new Date(
-                          selectedDate.setDate(selectedDate.getDate() + 1)
-                        )
+                          selectedDate.setDate(selectedDate.getDate() + 1),
+                        ),
                       )
                     }
                   >
@@ -85,7 +138,7 @@ export default function InterviewsCalendar() {
                   </button>
                 </div>
 
-                <span className="px-3 py-1 rounded-full bg-white text-sm font-medium text-teal-600 border border-teal-600">
+                <span className="px-3 py-1 rounded-full bg-white text-sm font-medium text-black border border-black">
                   {filteredInterviews.length} interview
                   {filteredInterviews.length !== 1 ? "s" : ""}
                 </span>
@@ -106,7 +159,6 @@ export default function InterviewsCalendar() {
                       className="p-4 bg-white rounded-xl shadow-lg hover:shadow-md transition-all duration-200"
                     >
                       <div className="flex gap-3 items-start">
-                       
                         <div className="w-12 h-12 rounded-full flex items-center justify-center font-semibold bg-black-100 text-neutral-600">
                           {interview.candidateName
                             .split(" ")
@@ -128,30 +180,41 @@ export default function InterviewsCalendar() {
                                 <AccessTimeIcon className="!text-[16px]" />
                                 {interview.time}
                               </div>
-
                               <div
                                 className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium
-                  ${
-                    interview.mode === "onsite"
-                      ? "bg-teal-50 text-teal-600"
-                      : "bg-blue-50 text-blue-600"
-                  }`}
+    ${
+      interview.mode === "on_site"
+        ? "bg-teal-50 text-teal-600"
+        : "bg-blue-50 text-blue-600"
+    }`}
                               >
                                 {getModeIcon(interview.mode)}
                                 {getModeLabel(interview.mode)}
                               </div>
                             </div>
 
-        
-                            {interview.mode !== "onsite" &&
+                            {interview.mode !== "on_site" &&
                               interview.meetingLink && (
                                 <a
-                                  href={interview.meetingLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition"
+                                  href="#"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+
+                                    navigate(
+                                      "/dept/dashboard/interview-session",
+                                      {
+                                        state: {
+                                          candidateName:
+                                            interview.candidateName,
+                                          meetLink: interview.meetingLink,
+                                          jobTitle: "Software Engineering"
+                                        },
+                                      },
+                                    );
+                                  }}
+                                  className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-black-700 transition"
                                 >
-                                  Join Meeting
+                                  Conduct Interview
                                 </a>
                               )}
                           </div>

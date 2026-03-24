@@ -80,6 +80,7 @@ export default function ShortlistedCandidates() {
   const handleScheduleInterview = async (data) => {
     try {
       const res = await scheduleInterviewApi({
+        candidateName: selectedCandidate.name,
         candidateEmail: selectedCandidate.email,
         ...data,
       });

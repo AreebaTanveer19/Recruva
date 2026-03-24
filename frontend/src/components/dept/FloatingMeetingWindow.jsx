@@ -10,7 +10,6 @@ import {
   Alert,
 } from "@mui/material";
 import VideocamIcon from "@mui/icons-material/Videocam";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import RemoveIcon from "@mui/icons-material/Remove";
 import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -19,7 +18,7 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
   const [minimized, setMinimized] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [toastOpen, setToastOpen] = useState(false);
-
+ //const meetWindowRef = useRef(null);
   useEffect(() => {
     const interval = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(interval);
@@ -32,18 +31,21 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
     return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
 
-  const openMeet = () => {
-    window.open(
-      meetLink,
-      "_blank",
-      "width=1200,height=800,toolbar=no,menubar=no",
-    );
-  };
-
-  // const copyLink = () => {
-  //   navigator.clipboard.writeText(meetLink);
-  //   setToastOpen(true);
-  // };
+const openMeet = () => {
+   const width = 500;
+    const height = 550;
+    const top = 250; 
+    const left = window.screen.width - width - 50;
+    if (!window.meetWindow || window.meetWindow.closed) {
+      window.meetWindow = window.open(
+        meetLink,
+        "meetWindow",
+        `width=${width},height=${height},top=${top},left=${left},resizable=no,scrollbars=no,noopener,noreferrer`
+      );
+    } else {
+      window.meetWindow.focus();
+    }
+};
 
   /* ── Pulsing green dot ── */
   const PulseDot = ({ size = 10 }) => (
@@ -256,26 +258,7 @@ export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
               >
                 Open Google Meet
               </Button>
-              {/* <Button
-                variant="outlined"
-                fullWidth
-                size="small"
-                startIcon={<ContentCopyIcon />}
-                onClick={copyLink}
-                sx={{
-                  borderColor: "#000",
-                  color: "#000",
-                  "&:hover": {
-                    borderColor: "#222",
-                    color: "#222",
-                    bgcolor: "transparent",
-                  },
-                  py: 1,
-                  px: 2,
-                }}
-              >
-                Copy Link
-              </Button> */}
+             
             </Box>
           </Box>
         </Paper>

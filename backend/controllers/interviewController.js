@@ -156,7 +156,7 @@ const googleRedirect = async (req, res) => {
 
 const scheduleInterview = async (req, res) => {
   try {
-    const { candidateEmail, date, startTime, mode, notes } = req.body;
+    const {candidateName, candidateEmail, date, startTime, mode, notes } = req.body;
 
     if (!candidateEmail || !date || !startTime) {
       return res.status(400).json({
@@ -224,12 +224,13 @@ const scheduleInterview = async (req, res) => {
         mode: mode === "google_meet" ? "google_meet" : "on_site",
         meetLink: response.data.hangoutLink,
         notes,
+        candidateName
       },
     });
 
     await sendInterviewEmail({
       to: candidateEmail,
-      candidateName: candidateEmail.split("@")[0], 
+      candidateName: candidateName, 
       interviewerName: user.email, 
       dateTime: startDateTime.format("DD MMM YYYY, hh:mm A"),
       meetLink: response.data.hangoutLink,
@@ -279,9 +280,130 @@ const disconnectCalendar = async (req, res) => {
   }
 };
 
+// GET /api/interviews
+const getAllInterviews = async (req, res) => {
+  try {
+    const interviews = await prisma.interview.findMany({
+      include: {
+        scheduler: {
+          select: {
+            id: true,
+            // name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        date: "asc",
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      data: interviews,
+    });
+  } catch (error) {
+    console.error("Error fetching interviews:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch interviews",
+    });
+  }
+};
+
+// GET /api/interviews/:id
+
+const getInterviewById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const interview = await prisma.interview.findUnique({
+      where: {
+        id: parseInt(id),
+      },
+      include: {
+        scheduler: true,
+      },
+    });
+
+    if (!interview) {
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: interview,
+    });
+  } catch (error) {
+    console.error("Error fetching interview:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching interview",
+    });
+  }
+};
+
+// GET /api/interviews?status=scheduled&jobId=1
+
+const getFilteredInterviews = async (req, res) => {
+  try {
+    const { status, jobId, candidateEmail, startDate, endDate } = req.query;
+
+    const interviews = await prisma.interview.findMany({
+      where: {
+        ...(status && { status }),
+        ...(jobId && { jobId: parseInt(jobId) }),
+        ...(candidateEmail && {
+          candidateEmail: {
+            contains: candidateEmail,
+            mode: "insensitive",
+          },
+        }),
+        ...(startDate &&
+          endDate && {
+            date: {
+              gte: new Date(startDate),
+              lte: new Date(endDate),
+            },
+          }),
+      },
+      include: {
+        scheduler: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        date: "asc",
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      count: interviews.length,
+      data: interviews,
+    });
+  } catch (error) {
+    console.error("Error fetching filtered interviews:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching interviews",
+    });
+  }
+};
+
 module.exports = {
   googleAuth,
   googleRedirect,
   scheduleInterview,
   disconnectCalendar,
+  getAllInterviews,
+  getInterviewById,
+  getFilteredInterviews
 };

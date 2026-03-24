@@ -11,7 +11,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-
+import { useLocation } from "react-router-dom";
 import { FloatingMeetingWindow } from "../../../components/dept/FloatingMeetingWindow";
 import { TopicSection } from "../../../components/dept/TopicSection";
 import { FinishInterviewModal } from "../../../components/dept/FinishInterviewModal";
@@ -29,8 +29,10 @@ export default function InterviewSession() {
   const [regeneratingId, setRegeneratingId] = useState(null);
   const [deletingId, setDeletingId]         = useState(null);
   const questionRefs = useRef({});
+ const location = useLocation();
+  const { candidateName, meetLink, jobTitle  } = location.state || {};
 
-
+ 
   const showAlert = (type, title, message) => {
     setAlert({ type, title, message });
     setTimeout(() => setAlert({ type: "", title: "", message: "" }), 3000);
@@ -138,15 +140,20 @@ export default function InterviewSession() {
   /* ---------------- Flat list for finish modal ---------------- */
 
   const allQuestions = useMemo(() => Object.values(grouped).flat(), [grouped]);
+ if (!candidateName || !meetLink) {
+    return (
+      <div className="p-8 text-center text-red-500">
+        No interview data available!
+      </div>
+    );
+  }
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: "background.default" }}>
-
-      {/* Floating Meeting Window */}
-      <FloatingMeetingWindow
-        candidateName={interviewCandidate.name}
-        jobTitle={interviewCandidate.jobTitle}
-        meetLink={interviewCandidate.meetLink}
+ <FloatingMeetingWindow
+        candidateName={candidateName}
+        jobTitle="Software Engineering" // optional for now
+        meetLink={meetLink}
       />
 
       {/* Header */}
@@ -155,11 +162,11 @@ export default function InterviewSession() {
 
           {/* Left */}
           <Box>
-            <Typography variant="subtitle2" fontWeight={600}>
-              {interviewCandidate.jobTitle}
+            <Typography variant="subtitle2" fontWeight={700} color="black">
+              Software Engineering
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Candidate: {interviewCandidate.name}
+            <Typography variant="caption" color="black">
+              Candidate: {candidateName}
             </Typography>
           </Box>
 
@@ -197,9 +204,21 @@ export default function InterviewSession() {
         <Box sx={{ maxWidth: 768, ml: 4, display: "flex", flexDirection: "column", gap: 1 }}>
 
           {Object.keys(grouped).length === 0 ? (
-            <Typography variant="body2" color="text.disabled" sx={{ textAlign: "center", mt: 8 }}>
-              {selectedJob ? "Loading questions..." : "Select a job to load questions"}
-            </Typography>
+<div className="flex flex-col items-center justify-center">
+  {/* Spinner */}
+  {selectedJob && (
+    <div className="w-12 h-12 border-4 border-gray-300 border-t-black rounded-full animate-spin mb-4"></div>
+  )}
+
+  {/* Loading / info text */}
+  <Typography
+    variant="body1"
+    color="textSecondary"
+    sx={{ textAlign: "center" }}
+  >
+    {selectedJob ? "Loading questions..." : "Select a job to load questions"}
+  </Typography>
+</div>
           ) : (
             Object.entries(grouped).map(([topic, questions]) => (
               <TopicSection

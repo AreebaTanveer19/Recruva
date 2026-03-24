@@ -86,6 +86,7 @@ model CvData {
 
 model Interview {
   id             Int             @id @default(autoincrement())
+  candidateName  String
   candidateEmail String
   jobId          Int?
   scheduledBy    Int
