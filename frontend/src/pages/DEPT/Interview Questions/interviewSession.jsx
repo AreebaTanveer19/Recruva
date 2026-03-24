@@ -15,9 +15,9 @@ import {
 import { FloatingMeetingWindow } from "../../../components/dept/FloatingMeetingWindow";
 import { TopicSection } from "../../../components/dept/TopicSection";
 import { FinishInterviewModal } from "../../../components/dept/FinishInterviewModal";
-
+import AlertDisplay from "../../../components/AlertDisplay";
 import { interviewCandidate } from "../data/interviewMockData";
-import { fetchOpenJobs } from "../../../helper";
+import { fetchOpenJobs, deleteQuestion, regenerateQuestion } from "../../../helper";
 
 export default function InterviewSession() {
   const [jobs, setJobs]               = useState([]);
@@ -25,8 +25,16 @@ export default function InterviewSession() {
   const [grouped, setGrouped]         = useState({});
   const [showSummary, setShowSummary] = useState(false);
   const [elapsed, setElapsed]         = useState(0);
-
+  const [alert, setAlert]             = useState({ type: "", title: "", message: "" });
+  const [regeneratingId, setRegeneratingId] = useState(null);
+  const [deletingId, setDeletingId]         = useState(null);
   const questionRefs = useRef({});
+
+
+  const showAlert = (type, title, message) => {
+    setAlert({ type, title, message });
+    setTimeout(() => setAlert({ type: "", title: "", message: "" }), 3000);
+  };
 
   /* ---------------- Fetch Jobs ---------------- */
 
@@ -66,6 +74,67 @@ export default function InterviewSession() {
     return () => clearInterval(interval);
   }, []);
 
+ /* ---------------- Delete Question ---------------- */
+
+  const handleDeleteQuestion = async (question) => {
+    try {
+      setDeletingId(question.id);
+      await deleteQuestion(selectedJob, question.id);
+
+      setGrouped((prev) => {
+        const updated = { ...prev };
+        for (const topic in updated) {
+          const filtered = updated[topic].filter((q) => q.id !== question.id);
+          if (filtered.length === 0) {
+            delete updated[topic];
+          } else {
+            updated[topic] = filtered;
+          }
+        }
+        return updated;
+      });
+
+      showAlert("success", "Question Deleted", "Question has been removed successfully.");
+    } catch (err) {
+      console.error("Error deleting question:", err);
+      showAlert("error", "Delete Failed", "Failed to delete the question. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  /* ---------------- Regenerate Question ---------------- */
+
+  const handleRegenerateQuestion = async (question) => {
+    try {
+      setRegeneratingId(question.id);
+      showAlert("info", "Regenerating", "Generating a new question, please wait...");
+
+      const res = await regenerateQuestion(selectedJob, question.id);
+      const newQuestion = res.question;
+
+      setGrouped((prev) => {
+        const updated = { ...prev };
+        for (const topic in updated) {
+          const idx = updated[topic].findIndex((q) => q.id === question.id);
+          if (idx !== -1) {
+            updated[topic] = updated[topic].map((q) =>
+              q.id === question.id ? newQuestion : q
+            );
+            break;
+          }
+        }
+        return updated;
+      });
+
+      showAlert("success", "Question Regenerated", "A new question has been generated successfully.");
+    } catch (err) {
+      console.error("Error regenerating question:", err);
+      showAlert("error", "Regeneration Failed", "Failed to regenerate the question. Please try again.");
+    } finally {
+      setRegeneratingId(null);
+    }
+  };
   /* ---------------- Flat list for finish modal ---------------- */
 
   const allQuestions = useMemo(() => Object.values(grouped).flat(), [grouped]);
@@ -112,6 +181,16 @@ export default function InterviewSession() {
 
         </Toolbar>
       </AppBar>
+ {/* Alert */}
+      {alert.message && (
+        <Box sx={{ px: 3, pt: 2 }}>
+          <AlertDisplay
+            type={alert.type}
+            title={alert.title}
+            message={alert.message}
+          />
+        </Box>
+      )}
 
       {/* Main Content */}
       <Box component="main" sx={{ flex: 1, overflowY: "auto", p: 3 }}>
@@ -128,6 +207,10 @@ export default function InterviewSession() {
                 topic={topic}
                 questions={questions}
                 questionRefs={questionRefs}
+                onDelete={handleDeleteQuestion}
+                onRegenerate={handleRegenerateQuestion}
+                regeneratingId={regeneratingId}
+                deletingId={deletingId}
               />
             ))
           )}

@@ -19,3 +19,23 @@ export const formatDate = (date) => {
       day: "numeric",
     });
   };
+
+export const deleteQuestion = async (jobId, questionId) => {
+  try {
+    const res = await api.delete(`/jobs/${jobId}/questions/${questionId}/delete`);
+    return res.data;
+  } catch (error) {
+    console.error("Error deleting question:", error);
+    throw error;
+  }
+};
+
+export const regenerateQuestion = async (jobId, questionId) => {
+  try {
+    const res = await api.put(`/jobs/${jobId}/questions/${questionId}/regenerate`);
+    return res.data; // { message, question: newQuestion }
+  } catch (error) {
+    console.error("Error regenerating question:", error);
+    throw error;
+  }
+};

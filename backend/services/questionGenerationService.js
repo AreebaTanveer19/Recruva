@@ -217,6 +217,10 @@ async function regenerateQuestion(jobId, oldQuestionId, jobDescription, requirem
     where: { id: oldQuestionId }
   });
 
+  if (!oldQuestion) {
+    throw new Error(`Question with id ${oldQuestionId} not found in bank`);
+  }
+
   // Search bank for alternative first — 0 API calls
   const alternative = await prisma.questionBank.findFirst({
     where: {
@@ -228,40 +232,72 @@ async function regenerateQuestion(jobId, oldQuestionId, jobDescription, requirem
   });
 
   if (alternative) {
-    console.log(" Found alternative in bank ");
+    console.log("Found alternative in bank");
     await prisma.jobQuestion.update({
       where: { jobId_questionId: { jobId, questionId: oldQuestionId } },
-      data:  { questionId: alternative.id, status: "regenerated" },
+      data:  { questionId: alternative.id },
     });
     return alternative;
   }
 
-  // Nothing in bank — generate 1 new question
-  const prompt = `Generate 1 interview question to replace this one.
+  // Fetch all existing questions for this job to check similarity
+  const existingQuestions = await prisma.questionBank.findMany({
+    where: { jobQuestions: { some: { jobId } } },
+    select: { question: true }
+  });
+
+  // Nothing in bank — generate 1 new question with retry for duplicates
+  const MAX_RETRIES = 10;
+  let saved = null;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const prompt = `Generate 1 interview question to replace this one.
 Original: "${oldQuestion.question}"
 Difficulty: ${oldQuestion.difficulty}
 Tags: ${oldQuestion.tags.join(", ")}
 
+IMPORTANT: Do NOT generate questions similar to these existing ones:
+- ${existingQuestions.map(q => q.question).join("\n- ")}
+
 Return ONLY a JSON object with: "question", "difficulty", "category", "tags", "briefAnswer". No markdown.`;
 
-  const result = await groq.chat.completions.create({
-    model:       "llama-3.3-70b-versatile",
-    messages:    [{ role: "user", content: prompt }],
-    temperature: 0.7,
-  });
+    const result = await groq.chat.completions.create({
+      model:       "llama-3.3-70b-versatile",
+      messages:    [{ role: "user", content: prompt }],
+      temperature: 0.7,
+    });
 
-  const raw = result.choices[0].message.content.trim()
-    .replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const raw = result.choices[0].message.content.trim()
+      .replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
 
-  const newQ = JSON.parse(raw);
+    const newQ = JSON.parse(raw);
 
-  const saved = await prisma.questionBank.create({
-    data: { ...newQ }
-  });
+    // Check semantic similarity against existing job questions
+    const isDuplicate = existingQuestions.some(q => isTooSimilar(q.question, newQ.question));
 
+    if (isDuplicate) {
+      console.log(`Attempt ${attempt}: Generated question too similar, retrying...`);
+      if (attempt === MAX_RETRIES) {
+        throw new Error("Failed to generate a unique question after maximum retries");
+      }
+      continue;
+    }
+
+    // Unique question — save to bank
+    saved = await prisma.questionBank.upsert({
+      where:  { question: newQ.question },
+      update: {},
+      create: { ...newQ },
+    });
+
+    console.log(`Generated unique question on attempt ${attempt}`);
+    break;
+  }
+
+  // Update job question link
   await prisma.jobQuestion.update({
     where: { jobId_questionId: { jobId, questionId: oldQuestionId } },
-    data:  { questionId: saved.id, status: "regenerated" },
+    data:  { questionId: saved.id },
   });
 
   return saved;
