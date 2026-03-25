@@ -6,7 +6,7 @@ import { scheduleInterviewApi } from "../data/interviewData";
 import api from "../../../api";
 import { ACCESS_TOKEN } from "../../../constants";
 import { candidatesList } from "../data/candidateList";
-
+import { fetchOpenJobs } from "../../../helper";
 const stats = [
   { label: "Total Candidates", value: 120, change: "+5%" },
   { label: "Scheduled", value: 45, change: "+2%" },
@@ -19,10 +19,49 @@ export default function ShortlistedCandidates() {
   const [openModal, setOpenModal] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [candidates, setCandidates] = useState([]);
-
+  const [jobs, setJobs] = useState([]);
+  const [selectedJob, setSelectedJob] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [filteredCandidates, setFilteredCandidates] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   useEffect(() => {
     setCandidates(candidatesList);
   }, []);
+
+  useEffect(() => {
+    const loadJobs = async () => {
+      try {
+        const openJobs = await fetchOpenJobs();
+        setJobs(openJobs);
+      } catch (err) {
+        console.error("Failed to fetch open jobs", err);
+      }
+    };
+    loadJobs();
+  }, []);
+
+  useEffect(() => {
+    let filtered = [...candidates];
+
+    // Filter by job
+    if (selectedJob) {
+      filtered = filtered.filter((c) => c.position === selectedJob);
+    }
+
+    // Filter by status
+    if (selectedStatus) {
+      filtered = filtered.filter((c) => c.status === selectedStatus);
+    }
+
+    // Filter by search term (candidate name)
+    if (searchTerm.trim() !== "") {
+      filtered = filtered.filter((c) =>
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    }
+
+    setFilteredCandidates(filtered);
+  }, [candidates, selectedJob, selectedStatus, searchTerm]);
 
   const connectCalendar = async () => {
     setCalendarStatus("connecting");
@@ -182,23 +221,47 @@ export default function ShortlistedCandidates() {
         </div>
 
         {/* Toolbar */}
-        <div className="flex flex-col md:flex-row justify-between gap-3 mb-6">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="relative flex-1 max-w-md">
-              <input
-                type="text"
-                placeholder="Search candidates..."
-                className="w-full pl-9 pr-3 py-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            </div>
+       <div className="flex flex-col md:flex-row justify-between gap-4 mb-6 items-center">
+  {/* Search */}
+  <div className="relative flex-1 w-full">
+    <input
+      type="text"
+      placeholder="Search candidates..."
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+    />
+    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+  </div>
 
-            <button className="flex items-center gap-1.5 text-sm font-medium rounded-lg border px-3 py-3 hover:bg-gray-100">
-              <Filter className="w-5 h-5" />
-              Filters
-            </button>
-          </div>
-        </div>
+  {/* Job Dropdown */}
+  <div className="flex gap-3 mt-3 md:mt-0">
+    <select
+      value={selectedJob}
+      onChange={(e) => setSelectedJob(e.target.value)}
+      className="px-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+    >
+      <option value="">All Jobs</option>
+      {jobs.map((job) => (
+        <option key={job.id} value={job.title}>
+          {job.title}
+        </option>
+      ))}
+    </select>
+
+    {/* Status Dropdown */}
+    <select
+      value={selectedStatus}
+      onChange={(e) => setSelectedStatus(e.target.value)}
+      className="px-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+    >
+      <option value="">All Statuses</option>
+      <option value="pending">Pending</option>
+      <option value="scheduled">Scheduled</option>
+      <option value="offered">Offered</option>
+    </select>
+  </div>
+</div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -215,7 +278,7 @@ export default function ShortlistedCandidates() {
 
         {/* Candidate Table */}
         <CandidateTable
-          candidates={candidates}
+          candidates={filteredCandidates}
           onScheduleInterview={handleScheduleClick}
         />
 

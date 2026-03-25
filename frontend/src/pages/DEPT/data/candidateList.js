@@ -3,7 +3,7 @@ export const candidatesList = [
     id: "1",
     name: "Waleeja Ali",
     email: "waleeja.ali13@gmail.com",
-    position: "Senior Frontend Developer",
+    position: "Java Developer",
     status: "pending",
   },
   {
