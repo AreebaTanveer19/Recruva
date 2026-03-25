@@ -1,200 +1,209 @@
 const Groq = require("groq-sdk");
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+// CONFIG: SKILL METADATA
+
+
+const SKILL_META = {
+  "React": { weight: 5, type: "core" },
+  "Node.js": { weight: 5, type: "core" },
+  "Python": { weight: 5, type: "core" },
+
+  "MongoDB": { weight: 3, type: "support" },
+  "REST API": { weight: 3, type: "support" },
+  "Databases": { weight: 3, type: "support" },
+
+  "HTML": { weight: 2, type: "basic" },
+  "CSS": { weight: 2, type: "basic" },
+};
+
 // TITLE → KEYWORD MAP
-
-// const TITLE_KEYWORD_MAP = {
-//   // Frontend
-//   "react":          ["React", "Frontend", "JavaScript"],
-//   "angular":        ["Angular", "Frontend", "TypeScript"],
-//   "vue":            ["Vue", "Frontend", "JavaScript"],
-//   "frontend":       ["Frontend", "JavaScript"],
-//   "ui":             ["Frontend"],
-
-//   // Backend
-//   "node":           ["Node.js", "Backend", "JavaScript", "REST API"],
-//   "express":        ["Node.js", "Backend", "REST API"],
-//   "django":         ["Python", "Django", "Backend"],
-//   "flask":          ["Python", "Flask", "Backend"],
-//   "spring":         ["Java", "Spring Boot", "Backend"],
-//   "laravel":        ["PHP", "Laravel", "Backend"],
-//   "backend":        ["Backend", "REST API", "Databases"],
-
-//   // Fullstack
-//   "fullstack":      ["React", "Node.js", "Databases", "REST API"],
-//   "full stack":     ["React", "Node.js", "Databases", "REST API"],
-//   "full-stack":     ["React", "Node.js", "Databases", "REST API"],
-//   "mern":           ["MongoDB", "React", "Node.js", "REST API"],
-//   "mean":           ["MongoDB", "Angular", "Node.js", "REST API"],
-
-//   // Mobile
-//   "mobile":         ["React Native", "Mobile", "JavaScript"],
-//   "android":        ["Android", "Java", "Kotlin", "Mobile"],
-//   "ios":            ["iOS", "Swift", "Mobile"],
-//   "flutter":        ["Flutter", "Dart", "Mobile"],
-//   "react native":   ["React Native", "Mobile", "JavaScript"],
-
-//   // DevOps / Cloud
-//   "devops":         ["Docker", "Kubernetes", "CI/CD", "Linux"],
-//   "cloud":          ["AWS", "Cloud", "DevOps"],
-//   "aws":            ["AWS", "Cloud", "DevOps"],
-//   "azure":          ["Azure", "Cloud", "DevOps"],
-//   "docker":         ["Docker", "DevOps", "Kubernetes"],
-//   "kubernetes":     ["Kubernetes", "DevOps", "Docker"],
-
-//   // Data / AI / ML
-//   "data":           ["Python", "SQL", "Data Structures"],
-//   "machine learning": ["Machine Learning", "Python", "DSA"],
-//   "ml":             ["Machine Learning", "Python", "DSA"],
-//   "ai":             ["Machine Learning", "Python", "Algorithms"],
-//   "data science":   ["Python", "SQL", "Machine Learning"],
-//   "data engineer":  ["Python", "SQL", "ETL", "Databases"],
-
-//   // Languages
-//   "python":         ["Python", "Backend"],
-//   "java":           ["Java", "OOP", "Backend"],
-//   "golang":         ["Go", "Backend", "Concurrency"],
-//   "rust":           ["Rust", "Systems Programming"],
-//   "typescript":     ["TypeScript", "JavaScript", "Frontend"],
-//   "php":            ["PHP", "Backend"],
-
-//   // Other
-//   "security":       ["Cybersecurity", "Networking", "Linux"],
-//   "blockchain":     ["Blockchain", "Solidity", "Web3"],
-//   "qa":             ["Testing", "QA", "Automation"],
-//   "embedded":       ["C", "C++", "Embedded Systems"],
-//   "game":           ["C++", "Unity", "Game Development"],
-// };
 
 const TITLE_KEYWORD_MAP = {
   // ─── Frontend ────────────────────────────────────────────────
-  "react":             ["React", "JavaScript", "Frontend", "HTML", "CSS"],
-  "angular":           ["Angular", "TypeScript", "Frontend", "RxJS", "HTML"],
-  "vue":               ["Vue", "JavaScript", "Frontend", "HTML", "CSS"],
-  "svelte":            ["Svelte", "JavaScript", "Frontend", "HTML"],
-  "next":              ["Next.js", "React", "JavaScript", "SSR", "Frontend"],
-  "nuxt":              ["Nuxt.js", "Vue", "JavaScript", "SSR", "Frontend"],
-  "frontend":          ["JavaScript", "HTML", "CSS", "Frontend", "REST API"],
-  "ui":                ["Frontend", "HTML", "CSS", "Accessibility"],
-  "ux":                ["Frontend", "Accessibility", "Design Systems"],
+  "react": [
+    { name: "React", weight: 1.0 },
+    { name: "JavaScript", weight: 0.8 },
+    { name: "Frontend", weight: 0.6 }
+  ],
+  "angular": [
+    { name: "Angular", weight: 1.0 },
+    { name: "TypeScript", weight: 0.8 },
+    { name: "Frontend", weight: 0.6 },
+    { name: "RxJS", weight: 0.8 },
+  ],
+  "vue": [
+    { name: "Vue", weight: 1.0 },
+    { name: "JavaScript", weight: 0.8 },
+    { name: "Frontend", weight: 0.6 },
+
+  ],
+  "next": [
+    { name: "Next.js", weight: 1.0 },
+    { name: "React", weight: 0.8 },
+    { name: "JavaScript", weight: 0.8 },
+    { name: "SSR", weight: 0.6 },
+    { name: "Frontend", weight: 0.6 },
+  ],
+  "frontend": [
+    { name: "JavaScript", weight: 1.0 },
+    { name: "Frontend", weight: 0.6 },
+  ],
 
   // ─── Backend ─────────────────────────────────────────────────
-  "node":              ["Node.js", "JavaScript", "Backend", "REST API", "Databases"],
-  "express":           ["Node.js", "Express", "Backend", "REST API", "Middleware"],
-  "nestjs":            ["NestJS", "TypeScript", "Node.js", "Backend", "REST API"],
-  "django":            ["Django", "Python", "Backend", "REST API", "ORM"],
-  "flask":             ["Flask", "Python", "Backend", "REST API"],
-  "fastapi":           ["FastAPI", "Python", "Backend", "REST API", "Async"],
-  "spring":            ["Spring Boot", "Java", "Backend", "REST API", "Microservices"],
-  "laravel":           ["Laravel", "PHP", "Backend", "REST API", "ORM"],
-  "rails":             ["Ruby on Rails", "Ruby", "Backend", "REST API", "MVC"],
-  "dotnet":            [".NET", "C#", "Backend", "REST API", "Microservices"],
-  "asp.net":           ["ASP.NET", "C#", "Backend", "REST API"],
-  "golang":            ["Go", "Backend", "Concurrency", "Microservices", "REST API"],
-  "rust":              ["Rust", "Systems Programming", "Concurrency", "Backend"],
-  "backend":           ["Backend", "REST API", "Databases", "Authentication", "Caching"],
+  "node": [
+    { name: "Node.js", weight: 1.0 },
+    { name: "JavaScript", weight: 0.8 },
+    { name: "Backend", weight: 0.6 },
+    { name: "REST API", weight: 0.8 },
+  ],
+  "express": [
+    { name: "Express", weight: 1.0 },
+    { name: "Node.js", weight: 0.8 },
+    { name: "Backend", weight: 0.6 },
+    { name: "REST API", weight: 0.8 },
+    { name: "Middleware", weight: 0.6 },
+  ],
+  "django": [
+    { name: "Django", weight: 1.0 },
+    { name: "Python", weight: 0.8 },
+    { name: "Backend", weight: 0.6 },
+    { name: "REST API", weight: 0.8 },
+    { name: "ORM", weight: 0.6 },
+  ],
+  "spring": [
+    { name: "Spring Boot", weight: 1.0 },
+    { name: "Java", weight: 0.8 },
+    { name: "Microservices", weight: 0.8 },
+  ],
+  "backend": [
+    { name: "Backend", weight: 1.0 },
+    { name: "REST API", weight: 0.8 },
+    { name: "Authentication", weight: 0.6 },
+    { name: "Caching", weight: 0.6 },
+  ],
 
   // ─── Fullstack ────────────────────────────────────────────────
-  "fullstack":         ["JavaScript", "React", "Node.js", "Databases", "REST API"],
-  "full stack":        ["JavaScript", "React", "Node.js", "Databases", "REST API"],
-  "full-stack":        ["JavaScript", "React", "Node.js", "Databases", "REST API"],
-  "mern":              ["MongoDB", "Express", "React", "Node.js", "REST API"],
-  "mean":              ["MongoDB", "Express", "Angular", "Node.js", "REST API"],
-  "mevn":              ["MongoDB", "Express", "Vue", "Node.js", "REST API"],
-  "t3":                ["Next.js", "TypeScript", "Prisma", "tRPC", "Tailwind"],
+  "mern": [
+    { name: "MongoDB", weight: 1.0 },
+    { name: "Express", weight: 0.9 },
+    { name: "React", weight: 0.9 },
+    { name: "Node.js", weight: 0.9 },
+    { name: "REST API", weight: 0.7 },
+  ],
+  "fullstack": [
+    { name: "JavaScript", weight: 1.0 },
+    { name: "React", weight: 0.9 },
+    { name: "Node.js", weight: 0.9 },
+    { name: "Databases", weight: 0.7 },
+    { name: "REST API", weight: 0.7 },
+  ],
 
   // ─── Mobile ───────────────────────────────────────────────────
-  "mobile":            ["React Native", "Mobile", "JavaScript", "iOS", "Android"],
-  "android":           ["Android", "Kotlin", "Java", "Mobile", "Jetpack Compose"],
-  "ios":               ["iOS", "Swift", "SwiftUI", "Mobile", "Xcode"],
-  "flutter":           ["Flutter", "Dart", "Mobile", "iOS", "Android"],
-  "react native":      ["React Native", "JavaScript", "Mobile", "iOS", "Android"],
-  "kotlin":            ["Kotlin", "Android", "Mobile", "Coroutines"],
-  "swift":             ["Swift", "iOS", "SwiftUI", "Mobile"],
+  "android": [
+    { name: "Android", weight: 1.0 },
+    { name: "Kotlin", weight: 0.9 },
+    { name: "Java", weight: 0.7 },
+  ],
+  "ios": [
+    { name: "iOS", weight: 1.0 },
+    { name: "Swift", weight: 0.9 },
+    { name: "SwiftUI", weight: 0.7 },
+  ],
+  "flutter": [
+    { name: "Flutter", weight: 1.0 },
+    { name: "Dart", weight: 0.9 },
+  ],
 
-  // ─── DevOps / Cloud / Infrastructure ─────────────────────────
-  "devops":            ["CI/CD", "Docker", "Kubernetes", "Linux", "Monitoring"],
-  "cloud":             ["AWS", "Cloud Architecture", "DevOps", "Serverless", "IaC"],
-  "aws":               ["AWS", "Cloud Architecture", "Serverless", "DevOps", "IaC"],
-  "azure":             ["Azure", "Cloud Architecture", "DevOps", "IaC"],
-  "gcp":               ["GCP", "Cloud Architecture", "DevOps", "Serverless"],
-  "docker":            ["Docker", "Containers", "DevOps", "Kubernetes", "CI/CD"],
-  "kubernetes":        ["Kubernetes", "Containers", "DevOps", "Docker", "Microservices"],
-  "terraform":         ["Terraform", "IaC", "DevOps", "Cloud Architecture"],
-  "sre":               ["SRE", "Linux", "Monitoring", "Incident Management", "DevOps"],
-  "platform":          ["DevOps", "Kubernetes", "CI/CD", "IaC", "Cloud Architecture"],
+  // ─── DevOps ──────────────────────────────────────────────────
+  "devops": [
+    { name: "Docker", weight: 1.0 },
+    { name: "Kubernetes", weight: 0.9 },
+    { name: "CI/CD", weight: 0.9 },
+    { name: "Linux", weight: 0.7 },
+    { name: "Monitoring", weight: 0.6 },
+  ],
+  "aws": [
+    { name: "AWS", weight: 1.0 },
+    { name: "Cloud Architecture", weight: 0.9 },
+    { name: "Serverless", weight: 0.7 },
+    { name: "DevOps", weight: 0.6 },
+  ],
 
   // ─── Databases ────────────────────────────────────────────────
-  "database":          ["Databases", "SQL", "Query Optimization", "Indexing", "ORM"],
-  "dba":               ["Databases", "SQL", "Query Optimization", "Replication", "Backup"],
-  "postgres":          ["PostgreSQL", "SQL", "Databases", "Query Optimization"],
-  "mysql":             ["MySQL", "SQL", "Databases", "Query Optimization"],
-  "mongodb":           ["MongoDB", "NoSQL", "Databases", "Aggregation"],
-  "redis":             ["Redis", "Caching", "Databases", "Pub/Sub"],
-  "elasticsearch":     ["Elasticsearch", "Search", "Databases", "Indexing"],
-  "cassandra":         ["Cassandra", "NoSQL", "Databases", "Distributed Systems"],
+  "mongodb": [
+    { name: "MongoDB", weight: 1.0 },
+    { name: "NoSQL", weight: 0.8 },
+    { name: "Databases", weight: 0.6 },
+    { name: "Aggregation", weight: 0.7 },
+  ],
+  "postgres": [
+    { name: "PostgreSQL", weight: 1.0 },
+    { name: "SQL", weight: 0.9 },
+    { name: "Databases", weight: 0.6 },
+  ],
 
-  // ─── Data / AI / ML ──────────────────────────────────────────
-  "data scientist":    ["Python", "Machine Learning", "Statistics", "SQL", "Data Visualization"],
-  "data analyst":      ["SQL", "Python", "Data Visualization", "Excel", "Statistics"],
-  "data engineer":     ["Python", "SQL", "ETL", "Databases", "Distributed Systems"],
-  "machine learning":  ["Machine Learning", "Python", "Deep Learning", "Statistics", "DSA"],
-  "ml engineer":       ["Machine Learning", "Python", "MLOps", "Deep Learning", "APIs"],
-  "ai engineer":       ["Machine Learning", "Python", "LLMs", "Prompt Engineering", "APIs"],
-  "mlops":             ["MLOps", "Python", "Docker", "CI/CD", "Cloud Architecture"],
-  "nlp":               ["NLP", "Python", "Machine Learning", "Deep Learning", "Transformers"],
-  "computer vision":   ["Computer Vision", "Python", "Deep Learning", "OpenCV"],
-  "data":              ["Python", "SQL", "Data Structures", "Statistics"],
-  "ml":                ["Machine Learning", "Python", "Deep Learning", "DSA"],
-  "ai":                ["Machine Learning", "Python", "LLMs", "Deep Learning"],
+  // ─── AI / ML ─────────────────────────────────────────────────
+  "machine learning": [
+    { name: "Machine Learning", weight: 1.0 },
+    { name: "Python", weight: 0.9 },
+    { name: "Deep Learning", weight: 0.8 },
+    { name: "Statistics", weight: 0.7 },
+  ],
+  "ai": [
+    { name: "Machine Learning", weight: 1.0 },
+    { name: "Python", weight: 0.9 },
+    { name: "LLMs", weight: 0.9 },
+    { name: "Deep Learning", weight: 0.8 },
+  ],
 
-  // ─── Languages (role-agnostic) ────────────────────────────────
-  "python":            ["Python", "OOP", "Backend", "Scripting"],
-  "java":              ["Java", "OOP", "Backend", "Spring Boot", "Multithreading"],
-  "typescript":        ["TypeScript", "JavaScript", "OOP", "Frontend", "Backend"],
-  "javascript":        ["JavaScript", "Node.js", "Frontend", "Async", "OOP"],
-  "php":               ["PHP", "Backend", "Laravel", "OOP"],
-  "c#":                ["C#", ".NET", "OOP", "Backend"],
-  "cpp":               ["C++", "OOP", "Systems Programming", "Memory Management"],
-  "scala":             ["Scala", "Functional Programming", "Backend", "Spark"],
+  // ─── Languages ────────────────────────────────────────────────
+  "python": [
+    { name: "Python", weight: 1.0 },
+    { name: "OOP", weight: 0.7 },
+  ],
+  "java": [
+    { name: "Java", weight: 1.0 },
+    { name: "OOP", weight: 0.7 },
+    { name: "Spring Boot", weight: 0.8 },
+  ],
 
-  // ─── Architecture / Systems ───────────────────────────────────
-  "microservices":     ["Microservices", "REST API", "Docker", "Kubernetes", "Event-Driven"],
-  "architect":         ["System Design", "Microservices", "Databases", "Cloud Architecture", "Security"],
-  "system design":     ["System Design", "Databases", "Caching", "Load Balancing", "Scalability"],
-  "distributed":       ["Distributed Systems", "Databases", "Concurrency", "Consistency", "Networking"],
+  // ─── Systems ─────────────────────────────────────────────────
+  "system design": [
+    { name: "System Design", weight: 1.0 },
+    { name: "Scalability", weight: 0.9 },
+    { name: "Load Balancing", weight: 0.8 },
+    { name: "Databases", weight: 0.7 },
+  ],
 
   // ─── Security ─────────────────────────────────────────────────
-  "security":          ["Cybersecurity", "Authentication", "Networking", "Linux", "Penetration Testing"],
-  "cybersecurity":     ["Cybersecurity", "Networking", "Linux", "Penetration Testing", "Cryptography"],
-  "appsec":            ["Cybersecurity", "Authentication", "OWASP", "Secure Coding"],
+  "security": [
+    { name: "Cybersecurity", weight: 1.0 },
+    { name: "Authentication", weight: 0.9 },
+    { name: "Networking", weight: 0.7 },
+  ],
 
-  // ─── QA / Testing ─────────────────────────────────────────────
-  "qa":                ["Testing", "QA", "Automation", "CI/CD", "Test Design"],
-  "sdet":              ["Testing", "Automation", "QA", "CI/CD", "Scripting"],
-  "test":              ["Testing", "QA", "Test Design", "Automation"],
-
-  // ─── Specialised ──────────────────────────────────────────────
-  "blockchain":        ["Blockchain", "Solidity", "Web3", "Smart Contracts", "Cryptography"],
-  "web3":              ["Web3", "Blockchain", "Solidity", "Smart Contracts", "JavaScript"],
-  "game":              ["C++", "Unity", "Game Development", "Graphics", "Physics"],
-  "graphics":          ["OpenGL", "WebGL", "C++", "Shaders", "Graphics"],
-  "embedded":          ["C", "C++", "Embedded Systems", "RTOS", "Hardware Interfaces"],
-  "firmware":          ["C", "C++", "Embedded Systems", "RTOS", "Debugging"],
+  // ─── QA ───────────────────────────────────────────────────────
+  "qa": [
+    { name: "Testing", weight: 1.0 },
+    { name: "Automation", weight: 0.9 },
+    { name: "CI/CD", weight: 0.7 },
+  ],
 };
 
-// ─────────────────────────────────────────────────────────────
-// COMMON FILLER WORDS TO IGNORE FROM REQUIREMENTS
-// ─────────────────────────────────────────────────────────────
+// IGNORE WORDS
+
+
 const IGNORE_WORDS = [
-  "experience", "years", "knowledge", "understanding", "familiarity",
-  "ability", "skills", "strong", "good", "excellent", "proficiency",
-  "must", "required", "preferred", "plus", "degree", "bachelor",
-  "master", "working", "proven", "demonstrated", "solid", "hands-on",
-  "minimum", "least", "with", "the", "and", "or", "in", "of",
+  "experience", "years", "knowledge", "understanding",
+  "skills", "strong", "good", "excellent", "proficiency",
+  "must", "required", "preferred", "degree",
+  "with", "the", "and", "or", "in", "of",
 ];
 
-// LOCAL EXTRACTION
+
+// SMART MATCHING FUNCTION
+
 
 function matchesKey(text, key) {
   if (key.length <= 4) {
@@ -204,39 +213,35 @@ function matchesKey(text, key) {
   return text.includes(key);
 }
 
+// LOCAL EXTRACTION
+
 
 function extractKeywordsLocally(jobTitle = "", requirements = []) {
   const keywords = new Set();
-
-  // 1. Match from job title
   const titleLower = jobTitle.toLowerCase();
-  // AFTER
+
+  // 1. Match job title
   for (const [key, tags] of Object.entries(TITLE_KEYWORD_MAP)) {
     if (matchesKey(titleLower, key)) {
-      tags.forEach(t => keywords.add(t));
+      tags.forEach(t => keywords.add(t.name));
     }
   }
-  // for (const [key, tags] of Object.entries(TITLE_KEYWORD_MAP)) {
-  //   if (titleLower.includes(key)) {
-  //     tags.forEach(t => keywords.add(t));
-  //   }
-  // }
 
-  // 2. Extract from requirements array
+  // 2. Extract from requirements
   requirements.forEach(req => {
     const cleaned = req
       .toLowerCase()
-      .replace(/\.js$/i, "")          
-      .replace(/\(.*?\)/g, "")        
-      .replace(/[^a-zA-Z0-9\s\+\#]/g, " ") 
+      .replace(/\.js$/i, "")
+      .replace(/\(.*?\)/g, "")
+      .replace(/[^a-zA-Z0-9\s\+\#]/g, " ")
       .trim();
 
-    // Short entries are likely clean keywords — use directly
     const wordCount = cleaned.split(/\s+/).length;
+
+    // Short keywords (direct add)
     if (wordCount <= 3) {
-      const isFillerWord = IGNORE_WORDS.some(w => cleaned === w);
-      if (!isFillerWord && cleaned.length > 1) {
-        // Capitalize first letter of each word for consistency
+      const isFiller = IGNORE_WORDS.includes(cleaned);
+      if (!isFiller && cleaned.length > 1) {
         const formatted = cleaned
           .split(/\s+/)
           .map(w => w.charAt(0).toUpperCase() + w.slice(1))
@@ -245,118 +250,119 @@ function extractKeywordsLocally(jobTitle = "", requirements = []) {
       }
     }
 
-    // Long sentences — try to pull known tech names from them
-    // if (wordCount > 3) {
-    //   for (const [key, tags] of Object.entries(TITLE_KEYWORD_MAP)) {
-    //     if (cleaned.includes(key)) {
-    //       tags.forEach(t => keywords.add(t));
-    //     }
-    //   }
-    // }
+    // LONG TEXT MATCHING 
+    if (wordCount > 3) {
+      for (const [key, tags] of Object.entries(TITLE_KEYWORD_MAP)) {
+        if (matchesKey(cleaned, key)) {
+          tags.forEach(t => keywords.add(t.name));
+        }
+      }
+    }
   });
 
   return [...keywords];
 }
 
 
+// ENRICH KEYWORDS
 
-// LLM EXTRACTION 
 
-async function extractKeywordsViaLLM(jobDescription = "", requirements = []) {
-  const requirementsText = requirements.length > 0
-    ? `\nJob Requirements:\n${requirements.map((r, i) => `${i + 1}. ${r}`).join("\n")}`
-    : "";
-
-  const prompt = `Extract 6-10 skill keywords from this job posting.
-
-RULES:
-- Short keywords only (1-3 words max)
-- Ignore: years of experience, soft skills, education, salary, location
-- Use standard names (examples below)
-
-STANDARDIZATION:
-- ReactJS → "React"
-- NodeJS → "Node.js"  
-- TypeScript/TS → "TypeScript"
-- RESTful API → "REST API"
-- K8s → "Kubernetes"
-- Amazon cloud → "AWS"
-- Google cloud → "GCP"
-
-CATEGORY MAPPING (extract the category keyword when you see these topics):
-- Programming languages (Python, Java, PHP, Go, Rust) → use the language name as-is
-- Frontend (React, Angular, Vue, HTML, CSS) → use tool name + add "Frontend"
-- Backend (Node.js, Django, Spring, Laravel) → use tool name + add "Backend"
-- Databases (PostgreSQL, MongoDB, MySQL, Redis) → use db name + add "Databases"
-- DevOps (Docker, Kubernetes, CI/CD, Linux) → use tool name + add "DevOps"
-- Cloud (AWS, Azure, GCP) → use cloud name + add "Cloud"
-- Mobile (React Native, Flutter, Swift, Kotlin) → use tool name + add "Mobile"
-- Software Development (Agile, Scrum, Git, SDLC, TDD) → use term + add "Software Development"
-- Project Management (Jira, Trello, Asana, PMP, Kanban) → use term + add "Project Management"
-- System Design (Microservices, Architecture, Scalability) → use term + add "System Design"
-- Data & AI (Machine Learning, NLP, Data Science, TensorFlow) → use term + add "Machine Learning"
-- Security (OAuth, JWT, Cybersecurity, Penetration Testing) → use term + add "Security"
-- Testing (Jest, Selenium, TDD, Unit Testing) → use term + add "Testing"
-- OOP concepts (Inheritance, Design Patterns, SOLID) → use term + add "OOP"
-- DSA concepts (Algorithms, Data Structures, Big O) → use term + add "DSA"
-
-${requirementsText}
-
-Job Description:
-${jobDescription}
-
-Return ONLY a valid JSON array of strings. No markdown, no explanation.
-Example output for a React Developer role: ["React", "Frontend", "TypeScript", "Node.js", "Backend", "REST API", "PostgreSQL", "Databases", "Git", "Software Development"]`;
-
-  const result = await groq.chat.completions.create({
-    model: "llama-3.3-70b-versatile",
-    messages: [{ role: "user", content: prompt }],
-    temperature: 0.1,  
-    max_tokens: 200,  
-  });
-
-  const raw = result.choices[0].message.content.trim()
-    .replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-
-  return JSON.parse(raw);
+function enrichKeywords(keywords) {
+  return keywords.map(k => ({
+    name: k,
+    weight: SKILL_META[k]?.weight || 2,
+    type: SKILL_META[k]?.type || "basic",
+  }));
 }
 
-// MAIN EXPORT — tries local first, falls back to LLM
 
-const extractKeywords = async (jobTitle = "", jobDescription = "", requirements = []) => {
+// CLEAN KEYWORDS (REMOVE DUPES / GENERIC)
 
-  // Step 1 — Try local extraction first 
-  const localKeywords = extractKeywordsLocally(jobTitle, requirements);
-  console.log(`🔍 Local extraction found ${localKeywords.length} keywords:`, localKeywords);
 
-  // If local found enough keywords — use them, skip LLM
+function cleanKeywords(keywords) {
+  const set = new Set(keywords);
 
-  // AFTER
+  if (set.has("React")) set.delete("Frontend");
+  if (set.has("Node.js")) set.delete("Backend");
+
+  return [...set];
+}
+
+//  MAIN FUNCTION
+
+
+async function extractKeywords(jobTitle = "", jobDescription = "", requirements = []) {
+  // Local extraction
+  let localKeywords = extractKeywordsLocally(jobTitle, requirements);
+  console.log("🔍 Local keywords:", localKeywords);
+
   const titleMatched = Object.keys(TITLE_KEYWORD_MAP)
-    .some(k => jobTitle.toLowerCase().includes(k));
+    .some(k => matchesKey(jobTitle.toLowerCase(), k));
 
+  // If local extraction is strong enough, return
   if (titleMatched && localKeywords.length >= 4) {
-    console.log("Local extraction sufficient — 0 API calls used");
-    return localKeywords;
+    console.log("Using local extraction");
+    const cleaned = cleanKeywords(localKeywords);
+    return enrichKeywords(cleaned);
   }
 
-  // Step 2 — Title not recognized or insufficient keywords — fall back to LLM
-  console.log(`Title not recognized or insufficient keywords — falling back to LLM`);
-  // if (localKeywords.length >= 4) {
-  //   console.log(" Local extraction sufficient — 0 API calls used");
-  //   return localKeywords;
-  // }
+  // 3️⃣ Otherwise, use LLM fallback
+  console.log(" Falling back to LLM for keyword extraction");
 
-  // // Step 2 — Local didn't find enough, fall back to LLM
-  // console.log(`Only ${localKeywords.length} keywords locally — falling back to LLM`);
-  const llmKeywords = await extractKeywordsViaLLM(jobDescription, requirements);
-  console.log(`LLM extraction found ${llmKeywords.length} keywords:`, llmKeywords);
+  const prompt = `Extract key skills and technologies from the following job posting.
 
-  // Merge both — local + LLM, deduplicated
-  const merged = [...new Set([...localKeywords, ...llmKeywords])];
-  console.log(`🔀 Merged keywords (${merged.length}):`, merged);
+Job Title: ${jobTitle}
+Job Description: ${jobDescription}
+Requirements: ${requirements.slice(0, 10).join(", ")}
 
-  return merged;
+Return a JSON array of objects with:
+- "name": skill name
+- "weight": importance (1-5)
+- "type": one of "core", "support", "basic"
+
+Include all relevant skills. Merge duplicates by importance.`;
+
+  try {
+    const result = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.7,
+    });
+
+    let llmKeywords = [];
+    const raw = result.choices[0].message.content.trim()
+      .replace(/```json\n?/g, "")
+      .replace(/```\n?/g, "")
+      .trim();
+
+    try {
+      llmKeywords = JSON.parse(raw);
+      console.log("💡 LLM keywords:", llmKeywords);
+    } catch (err) {
+      console.warn("⚠️ Failed to parse LLM keywords, using local only");
+      llmKeywords = [];
+    }
+
+    // Merge local + LLM keywords, dedupe by name (keep max weight)
+    const mergedMap = new Map();
+    [...localKeywords.map(k => enrichKeywords([k])[0]), ...llmKeywords].forEach(k => {
+      if (!mergedMap.has(k.name) || mergedMap.get(k.name).weight < k.weight) {
+        mergedMap.set(k.name, k);
+      }
+    });
+
+    const merged = cleanKeywords(Array.from(mergedMap.values()).map(k => k.name))
+      .map(name => mergedMap.get(name));
+
+    return merged;
+
+  } catch (err) {
+    console.error("LLM keyword extraction failed:", err.message);
+    // fallback: return enriched local keywords only
+    const cleaned = cleanKeywords(localKeywords);
+    return enrichKeywords(cleaned);
+  }
 }
+
 
 module.exports = { extractKeywords };

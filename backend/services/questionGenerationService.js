@@ -15,6 +15,18 @@ function getSignificantWords(text) {
   );
 }
 
+function dedupeKeywords(weightedKeywords) {
+  const map = new Map();
+
+  weightedKeywords.forEach(k => {
+    if (!map.has(k.name) || map.get(k.name).weight < k.weight) {
+      map.set(k.name, k);
+    }
+  });
+
+  return Array.from(map.values());
+}
+
 // Helper: check if two questions are too similar
 function isTooSimilar(q1, q2, threshold = 0.4) {
   const words1 = getSignificantWords(q1);
@@ -62,6 +74,12 @@ async function searchQuestionBank(keywords, jobId) {
 }
 
 // STEP 2: Generate ONLY missing questions 
+function convertToWeightedKeywords(keywords) {
+  return keywords.map((k, index) => ({
+    name: k,
+    weight: keywords.length - index, // simple priority (can improve later)
+  }));
+}
 
 async function generateMissingQuestions(jobDescription, requirements, keywords, found) {
   const gaps = [];
@@ -80,29 +98,57 @@ async function generateMissingQuestions(jobDescription, requirements, keywords, 
   const existingQuestions = [...found.easy, ...found.medium, ...found.hard]
     .map(q => q.question).join("\n- ");
 
-  const prompt = `Generate interview questions for this job posting.
+const weightedKeywordsText = keywords
+  .map(k => `${k.name} (priority: ${k.weight})`)
+  .join(", ");
+
+const prompt = `Generate interview questions for this job posting.
 
 Job Description: ${jobDescription}
-Key Skills: ${keywords.join(", ")}
-Requirements: ${requirements.slice(0, 5).join(", ")}
+
+Key Skills (with priority):
+${weightedKeywordsText}
+
+Requirements:
+${requirements.slice(0, 5).join(", ")}
 
 Generate exactly:
 ${gapList}
 
-IMPORTANT: Do NOT generate questions similar to these existing ones:
+IMPORTANT RULES:
+
+1. PRIORITY-BASED DISTRIBUTION:
+- Higher priority skills MUST have MORE questions
+- Lower priority skills should have FEWER questions
+- Do NOT distribute evenly
+
+Example:
+If React (5), Node.js (4), MongoDB (2)
+→ Generate more React questions than Node.js, and very few MongoDB
+
+2. RELEVANCE:
+- Every question MUST relate to at least one key skill
+- Avoid generic or unrelated questions
+
+3. AVOID DUPLICATES:
+Do NOT generate questions similar to:
 - ${existingQuestions}
 
-Difficulty guide:
-- easy: basic concepts, definitions, junior level
-- medium: practical application, requires explanation, mid level
-- hard: system design, architecture, deep expertise, senior level
+4. DIFFICULTY GUIDE:
+- easy: basic concepts, definitions
+- medium: practical application
+- hard: system design, deep expertise
+
+5. TAGGING RULE:
+- Tags MUST include the main skill (e.g., React, Node.js)
+- Include both broad + specific tags
 
 Return ONLY a JSON array. Each object must have:
 - "question": string
 - "difficulty": "easy" | "medium" | "hard"
 - "category": "Technical" | "Behavioral" | "Situational" | "HR"
-- "tags": array of 3-6 keywords (broad + specific, e.g. ["React", "Frontend", "Hooks"])
-- "briefAnswer": one sentence summary of the expected answer
+- "tags": array of 3-6 keywords
+- "briefAnswer": one sentence summary
 
 No markdown, no explanation.`;
 
@@ -142,57 +188,70 @@ No markdown, no explanation.`;
 // MAIN: Called when manager creates a job
 
 async function populateJobQuestions(jobId, jobTitle, jobDescription, requirements = []) {
-  console.log(`\n Populating questions for job ${jobId}`);
+  console.log(`\n🔹 Populating questions for job ${jobId}`);
 
   try {
-    // Check if keywords already saved
+    // Fetch existing job keywords
+ 
     const job = await prisma.job.findUnique({
-      where:  { id: jobId },
-      select: { keywords: true }
+      where: { id: jobId },
+      select: { keywords: true },
     });
 
-    let keywords;
+    let keywordNames = [];
+    let weightedKeywords = [];
 
-    if (job.keywords && job.keywords.length > 0) {
-      
-      keywords = job.keywords;
-      console.log(" Reusing saved keywords:", keywords);
+    if (job?.keywords?.length > 0) {
+      // ✅ Reuse saved keywords
+      keywordNames = job.keywords;
+      weightedKeywords = convertToWeightedKeywords(keywordNames);
+      console.log("🔑 Reusing saved keywords:", keywordNames);
     } else {
-      // Extract and save
-      keywords = await extractKeywords(jobTitle, jobDescription, requirements);
+      // Extract new keywords
+      let extracted = await extractKeywords(jobTitle, jobDescription, requirements);
+
+      // Deduplicate based on name & weight
+      extracted = dedupeKeywords(extracted);
+
+      // Save only unique names in DB
+      keywordNames = Array.from(new Set(extracted.map(k => k.name)));
+
       await prisma.job.update({
         where: { id: jobId },
-        data:  { keywords }
+        data: { keywords: keywordNames }, 
       });
-      console.log("Keywords saved:");
+
+      console.log(" Extracted & saved keywords:", keywordNames);
+
+      // Use extracted as weighted for generation
+      weightedKeywords = extracted;
     }
+    // Search question bank for this job
+   
+    const found = await searchQuestionBank(keywordNames, jobId);
+    console.log(
+      `📚 Found questions — easy: ${found.easy.length}, medium: ${found.medium.length}, hard: ${found.hard.length}`
+    );
 
-    // Search bank
-    // const found = await searchQuestionBank(keywords, jobId);
-    // console.log(` Found — easy: ${found.easy.length}, medium: ${found.medium.length}, hard: ${found.hard.length}`);
+    // Generate missing questions
+    const generated = await generateMissingQuestions(
+      jobDescription,
+      requirements,
+      weightedKeywords,
+      found
+    );
 
-    // // Fill gaps
-    // const generated = await generateMissingQuestions(jobDescription, requirements, keywords, found);
+    // Combine all questions
 
-    // // Combine all
-    // const allQuestions = [
-    //   ...found.easy,
-    //   ...found.medium,
-    //   ...found.hard,
-    //   ...generated,
-    // ];
+    const allQuestions = [
+      ...found.easy,
+      ...found.medium,
+      ...found.hard,
+      ...generated,
+    ];
 
-// Always generate fresh from LLM — skip bank search
-    const generated = await generateMissingQuestions(jobDescription, requirements, keywords, {
-      easy:   [],
-      medium: [],
-      hard:   [],
-    });
+    // Link questions to job
 
-    const allQuestions = [...generated];
-
-
-    // Link to job
     await prisma.jobQuestion.createMany({
       data: allQuestions.map(q => ({
         jobId,
@@ -202,15 +261,14 @@ async function populateJobQuestions(jobId, jobTitle, jobDescription, requirement
       skipDuplicates: true,
     });
 
-    console.log(` ${allQuestions.length} questions linked to job ${jobId}\n`);
+    console.log(`${allQuestions.length} questions linked to job ${jobId}\n`);
     return allQuestions;
 
   } catch (err) {
     console.error(` populateJobQuestions failed for job ${jobId}:`, err.message);
+    throw err; 
   }
 }
-
-// Manager regenerates a question
 
 async function regenerateQuestion(jobId, oldQuestionId, jobDescription, requirements = []) {
   const oldQuestion = await prisma.questionBank.findUnique({
