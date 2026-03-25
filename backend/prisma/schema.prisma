@@ -55,7 +55,7 @@ model Job {
   applications   Application[]
   creator        User           @relation("JobCreator", fields: [createdBy], references: [id])
   details        JobDetails?
-  jobQuestions   JobQuestion[]
+  JobQuestion    JobQuestion[]
   posters        User[]         @relation("JobPosters")
 }
 
@@ -67,7 +67,7 @@ model JobDetails {
   experienceLevel  Int
   salaryMin        Int
   salaryMax        Int
-  jdEmbedding      Float[]
+  jdEmbedding Float[]
   job              Job      @relation(fields: [jobId], references: [id])
 }
 
@@ -114,18 +114,18 @@ model Resume {
 }
 
 model Application {
-  id                 Int               @id @default(autoincrement())
-  candidateId        Int
-  jobId              Int
-  resumeId           Int
-  status             ApplicationStatus @default(pending)
-  appliedAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  candidateEmbedding Float[]
+  id          Int               @id @default(autoincrement())
+  candidateId Int
+  jobId       Int
+  resumeId    Int
+  status      ApplicationStatus @default(pending)
+  appliedAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   score              Float?
-  candidate          Candidate         @relation(fields: [candidateId], references: [id])
-  job                Job               @relation(fields: [jobId], references: [id])
-  resume             Resume            @relation(fields: [resumeId], references: [id])
+  candidateEmbedding Float[]
+  candidate   Candidate         @relation(fields: [candidateId], references: [id])
+  job         Job               @relation(fields: [jobId], references: [id])
+  resume      Resume            @relation(fields: [resumeId], references: [id])
 
   @@unique([candidateId, jobId])
 }
@@ -133,22 +133,22 @@ model Application {
 model QuestionBank {
   id           Int           @id @default(autoincrement())
   question     String        @unique
-  briefAnswer  String?
-  difficulty   String
-  category     String
+  briefAnswer String? 
+  difficulty   String        
+  category     String        
   tags         String[]
   createdAt    DateTime      @default(now())
+
   jobQuestions JobQuestion[]
 }
-
 model JobQuestion {
-  id         Int               @id @default(autoincrement())
-  jobId      Int
-  questionId Int
-  status     JobQuestionStatus @default(pending)
-  addedAt    DateTime          @default(now())
-  job        Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  question   QuestionBank      @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  id           Int               @id @default(autoincrement())
+  jobId        Int
+  questionId   Int
+  status       JobQuestionStatus @default(pending)
+  addedAt      DateTime          @default(now())
+  Job          Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  QuestionBank QuestionBank      @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@unique([jobId, questionId])
 }
