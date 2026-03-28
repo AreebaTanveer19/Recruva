@@ -309,40 +309,48 @@ async function extractKeywords(jobTitle = "", jobDescription = "", requirements 
   // 3️⃣ Otherwise, use LLM fallback
   console.log(" Falling back to LLM for keyword extraction");
 
-  const prompt = `Extract key skills and technologies from the following job posting.
+ const prompt = `Extract key skills and technologies.
+
+STRICT RULES:
+- Return ONLY valid JSON
+- Do NOT include any explanation
+- Do NOT include markdown or code blocks
+- Do NOT include text before or after JSON
+
+Format:
+[
+  { "name": "React", "weight": 5, "type": "core" }
+]
 
 Job Title: ${jobTitle}
 Job Description: ${jobDescription}
 Requirements: ${requirements.slice(0, 10).join(", ")}
-
-Return a JSON array of objects with:
-- "name": skill name
-- "weight": importance (1-5)
-- "type": one of "core", "support", "basic"
-
-Include all relevant skills. Merge duplicates by importance.`;
-
+`;
   try {
     const result = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
     });
+let llmKeywords = [];
+const rawContent = result.choices[0].message.content;
 
-    let llmKeywords = [];
-    const raw = result.choices[0].message.content.trim()
-      .replace(/```json\n?/g, "")
-      .replace(/```\n?/g, "")
-      .trim();
+try {
+  // 🔥 Extract ONLY JSON array from response
+  const match = rawContent.match(/\[\s*{[\s\S]*}\s*\]/);
 
-    try {
-      llmKeywords = JSON.parse(raw);
-      console.log("💡 LLM keywords:", llmKeywords);
-    } catch (err) {
-      console.warn("⚠️ Failed to parse LLM keywords, using local only");
-      llmKeywords = [];
-    }
+  if (!match) {
+    throw new Error("No valid JSON array found");
+  }
 
+  llmKeywords = JSON.parse(match[0]);
+
+  console.log("💡 LLM keywords:", llmKeywords);
+
+} catch (err) {
+  console.warn("⚠️ Failed to parse LLM keywords, using local only");
+  llmKeywords = [];
+}
     // Merge local + LLM keywords, dedupe by name (keep max weight)
     const mergedMap = new Map();
     [...localKeywords.map(k => enrichKeywords([k])[0]), ...llmKeywords].forEach(k => {

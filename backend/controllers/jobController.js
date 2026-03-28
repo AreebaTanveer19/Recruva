@@ -1,4 +1,4 @@
-const prisma = require("../config/db");
+const prisma = require('../config/db');
 const { extractKeywords } = require("../services/extractKeywordsService");
 
 const createJob = async (req, res) => {
@@ -44,16 +44,18 @@ const createJob = async (req, res) => {
       include: { details: true } 
     });
 
-     const keywords = await extractKeywords(
-      job.title,
-      job.details.description,
-      job.details.requirements
-    );
+    const keywordObjects = await extractKeywords(
+  job.title,
+  job.details.description,
+  job.details.requirements
+);
 
-    await prisma.job.update({
-      where: { id: job.id },
-      data:  { keywords }
-    });
+const keywordNames = keywordObjects.map(k => k.name);
+
+await prisma.job.update({
+  where: { id: job.id },
+  data: { keywords: keywordNames }
+});
 
     res.status(201).json({
       message: "Job created successfully",
@@ -218,7 +220,134 @@ const addJobPoster = async (req, res) => {
   }
 };
 
+const getJobById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const job = await prisma.job.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        details: true, 
+      },
+    });
+
+    if (!job) {
+      return res.status(404).json({ message: "Job not found" });
+    }
+
+    // Flatten details
+    const jobWithFlatDetails = job.details
+      ? { ...job, ...job.details, details: undefined }
+      : job;
+
+    res.status(200).json({
+      message: "Job retrieved successfully",
+      job: jobWithFlatDetails,
+    });
+  } catch (error) {
+    console.error("Error fetching job:", error);
+    res.status(500).json({ error: "Failed to fetch job" });
+  }
+};
+
+const editJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    const existingJob = await prisma.job.findUnique({
+      where: { id: Number(jobId) },
+      include: { details: true }
+    });
+
+    if (!existingJob) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+
+    const {
+      title,
+      department,
+      location,
+      employmentType,
+      workMode,
+      status,
+      deadline,
+      description,
+      requirements,
+      responsibilities,
+      experienceLevel,
+      salaryMin,
+      salaryMax
+    } = req.body;
+
+    // ✅ Build dynamic update object
+    const jobData = {};
+    if (title !== undefined) jobData.title = title;
+    if (department !== undefined) jobData.department = department;
+    if (location !== undefined) jobData.location = location;
+    if (employmentType !== undefined) jobData.employmentType = employmentType;
+    if (workMode !== undefined) jobData.workMode = workMode;
+    if (status !== undefined) jobData.status = status;
+    if (deadline !== undefined) {
+      jobData.deadline = deadline ? new Date(deadline) : null;
+    }
+
+    // ✅ Nested details update (only provided fields)
+    const detailsData = {};
+    if (description !== undefined) detailsData.description = description;
+    if (requirements !== undefined) detailsData.requirements = requirements;
+    if (responsibilities !== undefined) detailsData.responsibilities = responsibilities;
+    if (experienceLevel !== undefined) detailsData.experienceLevel = Number(experienceLevel);
+    if (salaryMin !== undefined) detailsData.salaryMin = Number(salaryMin);
+    if (salaryMax !== undefined) detailsData.salaryMax = Number(salaryMax);
+
+    if (Object.keys(detailsData).length > 0) {
+      jobData.details = {
+        update: detailsData
+      };
+    }
+
+    const updatedJob = await prisma.job.update({
+      where: { id: Number(jobId) },
+      data: jobData,
+      include: { details: true }
+    });
+
+   
+    if (title || description || requirements) {
+     const keywordObjects = await extractKeywords(
+  updatedJob.title,
+  updatedJob.details.description,
+  updatedJob.details.requirements
+);
 
 
+const keywordNames = keywordObjects.map(k => k.name);
 
-module.exports =  { createJob, getOpenJobs, getJobsPostedByHR, getJobsPendingForHR, addJobPoster };
+await prisma.job.update({
+  where: { id: updatedJob.id },
+  data: { keywords: keywordNames }
+});
+    }
+    const flattenedJob = {
+      ...updatedJob,
+      description: updatedJob.details?.description,
+      requirements: updatedJob.details?.requirements,
+      responsibilities: updatedJob.details?.responsibilities,
+      experienceLevel: updatedJob.details?.experienceLevel,
+      salaryMin: updatedJob.details?.salaryMin,
+      salaryMax: updatedJob.details?.salaryMax,
+      details: undefined,
+    };
+
+    res.status(200).json({
+      message: "Job updated successfully",
+      job: flattenedJob,
+    });
+
+  } catch (error) {
+    console.error("Error updating job:", error);
+    res.status(500).json({ error: "Failed to update job" });
+  }
+};
+
+module.exports =  { createJob, getOpenJobs, getJobsPostedByHR, getJobsPendingForHR, addJobPoster, editJob, getJobById };

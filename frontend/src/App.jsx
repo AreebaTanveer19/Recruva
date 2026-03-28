@@ -20,6 +20,7 @@ import InterviewsCalendar from "./pages/DEPT/Interview Scheduling/InterviewsCale
 import MyApplications from "./pages/candidate/MyApplications";
 import JobApplications from "./pages/HR/JobApplications";
 import InterviewSession from "./pages/DEPT/Interview Questions/interviewSession";
+import EditJob from "./pages/DEPT/Jobs/EditJob";
 
 function App() {
   return (
@@ -104,6 +105,7 @@ function App() {
           <Route path="jobs" element={<JobsPage />} />
           <Route path="jobs/createjob" element={<JobCreationForm />} />
           <Route path="open-jobs/:id" element={<JobDetails />} />
+          <Route path="edit-job/:id" element={<EditJob />} />
           <Route
             path="shortlisted-candidates"
             element={<ShortlistedCandidates />}

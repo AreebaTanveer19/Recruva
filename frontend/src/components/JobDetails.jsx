@@ -148,6 +148,14 @@ function JobDetails() {
                   Share to LinkedIn
                 </button>
               )}
+              {role === "DEPARTMENT" && (
+                <button
+                  onClick={() => navigate(`/dept/dashboard/edit-job/${job.id}`)}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 rounded-lg text-white font-semibold hover:bg-black transition"
+                >
+                  Edit Job
+                </button>
+              )}
             </div>
           </div>
         </div>

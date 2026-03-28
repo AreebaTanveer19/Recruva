@@ -1,11 +1,32 @@
 import { useForm } from "react-hook-form";
-import { useState, useEffect } from "react";
-import api from "../../../api";
+import { useState, useEffect, useRef } from "react";
 import alertDisplay from "../../../components/AlertDisplay";
+import api from "../../../api";
 
-const JobCreationForm = () => {
+const initialValues = {
+  title: "",
+  department: "",
+  location: "",
+  employmentType: "",
+  workMode: "",
+  description: "",
+  requirements: "",
+  responsibilities: "",
+  experienceLevel: 0,
+  salaryMin: 0,
+  salaryMax: 0,
+  deadline: "",
+};
+
+const JobCreationForm = ({
+  defaultValues = {},
+  onSubmit,
+  formTitle = "Create Job",
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alert, setAlert] = useState(null);
+
+  const lastDefaultValues = useRef(null); // track last values
 
   const {
     register,
@@ -14,82 +35,118 @@ const JobCreationForm = () => {
     formState: { errors, isValid },
   } = useForm({
     mode: "onChange",
+    defaultValues: { ...initialValues, ...defaultValues },
   });
 
+  // Reset only if defaultValues have actually changed
   useEffect(() => {
-    if (alert) {
-      const timer = setTimeout(() => setAlert(null), 5000);
-      return () => clearTimeout(timer);
+    const merged = { ...initialValues, ...defaultValues };
+    const last = lastDefaultValues.current;
+
+    if (!last || JSON.stringify(last) !== JSON.stringify(merged)) {
+      reset(merged);
+      lastDefaultValues.current = merged;
     }
-  }, [alert]);
+  }, [defaultValues, reset]);
 
   const showAlert = (alertObj) => {
     setAlert(alertObj);
-    setTimeout(() => {
-      setAlert(null);
-    }, 7000);
+    setTimeout(() => setAlert(null), 7000);
   };
+const internalSubmit = async (data) => {
+  setIsSubmitting(true);
+  try {
+    const processedData = {
+      ...data,
+      title: data.title.trim(),
+      department: data.department.trim(),
+      location: data.location.trim(),
+      description: data.description.trim(),
+      requirements: data.requirements.split(";").map((i) => i.trim()),
+      responsibilities: data.responsibilities.split(";").map((i) => i.trim()),
+      experienceLevel: parseInt(data.experienceLevel, 10),
+      salaryMin: parseInt(data.salaryMin, 10),
+      salaryMax: parseInt(data.salaryMax, 10),
+      deadline: data.deadline ? new Date(data.deadline) : null,
+    };
 
-  const onSubmit = async (data) => {
-    setIsSubmitting(true);
+    // Validate salary
+    if (processedData.salaryMin > processedData.salaryMax) {
+      showAlert({
+        type: "error",
+        title: "Error",
+        message: "Minimum salary cannot exceed maximum salary",
+      });
+      setIsSubmitting(false);
+      return;
+    }
 
-    try {
-      const processedData = {
-        ...data,
-        requirements: data.requirements.split(";").map((item) => item.trim()),
-        responsibilities: data.responsibilities
-          .split(";")
-          .map((item) => item.trim()),
-        experienceLevel: parseInt(data.experienceLevel, 10),
-        salaryMin: parseInt(data.salaryMin, 10),
-        salaryMax: parseInt(data.salaryMax, 10),
-        deadline: data.deadline ? new Date(data.deadline) : null,
-      };
-      
+    // Submit either via parent onSubmit or API directly
+    let successMessage = "";
+    if (onSubmit) {
+      await onSubmit(processedData);
+      successMessage = formTitle.includes("Edit") ? "Job updated successfully" : "Job created successfully";
+    } else {
       const token = localStorage.getItem("ACCESS_TOKEN");
-      console.log("Token", token);
       const res = await api.post("/createJob", processedData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (res.data.job) {
-        showAlert({
-          type: "success",
-          title: "Success",
-          message: "Job Created successfully",
-          color: "#a5d6a7",
-        });
-        reset();
+        successMessage = formTitle.includes("Edit") ? "Job updated successfully" : "Job created successfully";
       } else {
         showAlert({
           type: "error",
           title: "Error",
-          message: "Failed to create job",
+          message: res.data.error || "Failed to submit job",
         });
-        console.log(res.data.error);
+        setIsSubmitting(false);
+        return;
       }
-    } catch (err) {
-      console.error("Error creating job:", err);
-      showAlert({
-        type: "error",
-        title: "Error",
-        message: err.response?.data?.message || err.message || "Something went wrong",
-      });
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+
+    // Show success alert
+    showAlert({
+      type: "success",
+      title: "Success",
+      message: successMessage,
+      color: "#a5d6a7",
+    });
+
+    // Reset only for Create Job
+    if (!formTitle.includes("Edit")) {
+      reset({ ...initialValues });
+    } else {
+      // Keep current form values for Edit Job
+      reset({
+        ...data,
+        requirements: data.requirements,
+        responsibilities: data.responsibilities,
+      });
+    }
+
+  } catch (err) {
+    console.error(err);
+    showAlert({
+      type: "error",
+      title: "Error",
+      message: err.response?.data?.message || err.message || "Something went wrong",
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="min-h-screen py-7 px-4 sm:px-6 lg:px-8 bg-gray-50">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="bg-white shadow-lg border border-gray-200 rounded-t-lg px-8 py-6">
-          <h2 className="text-3xl font-bold text-gray-900">Create Job</h2>
+          <h2 className="text-3xl font-bold text-gray-900">{formTitle}</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Fill in the details below to create a new job opening
+            {formTitle.includes("Edit")
+              ? "Update the details of this job opening below"
+              : "Fill in the details below to create a new job opening"}
           </p>
         </div>
 
@@ -102,7 +159,7 @@ const JobCreationForm = () => {
 
         {/* Form */}
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={handleSubmit(internalSubmit)}
           className="bg-white shadow-lg border border-gray-200 rounded-b-lg px-8 py-8 space-y-6"
         >
           {/* Basic Information Section */}
@@ -122,7 +179,9 @@ const JobCreationForm = () => {
                   className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
                 />
                 {errors.title && (
-                  <p className="text-red-500 text-sm mt-1.5">Title is required</p>
+                  <p className="text-red-500 text-sm mt-1.5">
+                    Title is required
+                  </p>
                 )}
               </div>
 
@@ -277,7 +336,6 @@ const JobCreationForm = () => {
                   </p>
                 )}
               </div>
-
             </div>
           </div>
 
@@ -289,7 +347,8 @@ const JobCreationForm = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-900 mb-2">
-                  Experience Level (years) <span className="text-red-500">*</span>
+                  Experience Level (years){" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -364,7 +423,7 @@ const JobCreationForm = () => {
           <div className="pt-6 border-t border-gray-200">
             <button
               type="submit"
-              disabled={!isValid || isSubmitting}
+              disabled={isSubmitting}
               className={`w-full py-3.5 rounded-md font-semibold text-white transition-all duration-200 ${
                 isValid && !isSubmitting
                   ? "bg-gray-900 hover:bg-gray-800 shadow-sm hover:shadow-md"
@@ -374,10 +433,12 @@ const JobCreationForm = () => {
               {isSubmitting ? (
                 <span className="flex items-center justify-center">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Creating Job...
+                  {formTitle.includes("Edit")
+                    ? "Updating Job..."
+                    : "Creating Job..."}
                 </span>
               ) : (
-                "Create Job Posting"
+                formTitle
               )}
             </button>
           </div>

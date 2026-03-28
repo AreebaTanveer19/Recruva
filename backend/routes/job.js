@@ -1,5 +1,5 @@
 const express = require("express");
-const {createJob,getOpenJobs, getJobsPendingForHR, getJobsPostedByHR,addJobPoster} = require("../controllers/jobController");
+const {createJob,getOpenJobs, getJobsPendingForHR, getJobsPostedByHR,addJobPoster, editJob, getJobById} = require("../controllers/jobController");
 const { auth } = require("../middleware/auth");
 const roleCheck = require("../middleware/role");
 const router = express.Router();
@@ -9,6 +9,7 @@ router.get("/openJobs", auth, getOpenJobs);
 router.get("/posted-jobs", auth , roleCheck("HR"),getJobsPostedByHR);
 router.get("/pending-post", auth, roleCheck("HR"), getJobsPendingForHR);
 router.post("/add-poster", auth, addJobPoster);
-
+router.patch("/edit-job/:jobId", auth, roleCheck("DEPARTMENT"), editJob);
+router.get("/openJob/:id" ,getJobById);
 
 module.exports = router;
