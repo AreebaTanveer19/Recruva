@@ -10,6 +10,6 @@ router.get("/posted-jobs", auth , roleCheck("HR"),getJobsPostedByHR);
 router.get("/pending-post", auth, roleCheck("HR"), getJobsPendingForHR);
 router.post("/add-poster", auth, addJobPoster);
 router.patch("/edit-job/:jobId", auth, roleCheck("DEPARTMENT"), editJob);
-router.get("/openJob/:id" ,getJobById);
+router.get("/openJob/:id" , auth ,getJobById);
 
 module.exports = router;
