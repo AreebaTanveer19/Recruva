@@ -27,6 +27,36 @@ function dedupeKeywords(weightedKeywords) {
   return Array.from(map.values());
 }
 
+async function filterRelevantQuestions(questions, jobTitle, jobDescription, requirements) {
+  if (questions.length === 0) return [];
+
+  const prompt = `You are a technical interviewer. Given a job posting, decide which questions are truly relevant.
+
+Job Title: ${jobTitle}
+Job Description: ${jobDescription}
+Requirements: ${requirements.slice(0, 5).join(", ")}
+
+Questions to evaluate:
+${JSON.stringify(questions.map(q => ({ id: q.id, question: q.question, tags: q.tags })))}
+
+Return ONLY a JSON array of IDs that are relevant to this specific job.
+Example: [1, 3, 5]
+No markdown, no explanation.`;
+
+  const result = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0.2, // low temp — this is a filtering decision, not creative
+  });
+
+  const raw = result.choices[0].message.content.trim()
+    .replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+  const relevantIds = new Set(JSON.parse(raw));
+  return questions.filter(q => relevantIds.has(q.id));
+}
+
+
 // Helper: check if two questions are too similar
 function isTooSimilar(q1, q2, threshold = 0.4) {
   const words1 = getSignificantWords(q1);
@@ -228,25 +258,48 @@ async function populateJobQuestions(jobId, jobTitle, jobDescription, requirement
     }
     // Search question bank for this job
    
-    const found = await searchQuestionBank(keywordNames, jobId);
-    console.log(
-      `📚 Found questions — easy: ${found.easy.length}, medium: ${found.medium.length}, hard: ${found.hard.length}`
-    );
+    // const found = await searchQuestionBank(keywordNames, jobId);
+    // console.log(
+    //   `📚 Found questions — easy: ${found.easy.length}, medium: ${found.medium.length}, hard: ${found.hard.length}`
+    // );
 
-    // Generate missing questions
-    const generated = await generateMissingQuestions(
-      jobDescription,
-      requirements,
-      weightedKeywords,
-      found
-    );
+    // // Generate missing questions
+    // const generated = await generateMissingQuestions(
+    //   jobDescription,
+    //   requirements,
+    //   weightedKeywords,
+    //   found
+    // );
+
+    const found = await searchQuestionBank(keywordNames, jobId);
+console.log(`📚 Found questions — easy: ${found.easy.length}, medium: ${found.medium.length}, hard: ${found.hard.length}`);
+
+// ✅ NEW: Filter bank results for job relevance
+const allFound = [...found.easy, ...found.medium, ...found.hard];
+const relevant = await filterRelevantQuestions(allFound, jobTitle, jobDescription, requirements);
+
+const filteredFound = {
+  easy:   deduplicateQuestions(relevant.filter(q => q.difficulty === "easy"),   QUESTIONS_PER_DIFFICULTY),
+  medium: deduplicateQuestions(relevant.filter(q => q.difficulty === "medium"), QUESTIONS_PER_DIFFICULTY),
+  hard:   deduplicateQuestions(relevant.filter(q => q.difficulty === "hard"),   QUESTIONS_PER_DIFFICULTY),
+};
+
+console.log(`✅ Relevant after filtering — easy: ${filteredFound.easy.length}, medium: ${filteredFound.medium.length}, hard: ${filteredFound.hard.length}`);
+
+// Pass filteredFound instead of found
+const generated = await generateMissingQuestions(
+  jobDescription,
+  requirements,
+  weightedKeywords,
+  filteredFound  // ← was `found`
+);
 
     // Combine all questions
 
     const allQuestions = [
-      ...found.easy,
-      ...found.medium,
-      ...found.hard,
+      ...filteredFound.easy,
+      ...filteredFound.medium,
+      ...filteredFound.hard,
       ...generated,
     ];
 

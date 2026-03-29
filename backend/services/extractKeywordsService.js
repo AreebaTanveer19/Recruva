@@ -103,7 +103,6 @@ const TITLE_KEYWORD_MAP = {
   "android": [
     { name: "Android", weight: 1.0 },
     { name: "Kotlin", weight: 0.9 },
-    { name: "Java", weight: 0.7 },
   ],
   "ios": [
     { name: "iOS", weight: 1.0 },
