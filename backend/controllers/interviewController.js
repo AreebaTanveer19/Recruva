@@ -398,6 +398,21 @@ const getFilteredInterviews = async (req, res) => {
   }
 };
 
+const getCalendarStatus = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { googleRefreshToken: true },
+    });
+
+    res.status(200).json({
+      connected: !!user?.googleRefreshToken,
+    });
+  } catch (err) {
+    res.status(500).json({ connected: false });
+  }
+};
+
 module.exports = {
   googleAuth,
   googleRedirect,
@@ -405,5 +420,6 @@ module.exports = {
   disconnectCalendar,
   getAllInterviews,
   getInterviewById,
-  getFilteredInterviews
+  getFilteredInterviews,
+  getCalendarStatus
 };

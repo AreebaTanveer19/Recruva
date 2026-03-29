@@ -88,24 +88,51 @@ export default function ShortlistedCandidates() {
   };
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(window.location.search);
 
-    if (params.get("calendar") === "connected") {
-      localStorage.setItem("calendarConnected", "true");
-      setCalendarStatus("connected");
-      window.history.replaceState({}, "", window.location.pathname);
-    } else if (localStorage.getItem("calendarConnected")) {
-      setCalendarStatus("connected");
+  // Just came back from OAuth redirect
+  if (params.get("calendar") === "connected") {
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+
+  // Always check status from DB
+  const checkStatus = async () => {
+    try {
+      const token = localStorage.getItem(ACCESS_TOKEN);
+      const res = await api.get("/interview/calendar-status", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCalendarStatus(res.data.connected ? "connected" : "idle");
+    } catch (err) {
+      console.error("Failed to check calendar status", err);
+      setCalendarStatus("idle");
     }
-  }, []);
+  };
+
+  checkStatus();
+}, []);
+  // useEffect(() => {
+  //   const params = new URLSearchParams(window.location.search);
+
+  //   if (params.get("calendar") === "connected") {
+  //     localStorage.setItem("calendarConnected", "true");
+  //     setCalendarStatus("connected");
+  //     window.history.replaceState({}, "", window.location.pathname);
+  //   } else if (localStorage.getItem("calendarConnected")) {
+  //     setCalendarStatus("connected");
+  //   }
+  // }, []);
 
   // Open modal
   const handleScheduleClick = (candidate) => {
-    if (!localStorage.getItem("calendarConnected")) {
-      alert("Please connect Google Calendar first");
-      return;
-    }
-
+    // if (!localStorage.getItem("calendarConnected")) {
+    //   alert("Please connect Google Calendar first");
+    //   return;
+    // }
+if (calendarStatus !== "connected") {
+    alert("Please connect Google Calendar first");
+    return;
+  }
     setSelectedCandidate(candidate);
     setOpenModal(true);
   };
@@ -169,7 +196,7 @@ export default function ShortlistedCandidates() {
       if (data.success) {
         alert("Google Calendar disconnected successfully!");
         setCalendarStatus("idle");
-        localStorage.removeItem("calendarConnected");
+       // localStorage.removeItem("calendarConnected");
       } else {
         alert(data.message || "Failed to disconnect Google Calendar");
       }
