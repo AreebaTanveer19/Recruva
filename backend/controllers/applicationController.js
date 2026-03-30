@@ -335,6 +335,80 @@ const checkHasPreviousResume = async (req, res) => {
 };
 
 /**
+ * Generate experience summary from candidate's work experience and projects
+ * Merges key roles, technologies, and achievements into a concise 2-3 sentence summary
+ */
+function generateExperienceSummary(cvData) {
+  const experience = Array.isArray(cvData.work_experience) ? cvData.work_experience : [];
+  const projects = Array.isArray(cvData.projects) ? cvData.projects : [];
+  
+  if (experience.length === 0 && projects.length === 0) {
+    return '';
+  }
+
+  const summaryParts = [];
+
+  // Extract key roles and companies from experience
+  if (experience.length > 0) {
+    const recentExperience = experience.slice(0, 2);
+    const roles = recentExperience
+      .map(exp => exp.role || exp.position || '')
+      .filter(Boolean);
+    
+    const companies = recentExperience
+      .map(exp => exp.company || '')
+      .filter(Boolean);
+
+    if (roles.length > 0) {
+      const roleStr = roles.length > 1 ? roles.join(', ') : roles[0];
+      const companyStr = companies.length > 0 ? ` at ${companies.join(', ')}` : '';
+      summaryParts.push(`${roleStr}${companyStr}`);
+    }
+  }
+
+  // Extract key technologies from projects and experience
+  const technologies = new Set();
+  
+  experience.forEach(exp => {
+    if (exp.technologies && typeof exp.technologies === 'string') {
+      exp.technologies.split(',').forEach(tech => technologies.add(tech.trim()));
+    }
+  });
+  
+  projects.forEach(proj => {
+    if (proj.technologies && typeof proj.technologies === 'string') {
+      proj.technologies.split(',').forEach(tech => technologies.add(tech.trim()));
+    }
+  });
+
+  const techArray = Array.from(technologies).slice(0, 5);
+  if (techArray.length > 0) {
+    summaryParts.push(`proficient in ${techArray.join(', ')}`);
+  }
+
+  // Extract key project achievements
+  if (projects.length > 0) {
+    const recentProject = projects[0];
+    const projectName = recentProject.title || recentProject.name || '';
+    if (projectName) {
+      summaryParts.push(`developed ${projectName}`);
+    }
+  }
+
+  // Combine into a concise summary (2-3 sentences)
+  if (summaryParts.length === 0) return '';
+  
+  let summary = summaryParts[0];
+  if (summaryParts.length >= 2) {
+    summary += '. ' + summaryParts.slice(1).join(', ') + '.';
+  } else {
+    summary += '.';
+  }
+
+  return summary.substring(0, 500); // Limit to 500 characters
+}
+
+/**
  * Convert profile CvData to text for LLM parsing
  */
 function convertProfileToText(cvData) {
@@ -470,7 +544,18 @@ const applyWithProfileData = async (req, res) => {
     // Convert profile data to text and parse with LLM
     const profileText = convertProfileToText(cvData);
     const parsedData = await parseCVWithLLM(profileText);
-    const normalizedParsedData = normalizeParsedResumeData(parsedData);
+    let normalizedParsedData = normalizeParsedResumeData(parsedData);
+
+    // Ensure experience summary is included by merging candidate's work_experience and projects
+    const generatedSummary = generateExperienceSummary(cvData);
+    if (generatedSummary && !normalizedParsedData.experienceSummary) {
+      normalizedParsedData.experienceSummary = generatedSummary;
+    } else if (generatedSummary && normalizedParsedData.experienceSummary) {
+      // If both LLM and generated summary exist, prefer LLM but fallback to generated if LLM is too short
+      if (normalizedParsedData.experienceSummary.length < 50) {
+        normalizedParsedData.experienceSummary = generatedSummary;
+      }
+    }
 
     const uploadResult = await uploadProfileSnapshot({
       candidateId,

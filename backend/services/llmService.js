@@ -20,7 +20,8 @@ async function parseCVWithLLM(cvText) {
   "experience": [{ "company": "", "position": "", "duration": "", "description": "" }],
   "skills": [""],
   "projects": [{ "name": "", "description": "", "technologies": "" }],
-  "certifications": [{ "name": "", "issuer": "", "date": "" }]
+  "certifications": [{ "name": "", "issuer": "", "date": "" }],
+  "experienceSummary": ""
 }
 
 Rules:
@@ -28,6 +29,7 @@ Rules:
 - Keep unknown fields as empty strings.
 - Keep missing sections as empty arrays.
 - Extract as many real values as possible from the resume text.
+- For experienceSummary: Create a concise (2-3 sentences) summary by merging key work experience and projects. Include roles, technologies, and achievements. Keep it professional and brief.
 
 Resume text:
 ${cleanCVText}`;
@@ -330,7 +332,8 @@ function getEmptyStructure() {
     experience: [],
     projects: [],
     skills: [],
-    certifications: []
+    certifications: [],
+    experienceSummary: ''
   };
 }
 
@@ -351,7 +354,8 @@ function getOrderedStructure(data) {
     skills: Array.isArray(safeData.skills)
       ? safeData.skills.map((skill) => String(skill).trim()).filter(Boolean)
       : [],
-    certifications: Array.isArray(safeData.certifications) ? safeData.certifications : []
+    certifications: Array.isArray(safeData.certifications) ? safeData.certifications : [],
+    experienceSummary: typeof safeData.experienceSummary === 'string' ? safeData.experienceSummary.trim() : ''
   };
 }
 

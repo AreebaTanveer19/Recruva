@@ -59,6 +59,7 @@ function normalizeParsedResumeData(parsedData) {
     projects: normalizeObjectArray(safeData.projects),
     skills: normalizeSkills(safeData.skills),
     certifications: normalizeObjectArray(safeData.certifications),
+    experienceSummary: toSafeString(safeData.experienceSummary),
   };
 }
 
