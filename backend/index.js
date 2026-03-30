@@ -13,6 +13,7 @@ const cvRoutes = require("./routes/cv");
 const resumeRoutes = require("./routes/resumeRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const questionGenerationRoutes = require("./routes/interviewQuestionGeneration");
+const jobScoringConfig = require("./routes/jobConfigScoring.js")
 const app = express();
 const port = process.env.PORT || 3000;
 const prisma = require("./config/db")
@@ -39,6 +40,7 @@ app.use("/api/cv", cvRoutes);
 app.use("/api/interview", interviewRoutes);
 app.use("/api/resume", resumeRoutes);
 app.use("/api/application", applicationRoutes);
+app.use("/api/job-scoring", jobScoringConfig)
 app.use("/api", questionGenerationRoutes);
 
 // Root endpoint
