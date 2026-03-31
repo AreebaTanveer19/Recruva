@@ -40,24 +40,24 @@ model Candidate {
 }
 
 model Job {
-  id             Int            @id @default(autoincrement())
+  id             Int               @id @default(autoincrement())
   title          String
   department     String
   location       String
   employmentType EmploymentType
   workMode       WorkMode
-  status         JobStatus      @default(Open)
+  status         JobStatus         @default(Open)
   createdBy      Int
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
   deadline       DateTime?
-  keywords       String[]       @default([])
+  keywords       String[]          @default([])
   applications   Application[]
-  creator        User           @relation("JobCreator", fields: [createdBy], references: [id])
+  creator        User              @relation("JobCreator", fields: [createdBy], references: [id])
   details        JobDetails?
   JobQuestion    JobQuestion[]
-  posters        User[]         @relation("JobPosters")
   scoringConfig  JobScoringConfig?
+  posters        User[]            @relation("JobPosters")
 }
 
 model JobDetails {
@@ -72,21 +72,18 @@ model JobDetails {
 }
 
 model JobScoringConfig {
-  id    Int @id @default(autoincrement())
-  jobId Int @unique
-
-  skillsWeight      Float @default(0.4)
-  experienceWeight  Float @default(0.4)
-  educationWeight   Float @default(0.2)
-
-  considerCGPA  Boolean @default(false)
-  minCGPA       Float?  
-
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  job  Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  id               Int      @id @default(autoincrement())
+  jobId            Int      @unique
+  skillsWeight     Float    @default(0.4)
+  experienceWeight Float    @default(0.4)
+  educationWeight  Float    @default(0.2)
+  considerCGPA     Boolean  @default(false)
+  minCGPA          Float?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  job              Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
+
 model CvData {
   id              Int       @id @default(autoincrement())
   phone           String?
@@ -102,7 +99,6 @@ model CvData {
 
 model Interview {
   id             Int             @id @default(autoincrement())
-  candidateName  String
   candidateEmail String
   jobId          Int?
   scheduledBy    Int
@@ -115,6 +111,7 @@ model Interview {
   status         InterviewStatus @default(scheduled)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  candidateName  String
   scheduler      User            @relation("UserScheduledInterviews", fields: [scheduledBy], references: [id])
 }
 
@@ -137,7 +134,8 @@ model Application {
   status      ApplicationStatus @default(pending)
   appliedAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
-  score              Float?
+  score       Float?
+  scoreBreakdown Json?
   candidate   Candidate         @relation(fields: [candidateId], references: [id])
   job         Job               @relation(fields: [jobId], references: [id])
   resume      Resume            @relation(fields: [resumeId], references: [id])
@@ -148,22 +146,22 @@ model Application {
 model QuestionBank {
   id           Int           @id @default(autoincrement())
   question     String        @unique
-  briefAnswer String? 
-  difficulty   String        
-  category     String        
+  briefAnswer  String?
+  difficulty   String
+  category     String
   tags         String[]
   createdAt    DateTime      @default(now())
-
   jobQuestions JobQuestion[]
 }
+
 model JobQuestion {
-  id           Int               @id @default(autoincrement())
-  jobId        Int
-  questionId   Int
-  status       JobQuestionStatus @default(pending)
-  addedAt      DateTime          @default(now())
-  job          Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  question QuestionBank      @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  id         Int               @id @default(autoincrement())
+  jobId      Int
+  questionId Int
+  status     JobQuestionStatus @default(pending)
+  addedAt    DateTime          @default(now())
+  job        Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  question   QuestionBank      @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@unique([jobId, questionId])
 }
