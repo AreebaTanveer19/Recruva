@@ -1,5 +1,6 @@
 const prisma = require('../config/db');
 const { extractKeywords } = require("../services/extractKeywordsService");
+const { storeJobEmbeddings } = require('../services/scoring/qdrantService');
 
 const createJob = async (req, res) => {
   try {
@@ -56,6 +57,11 @@ await prisma.job.update({
   where: { id: job.id },
   data: { keywords: keywordNames }
 });
+
+storeJobEmbeddings(job).catch(err =>
+  console.error('Failed to store job embeddings:', err)
+);
+
 
     res.status(201).json({
       message: "Job created successfully",
