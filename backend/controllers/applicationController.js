@@ -8,6 +8,7 @@ const {
   uploadProfileSnapshot,
 } = require('../services/resumeIngestionService');
 const { deleteResumeObject } = require('../services/supabaseStorageService');
+const { triggerApplicationScoring } = require('../services/scoring/triggerScoring');
 
 async function cleanupLocalUpload(file) {
   if (!file?.path) {
@@ -168,6 +169,8 @@ const applyWithExistingResume = async (req, res) => {
       },
     });
 
+    triggerApplicationScoring(application.id, resume.parsedData).catch(console.error);
+
     res.status(201).json({
       success: true,
       message: 'Application submitted successfully',
@@ -291,6 +294,8 @@ const applyWithNewResume = async (req, res) => {
 
       return application;
     });
+
+    triggerApplicationScoring(result.id, parsedData).catch(console.error);
 
     res.status(201).json({
       success: true,
@@ -590,6 +595,8 @@ const applyWithProfileData = async (req, res) => {
 
       return application;
     });
+
+    triggerApplicationScoring(result.id, normalizedParsedData).catch(console.error);
 
     res.status(201).json({
       success: true,
