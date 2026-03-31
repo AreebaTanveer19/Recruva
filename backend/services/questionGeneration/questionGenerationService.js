@@ -1,79 +1,19 @@
 const { PrismaClient } = require("@prisma/client");
 const Groq = require("groq-sdk");
 const { extractKeywords } = require("./extractKeywordsService");
+const  {
+  getSignificantWords,
+  dedupeKeywords,
+  convertToWeightedKeywords,
+  isTooSimilar,
+  deduplicateQuestions,
+  isQuestionDuplicate,
+} = require("./helperFunctions")
 
 const prisma = new PrismaClient();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const QUESTIONS_PER_DIFFICULTY = 5;
-
-// ─── Helper: extract significant words for similarity comparison ──
-function getSignificantWords(text) {
-  const stopWords = new Set([
-    "what", "is", "the", "a", "an", "of", "in", "and", "or", "how",
-    "do", "does", "can", "you", "for", "to", "are", "with", "this",
-    "that", "your", "explain", "describe", "define", "give", "between"
-  ]);
-  return new Set(
-    text.toLowerCase()
-      .replace(/[^a-z0-9\s]/g, "")
-      .split(/\s+/)
-      .filter(w => w.length > 2 && !stopWords.has(w))
-  );
-}
-
-// ─── Helper: deduplicate weighted keywords by name ────────────────
-function dedupeKeywords(weightedKeywords) {
-  const map = new Map();
-  weightedKeywords.forEach(k => {
-    if (!map.has(k.name) || map.get(k.name).weight < k.weight) {
-      map.set(k.name, k);
-    }
-  });
-  return Array.from(map.values());
-}
-
-// ─── Helper: convert keyword names to weighted format ─────────────
-function convertToWeightedKeywords(keywords) {
-  return keywords.map((k, index) => ({
-    name:   k,
-    weight: keywords.length - index,
-  }));
-}
-
-// ─── Helper: check if two questions are too similar ───────────────
-function isTooSimilar(q1, q2, threshold = 0.6) {
-  const words1  = getSignificantWords(q1);
-  const words2  = getSignificantWords(q2);
-  const smaller = Math.min(words1.size, words2.size);
-  if (smaller === 0) return false;
-  let overlap = 0;
-  for (const w of words1) { if (words2.has(w)) overlap++; }
-  return (overlap / smaller) >= threshold;
-}
-
-// ─── Helper: filter out similar questions, keeping first unique ───
-function deduplicateQuestions(questions, limit) {
-  const picked = [];
-  for (const q of questions) {
-    if (picked.length >= limit) break;
-    const isDuplicate = picked.some(p => isTooSimilar(p.question, q.question));
-    if (!isDuplicate) picked.push(q);
-  }
-  return picked;
-}
-
-// ─── Helper: check candidate against existing for similarity ──────
-function isQuestionDuplicate(newQuestion, existingSignificantWords) {
-  const newWords = getSignificantWords(newQuestion);
-  return existingSignificantWords.some(({ words }) => {
-    const smaller = Math.min(words.size, newWords.size);
-    if (smaller === 0) return false;
-    let overlap = 0;
-    for (const w of newWords) { if (words.has(w)) overlap++; }
-    return (overlap / smaller) >= 0.6;
-  });
-}
 
 // ─── Groq Call 1 (optional): Filter bank questions for relevance ──
 // Called in: populateJobQuestions (always), regenerateQuestion (only if bank alternative exists)
@@ -309,162 +249,6 @@ async function populateJobQuestions(jobId, jobTitle, jobDescription, requirement
   }
 }
 
-// ─── REGENERATE: Replace one question with a better one ───────────
-// Groq calls: 0-1 (bank alt check) + 1-3 (generation, 3 candidates per call)
-// Minimum: 0 calls (relevant bank alt found) | Maximum: 4 calls
-async function regenerateQuestion(jobId, oldQuestionId, jobDescription, requirements = []) {
-  const oldQuestion = await prisma.questionBank.findUnique({
-    where: { id: oldQuestionId },
-  });
-  if (!oldQuestion) throw new Error(`Question with id ${oldQuestionId} not found in bank`);
-
-  // Fetch job context
-  const job = await prisma.job.findUnique({
-    where:  { id: jobId },
-    select: { title: true, keywords: true, details: { select: { description: true, requirements: true } } },
-  });
-  if (!job) throw new Error(`Job with id ${jobId} not found`);
-
-  const jobTitle        = job.title;
-  const jobDesc         = jobDescription || job.details?.description || "";
-  const jobRequirements = requirements.length > 0 ? requirements : (job.details?.requirements || []);
-  const keywords        = job.keywords || [];
-
-  // ─── Try bank alternative first — 0 Groq calls ───────────────
-  const alternative = await prisma.questionBank.findFirst({
-    where: {
-      tags:         { hasSome: oldQuestion.tags },
-      difficulty:   oldQuestion.difficulty,
-      id:           { not: oldQuestionId },
-      jobQuestions: { none: { jobId } },
-    },
-  });
-
-  if (alternative) {
-    // 1 Groq call to verify relevance
-    const relevant = await filterRelevantQuestions([alternative], jobTitle, jobDesc, jobRequirements);
-    if (relevant.length > 0) {
-      console.log("Found relevant alternative in bank — 0 generation calls used");
-      await prisma.jobQuestion.update({
-        where: { jobId_questionId: { jobId, questionId: oldQuestionId } },
-        data:  { questionId: alternative.id },
-      });
-      return alternative;
-    }
-    console.log("Bank alternative not relevant — generating new question");
-  }
-
-  // Fetch existing questions for similarity check — DB only
-  const existingQuestions = await prisma.questionBank.findMany({
-    where:  { jobQuestions: { some: { jobId } } },
-    select: { question: true },
-  });
-
-  // Pre-extract significant words once outside loop
-  const existingSignificantWords = existingQuestions.map(q => ({
-    question: q.question,
-    words:    getSignificantWords(q.question),
-  }));
-
-  // Build existing summary once outside loop
-  const existingSummary = existingQuestions
-    .slice(0, 10)
-    .map(q => `- ${q.question}`)
-    .join("\n");
-
-  // ─── Generate 3 candidates per attempt, pick best locally ────
-  // Each attempt = 1 Groq call (instead of 2 with relevance check)
-  const MAX_RETRIES = 3;
-  let saved = null;
-
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    const prompt = `You are a technical interviewer. Generate 3 DIFFERENT replacement interview questions for this specific job.
-
-Job Title: ${jobTitle}
-Job Description: ${jobDesc}
-Key Skills: ${keywords.join(", ")}
-Requirements: ${jobRequirements.slice(0, 5).join(", ")}
-
-Difficulty: ${oldQuestion.difficulty}
-Tags to stay close to: ${oldQuestion.tags.join(", ")}
-
-STRICT RULES:
-1. All 3 questions MUST be directly relevant to this job
-2. Difficulty MUST stay: ${oldQuestion.difficulty}
-3. Each question MUST cover a DIFFERENT skill or sub-topic from each other
-4. Tags MUST include at least one of: ${keywords.slice(0, 5).join(", ")}
-5. Do NOT ask about the same concept as: "${oldQuestion.question}"
-6. Do NOT generate questions similar to these already linked to this job:
-${existingSummary}
-
-Return ONLY a JSON array of exactly 3 objects:
-[
-  {
-    "question": "...",
-    "difficulty": "${oldQuestion.difficulty}",
-    "category": "Technical" | "Behavioral" | "Situational" | "HR",
-    "tags": ["tag1", "tag2", ...],
-    "briefAnswer": "one sentence"
-  }
-]
-No markdown, no explanation.`;
-
-    const result = await groq.chat.completions.create({
-      model:       "llama-3.3-70b-versatile",
-      messages:    [{ role: "user", content: prompt }],
-      temperature: Math.min(0.9 + (attempt * 0.1), 1.2), // ramp up creativity per retry
-    });
-
-    const raw = result.choices[0].message.content.trim()
-      .replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-
-    let candidates;
-    try {
-      candidates = JSON.parse(raw);
-      if (!Array.isArray(candidates)) candidates = [candidates];
-    } catch {
-      console.log(`Attempt ${attempt}: Failed to parse JSON, retrying...`);
-      continue;
-    }
-
-    console.log(`Attempt ${attempt}: Got ${candidates.length} candidates`);
-
-    // Pick first non-duplicate — no extra Groq call
-    const validCandidate = candidates.find(newQ => {
-      const isDuplicate = isQuestionDuplicate(newQ.question, existingSignificantWords);
-      if (isDuplicate) console.log(`  Skipping (too similar): "${newQ.question}"`);
-      return !isDuplicate;
-    });
-
-    if (!validCandidate) {
-      console.log(`Attempt ${attempt}: All candidates too similar — retrying with higher temperature`);
-      continue;
-    }
-
-    console.log(`Attempt ${attempt} selected: "${validCandidate.question}"`);
-
-    saved = await prisma.questionBank.upsert({
-      where:  { question: validCandidate.question },
-      update: {},
-      create: { ...validCandidate },
-    });
-
-    break;
-  }
-
-  if (!saved) {
-    throw new Error("Failed to generate a unique question after maximum retries");
-  }
-
-  await prisma.jobQuestion.update({
-    where: { jobId_questionId: { jobId, questionId: oldQuestionId } },
-    data:  { questionId: saved.id },
-  });
-
-  return saved;
-}
-
 module.exports = {
   populateJobQuestions,
-  regenerateQuestion,
 };

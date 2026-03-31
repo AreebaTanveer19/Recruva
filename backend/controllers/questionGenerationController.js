@@ -1,6 +1,8 @@
-const { populateJobQuestions, regenerateQuestion } = require("../services/questionGenerationService");
-const {getJobQuestions} = require("../services/questionService")
+const { populateJobQuestions} = require("../services/questionGeneration/questionGenerationService");
+const {regenerateQuestion} = require("../services/questionGeneration/regenerateQuestionService")
+const {getJobQuestions} = require("../services/questionGeneration/questionService")
 const prisma = require("../config/db");
+
 const generateQuestions = async (req, res) => {
   try {
     const jobId = parseInt(req.params.jobId);
@@ -12,7 +14,7 @@ const generateQuestions = async (req, res) => {
 
     if (existing > 0) {
       // Already generated — just return them
-      const { getJobQuestions } = require("../services/questionService");
+      const { getJobQuestions } = require("../services/questionGeneration/questionService");
       const questions = await getJobQuestions(jobId);
       return res.status(200).json({
         message:   "Questions already generated",
@@ -42,7 +44,7 @@ const generateQuestions = async (req, res) => {
       job.details.requirements
     );
 
-    const { getJobQuestions } = require("../services/questionService");
+    const { getJobQuestions } = require("../services/questionGeneration/questionService");
     const grouped = await getJobQuestions(jobId);
 
     res.status(200).json({

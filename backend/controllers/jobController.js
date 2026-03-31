@@ -1,5 +1,5 @@
 const prisma = require('../config/db');
-const { extractKeywords } = require("../services/extractKeywordsService");
+const { extractKeywords } = require("../services/questionGeneration/extractKeywordsService");
 const { storeJobEmbeddings } = require('../services/scoring/qdrantService');
 
 const createJob = async (req, res) => {
