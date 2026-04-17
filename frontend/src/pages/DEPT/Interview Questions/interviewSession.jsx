@@ -16,7 +16,6 @@ import { FloatingMeetingWindow } from "../../../components/dept/FloatingMeetingW
 import { TopicSection } from "../../../components/dept/TopicSection";
 import { FinishInterviewModal } from "../../../components/dept/FinishInterviewModal";
 import AlertDisplay from "../../../components/AlertDisplay";
-import { interviewCandidate } from "../data/interviewMockData";
 import { fetchOpenJobs, deleteQuestion, regenerateQuestion } from "../../../helper";
 
 export default function InterviewSession() {

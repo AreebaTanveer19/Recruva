@@ -4,7 +4,7 @@ const { storeJobEmbeddings } = require('../services/scoring/qdrantService');
 
 const createJob = async (req, res) => {
   try {
-    const userId = req.user.id; 
+    const userId = req.user.id;
     const {
       title,
       department,
@@ -18,7 +18,9 @@ const createJob = async (req, res) => {
       responsibilities,
       experienceLevel,
       salaryMin,
-      salaryMax
+      salaryMax,
+      minDegreeLevel,
+      requiredDegrees
     } = req.body;
 
     const job = await prisma.job.create({
@@ -39,10 +41,12 @@ const createJob = async (req, res) => {
             experienceLevel: Number(experienceLevel),
             salaryMin: Number(salaryMin),
             salaryMax: Number(salaryMax),
+            minDegreeLevel: minDegreeLevel || "BSC",
+            requiredDegrees: requiredDegrees || [],
           }
         }
       },
-      include: { details: true } 
+      include: { details: true }
     });
 
     const keywordObjects = await extractKeywords(
@@ -125,7 +129,9 @@ const getJobsPostedByHR = async (req, res) => {
       experienceLevel: job.details?.experienceLevel,
       salaryMin: job.details?.salaryMin,
       salaryMax: job.details?.salaryMax,
-      details: undefined, 
+      minDegreeLevel: job.details?.minDegreeLevel,
+      requiredDegrees: job.details?.requiredDegrees,
+      details: undefined,
     }));
 
     res.status(200).json({
@@ -153,7 +159,7 @@ const getJobsPendingForHR = async (req, res) => {
       orderBy: { createdAt: "desc" },
     });
 
-    
+
     const flattenedJobs = jobs.map(job => ({
       ...job,
       description: job.details?.description,
@@ -162,6 +168,8 @@ const getJobsPendingForHR = async (req, res) => {
       experienceLevel: job.details?.experienceLevel,
       salaryMin: job.details?.salaryMin,
       salaryMax: job.details?.salaryMax,
+      minDegreeLevel: job.details?.minDegreeLevel,
+      requiredDegrees: job.details?.requiredDegrees,
       details: undefined,
     }));
 
@@ -213,6 +221,8 @@ const addJobPoster = async (req, res) => {
       experienceLevel: updatedJob.details?.experienceLevel,
       salaryMin: updatedJob.details?.salaryMin,
       salaryMax: updatedJob.details?.salaryMax,
+      minDegreeLevel: updatedJob.details?.minDegreeLevel,
+      requiredDegrees: updatedJob.details?.requiredDegrees,
       details: undefined,
     };
 
@@ -282,7 +292,9 @@ const editJob = async (req, res) => {
       responsibilities,
       experienceLevel,
       salaryMin,
-      salaryMax
+      salaryMax,
+      minDegreeLevel,
+      requiredDegrees
     } = req.body;
 
     // ✅ Build dynamic update object
@@ -305,6 +317,8 @@ const editJob = async (req, res) => {
     if (experienceLevel !== undefined) detailsData.experienceLevel = Number(experienceLevel);
     if (salaryMin !== undefined) detailsData.salaryMin = Number(salaryMin);
     if (salaryMax !== undefined) detailsData.salaryMax = Number(salaryMax);
+    if (minDegreeLevel !== undefined) detailsData.minDegreeLevel = minDegreeLevel;
+    if (requiredDegrees !== undefined) detailsData.requiredDegrees = requiredDegrees;
 
     if (Object.keys(detailsData).length > 0) {
       jobData.details = {
@@ -318,7 +332,7 @@ const editJob = async (req, res) => {
       include: { details: true }
     });
 
-   
+
     if (title || description || requirements) {
      const keywordObjects = await extractKeywords(
   updatedJob.title,
@@ -342,6 +356,8 @@ await prisma.job.update({
       experienceLevel: updatedJob.details?.experienceLevel,
       salaryMin: updatedJob.details?.salaryMin,
       salaryMax: updatedJob.details?.salaryMax,
+      minDegreeLevel: updatedJob.details?.minDegreeLevel,
+      requiredDegrees: updatedJob.details?.requiredDegrees,
       details: undefined,
     };
 
