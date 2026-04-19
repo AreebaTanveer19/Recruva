@@ -771,6 +771,7 @@ const getAllJobApplications = async (req, res) => {
         id: true,
         status: true,
         appliedAt: true,
+        score:true,
         candidate: {
           select: {
             id: true,
