@@ -15,6 +15,8 @@ const {
   updateApplicationStatus,
   getAllJobApplications,
   getPreviousProfileData,
+  bulkUpdateStatus,
+  getApplicationById,
 } = require('../controllers/applicationController');
 
 // Candidate routes
@@ -29,7 +31,9 @@ router.get('/my-applications', auth, getMyApplications);
 
 // HR-only routes
 router.get('/job/:jobId', auth, roleCheck('HR'), getJobApplications);
+router.patch('/bulk-status', auth, roleCheck('HR'), bulkUpdateStatus);
 router.patch('/:id/status', auth, roleCheck('HR'), updateApplicationStatus);
+router.get('/:id', auth, roleCheck('HR'), getApplicationById);
 router.get('/',auth,roleCheck('HR'),getAllJobApplications);
 
 module.exports = router;
