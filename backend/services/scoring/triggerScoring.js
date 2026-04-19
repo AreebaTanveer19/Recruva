@@ -18,7 +18,7 @@ async function triggerApplicationScoring(applicationId, parsedData) {
       return;
     }
 
-    const result = await scoreCandidate(application.job, parsedData, applicationId);
+    const result = await scoreCandidate(application.job, parsedData, applicationId, application.resumeId);
 
     await prisma.application.update({
       where: { id: applicationId },
