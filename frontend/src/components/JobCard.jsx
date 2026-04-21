@@ -99,7 +99,7 @@ const JobCard = ({ job, isExpanded, toggleExpand }) => {
 
         {/* Footer */}
         <div className="flex justify-between items-center">
-          <span className="text-xs text-gray-500">Posted {formatDate(job.createdAt)}</span>
+          <span className="text-xs text-gray-500">Posted {formatDate(new Date(job.createdAt))}</span>
           <button
             onClick={toggleExpand}
             className="text-sm text-black font-semibold flex items-center gap-1"

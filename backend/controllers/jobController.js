@@ -372,4 +372,41 @@ await prisma.job.update({
   }
 };
 
-module.exports =  { createJob, getOpenJobs, getJobsPostedByHR, getJobsPendingForHR, addJobPoster, editJob, getJobById };
+const getClosedJobs = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const closedJobs = await prisma.job.findMany({
+      where: {
+        OR: [
+          { status: "Closed" },
+          {
+            deadline: {
+              lt: now,
+            },
+          },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+      include: { details: true },
+    });
+
+    const jobsWithFlatDetails = closedJobs.map((job) => {
+      if (job.details) {
+        const { details, ...jobWithoutDetails } = job;
+        return { ...jobWithoutDetails, ...details };
+      }
+      return job;
+    });
+
+    res.status(200).json({
+      message: "Closed jobs retrieved successfully",
+      jobs: jobsWithFlatDetails,
+    });
+  } catch (error) {
+    console.error("Error fetching closed jobs:", error);
+    res.status(500).json({ error: "Failed to fetch closed jobs" });
+  }
+};
+
+module.exports =  { createJob, getOpenJobs, getJobsPostedByHR, getJobsPendingForHR, addJobPoster, editJob, getJobById, getClosedJobs };

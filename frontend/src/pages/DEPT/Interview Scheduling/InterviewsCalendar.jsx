@@ -52,6 +52,13 @@ export default function InterviewsCalendar() {
 
     loadInterviews();
   }, []);
+
+  const isInterviewPassed = (interview) => {
+    return new Date(interview.date.getTime() +
+      (new Date(`1970-01-01 ${interview.time.split(' - ')[0]}`).getTime() -
+       new Date('1970-01-01').getTime())) < new Date();
+  };
+
   const filteredInterviews = interviewsData.filter(
     (interview) =>
       interview.date.toDateString() === selectedDate.toDateString(),
@@ -197,29 +204,33 @@ export default function InterviewsCalendar() {
 
                             {interview.mode !== "on_site" &&
                               interview.meetingLink && (
-                                <a
-                                  href="#"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-
-                                    navigate(
-                                      "/dept/dashboard/interview-session",
-                                      {
-                                        state: {
-                                          candidateName:
-                                            interview.candidateName,
-                                          candidateEmail: interview.candidateEmail,
-                                          meetLink: interview.meetingLink,
-                                          jobId: interview.jobId,
-                                          interviewId: interview.id,
+                                <button
+                                  onClick={() => {
+                                    if (!isInterviewPassed(interview)) {
+                                      navigate(
+                                        "/dept/dashboard/interview-session",
+                                        {
+                                          state: {
+                                            candidateName:
+                                              interview.candidateName,
+                                            candidateEmail: interview.candidateEmail,
+                                            meetLink: interview.meetingLink,
+                                            jobId: interview.jobId,
+                                            interviewId: interview.id,
+                                          },
                                         },
-                                      },
-                                    );
+                                      );
+                                    }
                                   }}
-                                  className="px-4 py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-black-700 transition"
+                                  disabled={isInterviewPassed(interview)}
+                                  className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                                    isInterviewPassed(interview)
+                                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                      : "bg-black text-white hover:bg-gray-800"
+                                  }`}
                                 >
-                                  Conduct Interview
-                                </a>
+                                  {isInterviewPassed(interview) ? "Interview Passed" : "Conduct Interview"}
+                                </button>
                               )}
                           </div>
                         </div>
