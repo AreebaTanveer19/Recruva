@@ -2,17 +2,11 @@ import { useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import CandidateTable from "./CandidateTable";
 import ScheduleInterviewModal from "./ScheduleInterviewModal";
-import { scheduleInterviewApi } from "../data/interviewData";
+import { scheduleInterviewApi } from "../../../interviewData";
 import api from "../../../api";
 import { ACCESS_TOKEN } from "../../../constants";
-import { candidatesList } from "../data/candidateList";
+import {  fetchShortlistedCandidates, updateCandidateStatus } from "../data/candidateList.jsx";
 import { fetchOpenJobs } from "../../../helper";
-const stats = [
-  { label: "Total Candidates", value: 120, change: "+5%" },
-  { label: "Scheduled", value: 45, change: "+2%" },
-  { label: "Interviewed", value: 30, change: "-1%" },
-  { label: "Offered", value: 10, change: "+3%" },
-];
 
 export default function ShortlistedCandidates() {
   const [calendarStatus, setCalendarStatus] = useState("idle");
@@ -24,8 +18,38 @@ export default function ShortlistedCandidates() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [filteredCandidates, setFilteredCandidates] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loadingCandidates, setLoadingCandidates] = useState(true);
+
+  const generateStats = () => {
+    const total = candidates.length;
+    const scheduled = candidates.filter(c => c.status === "scheduled").length;
+    const interviewed = candidates.filter(c => c.status === "interviewed").length;
+    const offered = candidates.filter(c => c.status === "offered").length;
+
+    return [
+      { label: "Total Candidates", value: total, change: "+5%" },
+      { label: "Scheduled", value: scheduled, change: "+2%" },
+      { label: "Interviewed", value: interviewed, change: "-1%" },
+      { label: "Offered", value: offered, change: "+3%" },
+    ];
+  };
+
+  const stats = generateStats();
+
   useEffect(() => {
-    setCandidates(candidatesList);
+    const loadShortlistedCandidates = async () => {
+      try {
+        setLoadingCandidates(true);
+        const data = await fetchShortlistedCandidates();
+        setCandidates(data);
+      } catch (err) {
+        console.error("Failed to fetch shortlisted candidates", err);
+        
+      } finally {
+        setLoadingCandidates(false);
+      }
+    };
+    loadShortlistedCandidates();
   }, []);
 
   useEffect(() => {
@@ -111,24 +135,9 @@ export default function ShortlistedCandidates() {
 
   checkStatus();
 }, []);
-  // useEffect(() => {
-  //   const params = new URLSearchParams(window.location.search);
 
-  //   if (params.get("calendar") === "connected") {
-  //     localStorage.setItem("calendarConnected", "true");
-  //     setCalendarStatus("connected");
-  //     window.history.replaceState({}, "", window.location.pathname);
-  //   } else if (localStorage.getItem("calendarConnected")) {
-  //     setCalendarStatus("connected");
-  //   }
-  // }, []);
-
-  // Open modal
   const handleScheduleClick = (candidate) => {
-    // if (!localStorage.getItem("calendarConnected")) {
-    //   alert("Please connect Google Calendar first");
-    //   return;
-    // }
+
 if (calendarStatus !== "connected") {
     alert("Please connect Google Calendar first");
     return;
@@ -154,9 +163,17 @@ if (calendarStatus !== "connected") {
       if (res.success) {
         alert(`Interview scheduled! Meet link: ${res.meetLink || "N/A"}`);
 
+        // Update candidate status to "scheduled" in the database
+        try {
+          await updateCandidateStatus(selectedCandidate.applicationId, "scheduled");
+        } catch (error) {
+          console.error("Failed to update candidate status:", error);
+          // Continue even if status update fails
+        }
+
         setCandidates((prev) =>
           prev.map((c) =>
-            c.id === selectedCandidate.id ? { ...c, status: "scheduled" } : c,
+            c.applicationId === selectedCandidate.applicationId ? { ...c, status: "scheduled" } : c,
           ),
         );
 

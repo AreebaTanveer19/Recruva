@@ -15,7 +15,7 @@ import Profile from "./pages/candidate/Profile";
 import ProfileDisplay from "./pages/candidate/ProfileDisplay";
 import PostedJobs from "./pages/HR/PostedJobs";
 import SidebarLayout from "./layouts/SidebarLayout";
-import ShortlistedCandidates from "./pages/DEPT/Shortlisted Candidates/ShortlistedCandidates";
+import ShortlistedCandidates from "./pages/HR/Shortlisted Candidates/ShortlistedCandidates";
 import InterviewsCalendar from "./pages/DEPT/Interview Scheduling/InterviewsCalendar";
 import MyApplications from "./pages/candidate/MyApplications";
 import JobApplications from "./pages/HR/JobApplications";
@@ -90,6 +90,10 @@ function App() {
           <Route path="posted-jobs" element={<PostedJobs />} />
           <Route path="posted-jobs/:id" element={<JobDetails />} />
           <Route path="applications" element={<JobApplications />} />
+           <Route
+            path="shortlisted-candidates"
+            element={<ShortlistedCandidates />}
+          />
         </Route>
 
         {/* Department */}
@@ -106,10 +110,6 @@ function App() {
           <Route path="jobs/createjob" element={<JobCreationForm />} />
           <Route path="open-jobs/:id" element={<JobDetails />} />
           <Route path="edit-job/:id" element={<EditJob />} />
-          <Route
-            path="shortlisted-candidates"
-            element={<ShortlistedCandidates />}
-          />
           <Route path="interviews" element={<InterviewsCalendar />} />
           <Route path="interview-session" element={<InterviewSession />} />
         </Route>

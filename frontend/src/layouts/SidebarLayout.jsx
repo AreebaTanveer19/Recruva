@@ -22,6 +22,11 @@ const SidebarLayout = () => {
       path: "/hr/applications",
       icon: <FileText size={20} />,
     },
+    {
+      name: "Selected Candidates",
+      path: "/hr/shortlisted-candidates",
+      icon: <MdPeople size={20} />,
+    },
   ];
 
   const DeptNavLinks = [
@@ -31,11 +36,7 @@ const SidebarLayout = () => {
       icon: <MdDashboard size={20} />,
     },
     { name: "Job Openings", path: "/dept/dashboard/jobs", icon: <MdWork size={20} /> },
-    {
-      name: "Selected Candidates",
-      path: "/dept/dashboard/shortlisted-candidates",
-      icon: <MdPeople size={20} />,
-    },
+    
     {
       name: "Scheduled Interviews",
       path: "/dept/dashboard/interviews",

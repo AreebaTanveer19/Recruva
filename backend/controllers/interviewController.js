@@ -16,8 +16,8 @@ const sendInterviewEmail = async ({
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: process.env.EMAIL_USER,     
-      pass: process.env.EMAIL_PASS,     
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
   });
 
@@ -28,7 +28,7 @@ const sendInterviewEmail = async ({
     subject: "Interview Scheduled - Recruva",
    html: `
   <div style="font-family: Arial, sans-serif; color: #111; line-height: 1.5; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-    
+
     <!-- Header -->
     <div style="background-color: #1a73e8; color: #fff; padding: 16px; text-align: center; font-size: 18px; font-weight: bold;">
       Interview Scheduled
@@ -69,6 +69,76 @@ const sendInterviewEmail = async ({
   } catch (error) {
     console.error("Error sending interview email:", error);
     throw new Error("Failed to send interview email");
+  }
+};
+
+const sendInterviewerEmail = async ({
+  to,
+  candidateName,
+  candidateEmail,
+  dateTime,
+  meetLink,
+  mode,
+  notes,
+  hrEmail,
+}) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: `"Recruva" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "New Interview Assignment - Recruva",
+    html: `
+  <div style="font-family: Arial, sans-serif; color: #111; line-height: 1.5; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+
+    <!-- Header -->
+    <div style="background-color: #1a73e8; color: #fff; padding: 16px; text-align: center; font-size: 18px; font-weight: bold;">
+      Interview Assignment
+    </div>
+
+    <!-- Body -->
+    <div style="padding: 24px;">
+      <p>Hi,</p>
+
+      <p>You have been assigned to conduct an interview. Please find the details below:</p>
+
+      <div style="background-color: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          <li><b>Candidate Name:</b> ${candidateName}</li>
+          <li><b>Candidate Email:</b> <a href="mailto:${candidateEmail}" style="color: #1a73e8;">${candidateEmail}</a></li>
+          <li><b>Date & Time:</b> ${dateTime}</li>
+          <li><b>Mode:</b> ${mode}</li>
+          ${meetLink ? `<li><b>Google Meet Link:</b> <a href="${meetLink}" style="color: #1a73e8;">${meetLink}</a></li>` : ""}
+          ${notes ? `<li><b>Notes:</b> ${notes}</li>` : ""}
+          <li><b>Scheduled By:</b> ${hrEmail}</li>
+        </ul>
+      </div>
+
+      <p>Please ensure you are available at the scheduled time. If you have any questions, contact the HR team.</p>
+
+      <p>Best regards,<br/>Recruva Team</p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background-color: #f0f0f0; padding: 12px; text-align: center; font-size: 12px; color: #555;">
+      This is an automated email from Recruva. Please do not reply.
+    </div>
+  </div>
+`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Interviewer email sent successfully to", to);
+  } catch (error) {
+    console.error("Error sending interviewer email:", error);
+    throw new Error("Failed to send interviewer email");
   }
 };
 
@@ -141,7 +211,7 @@ const googleRedirect = async (req, res) => {
 
     // 5. Redirect to frontend
     res.redirect(
-      "http://localhost:5173/dept/dashboard/shortlisted-candidates?calendar=connected",
+      "http://localhost:5173/hr/shortlisted-candidates?calendar=connected",
     );
   } catch (error) {
     console.error("OAuth Callback Error:", error);
@@ -156,7 +226,7 @@ const googleRedirect = async (req, res) => {
 
 const scheduleInterview = async (req, res) => {
   try {
-    const {candidateName, candidateEmail, date, startTime, mode, notes } = req.body;
+    const {candidateName, candidateEmail, date, startTime, mode, notes, assignedToId, jobId } = req.body;
 
     if (!candidateEmail || !date || !startTime) {
       return res.status(400).json({
@@ -218,6 +288,8 @@ const scheduleInterview = async (req, res) => {
       data: {
         candidateEmail,
         scheduledBy: req.user.id,
+        assignedToId: assignedToId ? parseInt(assignedToId) : null,
+        jobId: jobId ? parseInt(jobId) : null,
         date: startDateTime.toDate(),
         startTime: startDateTime.toDate(),
         endTime: endDateTime.toDate(),
@@ -230,14 +302,40 @@ const scheduleInterview = async (req, res) => {
 
     await sendInterviewEmail({
       to: candidateEmail,
-      candidateName: candidateName, 
-      interviewerName: user.email, 
+      candidateName: candidateName,
+      interviewerName: user.email,
       dateTime: startDateTime.format("DD MMM YYYY, hh:mm A"),
       meetLink: response.data.hangoutLink,
       mode: mode === "google_meet" ? "Google Meet" : "On-site",
       notes,
       refreshToken: user.googleRefreshToken,
     });
+
+    // Send email to assigned interviewer if assignedToId is provided
+    if (assignedToId) {
+      try {
+        const interviewerUser = await prisma.user.findUnique({
+          where: { id: parseInt(assignedToId) },
+          select: { email: true },
+        });
+
+        if (interviewerUser) {
+          await sendInterviewerEmail({
+            to: interviewerUser.email,
+            candidateName: candidateName,
+            candidateEmail: candidateEmail,
+            dateTime: startDateTime.format("DD MMM YYYY, hh:mm A"),
+            meetLink: response.data.hangoutLink,
+            mode: mode === "google_meet" ? "Google Meet" : "On-site",
+            notes,
+            hrEmail: user.email,
+          });
+        }
+      } catch (emailError) {
+        console.error("Failed to send interviewer email:", emailError);
+        // Don't fail the whole request if interviewer email fails
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -288,7 +386,6 @@ const getAllInterviews = async (req, res) => {
         scheduler: {
           select: {
             id: true,
-            // name: true,
             email: true,
           },
         },

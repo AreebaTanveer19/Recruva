@@ -2,7 +2,6 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
 
-
 export const getModeIcon = (mode) => {
   switch (mode) {
     case "google_meet":
@@ -36,7 +35,7 @@ export const meetingLinkTemplates = {
 };
 
 
-import { ACCESS_TOKEN } from "../../../constants";
+import { ACCESS_TOKEN } from "./constants";
 
 export const scheduleInterviewApi = async (payload) => {
   const token = localStorage.getItem(ACCESS_TOKEN);
@@ -60,7 +59,7 @@ export const scheduleInterviewApi = async (payload) => {
 
 // services/interviewApi.js
 
-import api from "../../../api";
+import api from "./api";
 
 export const fetchInterviews = async () => {
   try {

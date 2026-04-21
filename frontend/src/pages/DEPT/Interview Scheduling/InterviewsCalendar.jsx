@@ -9,7 +9,7 @@ import {
   getModeIcon,
   getModeLabel,
   fetchInterviews,
-} from "../data/interviewData.jsx";
+} from "../../../interviewData.jsx";
 import { formatDate } from "../../../helper.js";
 
 export default function InterviewsCalendar() {
@@ -26,6 +26,7 @@ export default function InterviewsCalendar() {
         // 🔥 transform backend data for your UI
         const formatted = data.map((i) => ({
           id: i.id,
+          jobId: i.jobId,
           date: new Date(i.date),
           time: `${new Date(i.startTime).toLocaleTimeString([], {
             hour: "2-digit",
@@ -34,8 +35,9 @@ export default function InterviewsCalendar() {
             hour: "2-digit",
             minute: "2-digit",
           })}`,
-          candidateName: i.candidateName, // temp name
-          position: "Software Engineering", // you can replace later with job title
+          candidateName: i.candidateName,
+          candidateEmail: i.candidateEmail,
+          position: "Software Engineering",
           mode: i.mode === "google_meet" ? "google_meet" : "on_site",
           meetingLink: i.meetLink,
         }));
@@ -206,8 +208,10 @@ export default function InterviewsCalendar() {
                                         state: {
                                           candidateName:
                                             interview.candidateName,
+                                          candidateEmail: interview.candidateEmail,
                                           meetLink: interview.meetingLink,
-                                          jobTitle: "Software Engineering"
+                                          jobId: interview.jobId,
+                                          interviewId: interview.id,
                                         },
                                       },
                                     );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -29,7 +29,8 @@ import VideocamIcon from "@mui/icons-material/Videocam";
 import LinkIcon from "@mui/icons-material/Link";
 import PlaceIcon from "@mui/icons-material/Place";
 import DescriptionIcon from "@mui/icons-material/Description";
-import { interviewModes, meetingLinkTemplates } from "../data/interviewData";
+import { interviewModes, meetingLinkTemplates } from "../../../interviewData";
+import { getUsersByRole } from "../data/candidateList";
 
 
 export default function ScheduleInterviewModal({
@@ -43,6 +44,26 @@ export default function ScheduleInterviewModal({
   const [mode, setMode] = useState("");
   const [meetingLink, setMeetingLink] = useState("");
   const [notes, setNotes] = useState("");
+  const [departmentUsers, setDepartmentUsers] = useState([]);
+  const [assignedToId, setAssignedToId] = useState("");
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      const loadDepartmentUsers = async () => {
+        try {
+          setLoadingUsers(true);
+          const users = await getUsersByRole("DEPARTMENT");
+          setDepartmentUsers(users);
+        } catch (error) {
+          console.error("Failed to load department users:", error);
+        } finally {
+          setLoadingUsers(false);
+        }
+      };
+      loadDepartmentUsers();
+    }
+  }, [open]);
 
   const handleModeChange = (value) => {
     setMode(value);
@@ -50,7 +71,7 @@ export default function ScheduleInterviewModal({
   };
 
   const handleSubmit = () => {
-  if (!date || !time || !mode || !candidate) return;
+  if (!date || !time || !mode || !candidate || !assignedToId) return;
 
   // Format date and time
   const formattedDate = dayjs(date).format("YYYY-MM-DD");
@@ -60,10 +81,12 @@ export default function ScheduleInterviewModal({
     candidateEmail: candidate.email,
     candidateId: candidate.id,
     date: formattedDate,
-    startTime: formattedTime, // send as "HH:mm"
+    startTime: formattedTime,
     mode,
     meetingLink,
     notes,
+    assignedToId: parseInt(assignedToId),
+    jobId: candidate.jobId,
   });
 
   setDate(null);
@@ -71,6 +94,7 @@ export default function ScheduleInterviewModal({
   setMode("");
   setMeetingLink("");
   setNotes("");
+  setAssignedToId("");
   onClose();
 };
 
@@ -94,7 +118,7 @@ export default function ScheduleInterviewModal({
   //   onClose();
   // };
 
-  const isFormValid = date && time && mode;
+  const isFormValid = date && time && mode && assignedToId;
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -212,6 +236,35 @@ export default function ScheduleInterviewModal({
                   {interviewModes.map((item) => (
                     <MenuItem key={item.value} value={item.value}>
                       {item.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+
+            {/* ASSIGN TO DEPARTMENT USER */}
+            <Box>
+              <Typography
+                variant="caption"
+                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
+              >
+                <PlaceIcon fontSize="small" /> Assign To Department User
+              </Typography>
+
+              <FormControl fullWidth size="small" disabled={loadingUsers}>
+                <Select
+                  value={assignedToId}
+                  onChange={(e) => setAssignedToId(e.target.value)}
+                  displayEmpty
+                  sx={{ borderRadius: 2 }}
+                >
+                  <MenuItem value="" disabled>
+                    {loadingUsers ? "Loading users..." : "Select a department user"}
+                  </MenuItem>
+
+                  {departmentUsers.map((user) => (
+                    <MenuItem key={user.id} value={user.id}>
+                      {user.email}
                     </MenuItem>
                   ))}
                 </Select>

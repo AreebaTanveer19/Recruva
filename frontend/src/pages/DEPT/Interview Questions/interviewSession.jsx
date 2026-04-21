@@ -29,7 +29,7 @@ export default function InterviewSession() {
   const [deletingId, setDeletingId]         = useState(null);
   const questionRefs = useRef({});
  const location = useLocation();
-  const { candidateName, meetLink, jobTitle  } = location.state || {};
+  const { candidateName, candidateEmail, meetLink, jobId } = location.state || {};
 
  
   const showAlert = (type, title, message) => {
@@ -37,7 +37,7 @@ export default function InterviewSession() {
     setTimeout(() => setAlert({ type: "", title: "", message: "" }), 3000);
   };
 
-  /* ---------------- Fetch Jobs ---------------- */
+  /* ---------------- Fetch Jobs & Set Selected Job from params ---------------- */
 
   useEffect(() => {
     const loadJobs = async () => {
@@ -50,6 +50,14 @@ export default function InterviewSession() {
     };
     loadJobs();
   }, []);
+
+  // Separate effect to set selected job when jobId is provided
+  useEffect(() => {
+    if (jobId) {
+      console.log("Setting selected job to:", jobId);
+      setSelectedJob(jobId);
+    }
+  }, [jobId]);
 
   /* ---------------- Fetch Questions ---------------- */
 
@@ -170,20 +178,28 @@ export default function InterviewSession() {
           </Box>
 
           {/* Right */}
-          <Select
-            size="small"
-            value={selectedJob}
-            onChange={(e) => {
-              setSelectedJob(e.target.value);
-              setGrouped({});
-            }}
-            displayEmpty
-          >
-            <MenuItem value="">Select Job</MenuItem>
-            {jobs.map((job) => (
-              <MenuItem key={job.id} value={job.id}>{job.title}</MenuItem>
-            ))}
-          </Select>
+          {jobId ? (
+            // If jobId is provided via params, show the job title as text
+            <Typography variant="subtitle2" fontWeight={700} color="black">
+              {jobs.find((j) => j.id === jobId)?.title || "Loading..."}
+            </Typography>
+          ) : (
+            // Otherwise show the dropdown to select a job
+            <Select
+              size="small"
+              value={selectedJob}
+              onChange={(e) => {
+                setSelectedJob(e.target.value);
+                setGrouped({});
+              }}
+              displayEmpty
+            >
+              <MenuItem value="">Select Job</MenuItem>
+              {jobs.map((job) => (
+                <MenuItem key={job.id} value={job.id}>{job.title}</MenuItem>
+              ))}
+            </Select>
+          )}
 
         </Toolbar>
       </AppBar>

@@ -1,6 +1,6 @@
 import React from "react";
 import { CalendarIcon } from "@heroicons/react/24/solid";
-import { statusStyles } from "../data/candidateList";
+import { statusStyles } from "../data/candidateList.jsx";
 
 export default function CandidateTable({ candidates ,onScheduleInterview }) {
   return (
@@ -45,33 +45,41 @@ export default function CandidateTable({ candidates ,onScheduleInterview }) {
               <td className="px-6 py-4 text-gray-600">{candidate.email}</td>
               <td className="px-6 py-4 text-gray-900">{candidate.position}</td>
               <td className="px-6 py-4">
-                <span
-                  className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                    statusStyles[candidate.status]
-                  }`}
-                >
-                  {candidate.status.charAt(0).toUpperCase() +
-                    candidate.status.slice(1)}
-                </span>
-              </td>
-              <td className="px-6 py-4 text-right">
-                <button
-                  className={`px-3 py-2 text-sm font-medium rounded-lg shadow-sm flex items-center gap-1 ${
-                    candidate.status === "scheduled" ||
-                    candidate.status === "offered"
-                      ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                      : "bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:bg-gray-800"
-                  } transition-colors`}
-                  onClick={() => onScheduleInterview(candidate)}
-                  disabled={
-                    candidate.status === "scheduled" ||
-                    candidate.status === "offered"
-                  }
-                >
-                  <CalendarIcon className="w-4 h-4" />
-                  Schedule Interview
-                </button>
-              </td>
+  {(() => {
+    const statusClass =
+      statusStyles[candidate.status] || "bg-gray-100 text-gray-800";
+
+    return (
+      <span className={`px-3 py-1 text-xs font-medium rounded-full ${statusClass}`}>
+        {candidate.status}
+      </span>
+    );
+  })()}
+</td>
+
+<td className="px-6 py-4">
+  {(() => {
+    const isDisabled =
+      candidate.status === "scheduled" ||
+      candidate.status === "accepted" ||
+      candidate.status === "rejected";
+
+    return (
+      <button
+        className={`px-3 py-2 text-sm font-medium rounded-lg shadow-sm flex items-center gap-1 ${
+          isDisabled
+            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+            : "bg-gradient-to-r from-gray-900 to-gray-800 text-white hover:bg-gray-800"
+        }`}
+        onClick={() => onScheduleInterview(candidate)}
+        disabled={isDisabled}
+      >
+        <CalendarIcon className="w-4 h-4" />
+        Schedule Interview
+      </button>
+    );
+  })()}
+</td>
             </tr>
           ))}
         </tbody>
