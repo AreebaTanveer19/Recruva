@@ -13,11 +13,13 @@ const cvRoutes = require("./routes/cv");
 const resumeRoutes = require("./routes/resumeRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const questionGenerationRoutes = require("./routes/interviewQuestionGeneration");
-const jobScoringConfig = require("./routes/jobConfigScoring.js");
 const candidateRoutes = require("./routes/candidateRoutes");
+const jobScoringConfig = require("./routes/jobConfigScoring.js")
+const hrDashboardRoutes = require("./routes/hrDashboardRoutes.js")
 const app = express();
 const port = process.env.PORT || 3000;
 const prisma = require("./config/db")
+// const { initQdrantCollection } = require('./services/scoring/qdrantService');
 
 // Middleware
 app.use(cors({
@@ -44,6 +46,7 @@ app.use("/api/application", applicationRoutes);
 app.use("/api/job-scoring", jobScoringConfig)
 app.use("/api", questionGenerationRoutes);
 app.use("/api/candidates", candidateRoutes);
+app.use("/api", hrDashboardRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -64,6 +67,8 @@ app.get('/', (req, res) => {
     }
   });
 });
+
+// initQdrantCollection().catch(console.error);
 
 // Start server
 app.listen(port, async () => {

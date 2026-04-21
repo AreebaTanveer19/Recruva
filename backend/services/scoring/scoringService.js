@@ -1,4 +1,5 @@
 const { getEmbedding, prepareJobText, prepareCandidateText } = require('./embeddingService');
+const {getJobEmbeddings, getCandidateEmbeddings} = require ('./qdrantService')
 
 function cosineSimilarity(a, b) {
   const dot = a.reduce((sum, val, i) => sum + val * b[i], 0);
@@ -18,31 +19,30 @@ function toScore(similarity, type = 'skills') {
   return Math.min(Math.round(((clamped - min) / (max - min)) * 100), 90);
 }
 
-async function scoreCandidate(job, parsedData, applicationId) {
-  const jobText = prepareJobText(job);
+async function scoreCandidate(job, parsedData, applicationId, resumeId) {
+  //const jobText = prepareJobText(job);
   const candidateText = prepareCandidateText(parsedData);
+
+   const [
+    { requirementsEmb, experienceEmb },
+    { skillsCandEmb, experienceCandEmb },
+  ] = await Promise.all([
+    getJobEmbeddings(job),
+    getCandidateEmbeddings(resumeId, candidateText), // ✅ pass resumeId
+  ]);
 
   const config = job.scoringConfig || {};
   const weights = {
     skills:     config.skillsWeight     ?? 0.5,
     experience: config.experienceWeight ?? 0.5,
+    // education: config.educationWeight ?? 0.10,
   };
 
-  // Skills scoring
-  const [skillsJobEmb, skillsCandEmb] = await Promise.all([
-    getEmbedding(jobText.requirementsText),
-    getEmbedding(candidateText.skillsText),
-  ]);
-  const skillsScore = toScore(cosineSimilarity(skillsJobEmb, skillsCandEmb), 'skills');
+  const skillsScore = toScore(cosineSimilarity(requirementsEmb, skillsCandEmb), 'skills');
 
-  // Experience scoring
   let experienceScore = 0;
   if (candidateText.experienceText !== 'No experience listed.') {
-    const [expJobEmb, expCandEmb] = await Promise.all([
-      getEmbedding(jobText.experienceMatchText),
-      getEmbedding(candidateText.experienceText),
-    ]);
-    experienceScore = toScore(cosineSimilarity(expJobEmb, expCandEmb), 'experience');
+    experienceScore = toScore(cosineSimilarity(experienceEmb, experienceCandEmb), 'experience');
   }
 
   const finalScore = Math.round(

@@ -761,6 +761,40 @@ const updateApplicationStatus = async (req, res) => {
   }
 };
 
+//for bulk updating application statuses
+const bulkUpdateStatus = async (req, res) => {
+  try {
+    const { ids, status } = req.body;
+
+    const validStatuses = ['pending', 'reviewed', 'shortlisted', 'rejected', 'accepted'];
+    if (!ids?.length || !validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Valid ids array and status required. Status must be one of: ${validStatuses.join(', ')}`,
+      });
+    }
+
+    const result = await prisma.application.updateMany({
+      where: { id: { in: ids.map(Number) } },
+      data: { status },
+    });
+
+    res.json({
+      success: true,
+      message: `${result.count} application(s) updated to ${status}`,
+      updatedCount: result.count,
+    });
+  } catch (error) {
+    console.error('Error bulk updating application status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to bulk update application status',
+      error: error.message,
+    });
+  }
+};
+
+//for hr applications page
 const getAllJobApplications = async (req, res) => {
   try {
     const applications = await prisma.application.findMany({
@@ -771,6 +805,7 @@ const getAllJobApplications = async (req, res) => {
         id: true,
         status: true,
         appliedAt: true,
+        score:true,
         candidate: {
           select: {
             id: true,
@@ -806,6 +841,47 @@ const getAllJobApplications = async (req, res) => {
       success: false,
       message: 'Failed to fetch applications'
     });
+  }
+};
+
+//for individual applicant data
+const getApplicationById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const application = await prisma.application.findUnique({
+      where: { id: parseInt(id) },
+      select: {
+        id: true,
+        status: true,
+        appliedAt: true,
+        score: true,
+        scoreBreakdown: true,
+        candidate: {
+          select: { id: true, name: true, email: true },
+        },
+        job: {
+          select: { id: true, title: true, department: true },
+        },
+        resume: {
+          select: {
+            id: true,
+            originalName: true,
+            pdfUrl: true,
+            parsedData: true,      // ← CV data lives here, no separate endpoint needed
+          },
+        },
+      },
+    });
+
+    if (!application) {
+      return res.status(404).json({ success: false, message: 'Application not found' });
+    }
+
+    res.json({ success: true, application });
+  } catch (error) {
+    console.error('Error fetching application:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch application' });
   }
 };
 
@@ -872,4 +948,6 @@ module.exports = {
   updateApplicationStatus,
   getAllJobApplications,
   getPreviousProfileData,
+  bulkUpdateStatus,
+  getApplicationById,
 };

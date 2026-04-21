@@ -41,6 +41,36 @@ function normalizeSkills(skills) {
   )];
 }
 
+function normalizeEducation(education) {
+  if (!Array.isArray(education)) {
+    return [];
+  }
+
+  return education
+    .filter((item) => item && typeof item === 'object')
+    .map((item) => {
+      const normalized = {
+        degree: toSafeString(item.degree),
+        institution: toSafeString(item.institution),
+        year: toSafeString(item.year),
+      };
+
+      // Safely parse and validate CGPA
+      if (item.cgpa) {
+        const cgpaStr = toSafeString(item.cgpa);
+        // Validate CGPA is a valid number between 0-4
+        const cgpaNum = parseFloat(cgpaStr);
+        if (!isNaN(cgpaNum) && cgpaNum >= 0 && cgpaNum <= 4.5) {
+          normalized.cgpa = cgpaNum.toFixed(2);
+        } else if (cgpaStr) {
+          normalized.cgpa = cgpaStr;
+        }
+      }
+
+      return normalized;
+    });
+}
+
 function normalizeParsedResumeData(parsedData) {
   const safeData = parsedData && typeof parsedData === 'object' ? parsedData : {};
   const safeBasicInfo = safeData.basicInfo && typeof safeData.basicInfo === 'object'
@@ -54,7 +84,7 @@ function normalizeParsedResumeData(parsedData) {
       phone: toSafeString(safeBasicInfo.phone),
       location: toSafeString(safeBasicInfo.location),
     },
-    education: normalizeObjectArray(safeData.education),
+    education: normalizeEducation(safeData.education),
     experience: normalizeObjectArray(safeData.experience),
     projects: normalizeObjectArray(safeData.projects),
     skills: normalizeSkills(safeData.skills),

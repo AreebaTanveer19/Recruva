@@ -16,7 +16,7 @@ async function parseCVWithLLM(cvText) {
     const prompt = `Extract data from this resume and return ONLY valid JSON with this exact shape:
 {
   "basicInfo": { "name": "", "email": "", "phone": "", "location": "" },
-  "education": [{ "degree": "", "institution": "", "year": "" }],
+  "education": [{ "degree": "", "institution": "", "year": "", "cgpa": "" }],
   "experience": [{ "company": "", "position": "", "duration": "", "description": "" }],
   "skills": [""],
   "projects": [{ "name": "", "description": "", "technologies": "" }],
@@ -29,7 +29,15 @@ Rules:
 - Keep unknown fields as empty strings.
 - Keep missing sections as empty arrays.
 - Extract as many real values as possible from the resume text.
-- For experienceSummary: Create a concise (2-3 sentences) summary by merging key work experience and projects. Include roles, technologies, and achievements. Keep it professional and brief.
+- For experienceSummary: Generate a single-paragraph professional summary following this exact format:
+  1. Start with a strong professional title (e.g., "Full Stack Developer experienced in...").
+  2. List core technologies in one sentence (React, Node.js, Express.js, databases, etc.).
+  3. Mention additional tools/frameworks separately using "with additional proficiency in...".
+  4. Include 2-3 key projects with stack names (e.g., PERN, MERN, Django+React) and their purpose.
+  5. Highlight professional experience (internship/trainee level) with real-world contributions: frontend UI development, backend workflows, API integration, or production-level work.
+  6. Use concise, formal, impactful language without unnecessary adjectives.
+  7. Keep it in ONE paragraph with no bullet points.
+  8. Avoid repetition and ensure ATS-friendly, professional tone.
 
 Resume text:
 ${cleanCVText}`;
@@ -209,10 +217,12 @@ function extractDataWithRegex(text) {
   lines.forEach((line) => {
     if (/(bachelor|master|phd|diploma|university|college)/i.test(line)) {
       const yearMatch = line.match(/\b(19|20)\d{2}\b/);
+      const cgpaMatch = line.match(/(?:cgpa|gpa|grade)[\s:]*([0-4]\.\d{1,2}|[0-9]\.?[0-9]?)/i);
       result.education.push({
         degree: line,
         institution: line,
         year: yearMatch ? yearMatch[0] : '',
+        cgpa: cgpaMatch ? cgpaMatch[1] : '',
       });
     }
 

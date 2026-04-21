@@ -21,6 +21,7 @@ import MyApplications from "./pages/candidate/MyApplications";
 import JobApplications from "./pages/HR/JobApplications";
 import InterviewSession from "./pages/DEPT/Interview Questions/interviewSession";
 import EditJob from "./pages/DEPT/Jobs/EditJob";
+import CandidateDetailPage from "./pages/HR/CandidateDetailPage";
 
 function App() {
   return (
@@ -89,6 +90,7 @@ function App() {
           <Route path="open-jobs/:id/applications" element={<JobApplications />} />
           <Route path="posted-jobs" element={<PostedJobs />} />
           <Route path="posted-jobs/:id" element={<JobDetails />} />
+          <Route path="applications/:id" element={<CandidateDetailPage />} />
           <Route path="applications" element={<JobApplications />} />
            <Route
             path="shortlisted-candidates"
