@@ -4,7 +4,6 @@ import Auth from "./pages/candidate/Auth";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import HRDashboard from "./pages/HR/HRDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
-import DeptDashboard from "./pages/DEPT/DeptDashboard";
 import CandidateDashboard from "./pages/candidate/CandidateDashboard";
 import JobCreationForm from "./pages/DEPT/Jobs/JobCreationForm";
 import JobsPage from "./pages/DEPT/Jobs/JobsPage";
@@ -22,6 +21,7 @@ import JobApplications from "./pages/HR/JobApplications";
 import InterviewSession from "./pages/DEPT/Interview Questions/interviewSession";
 import EditJob from "./pages/DEPT/Jobs/EditJob";
 import CandidateDetailPage from "./pages/HR/CandidateDetailPage";
+import HiringManagerDashboard from "./pages/DEPT/HiringManagerDashboard";
 
 function App() {
   return (
@@ -107,7 +107,7 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<DeptDashboard />} />
+          <Route index element={<HiringManagerDashboard />} />
           <Route path="jobs" element={<JobsPage />} />
           <Route path="jobs/createjob" element={<JobCreationForm />} />
           <Route path="open-jobs/:id" element={<JobDetails />} />
