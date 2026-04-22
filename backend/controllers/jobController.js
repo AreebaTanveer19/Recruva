@@ -80,11 +80,27 @@ storeJobEmbeddings(job).catch(err =>
 
 const getOpenJobs = async (req, res) => {
   try {
+    const now = new Date();
+
+    // Auto-close jobs with passed deadlines
+    await prisma.job.updateMany({
+      where: {
+        status: "Open",
+        deadline: {
+          lt: now,
+        },
+      },
+      data: {
+        status: "Closed",
+      },
+    });
+
+    // Fetch remaining open jobs
     const openJobs = await prisma.job.findMany({
       where: { status: "Open" },
       orderBy: { createdAt: "desc" },
       include: {
-        details: true, 
+        details: true,
       },
     });
 

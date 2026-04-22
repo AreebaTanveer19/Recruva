@@ -23,11 +23,11 @@ export default function InterviewsCalendar() {
       try {
         const data = await fetchInterviews();
 
-        // 🔥 transform backend data for your UI
+        // Transform backend data - position is now provided by backend
         const formatted = data.map((i) => ({
           id: i.id,
           jobId: i.jobId,
-          date: new Date(i.date),
+          date: new Date(i.startTime),
           time: `${new Date(i.startTime).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
@@ -37,9 +37,11 @@ export default function InterviewsCalendar() {
           })}`,
           candidateName: i.candidateName,
           candidateEmail: i.candidateEmail,
-          position: "Software Engineering",
+          position: i.position,
           mode: i.mode === "google_meet" ? "google_meet" : "on_site",
           meetingLink: i.meetLink,
+          status: i.status,
+          applicationId: i.applicationId,
         }));
 
         setInterviewsData(formatted);
@@ -54,9 +56,7 @@ export default function InterviewsCalendar() {
   }, []);
 
   const isInterviewPassed = (interview) => {
-    return new Date(interview.date.getTime() +
-      (new Date(`1970-01-01 ${interview.time.split(' - ')[0]}`).getTime() -
-       new Date('1970-01-01').getTime())) < new Date();
+    return new Date(interview.date) < new Date();
   };
 
   const filteredInterviews = interviewsData.filter(
@@ -217,6 +217,8 @@ export default function InterviewsCalendar() {
                                             meetLink: interview.meetingLink,
                                             jobId: interview.jobId,
                                             interviewId: interview.id,
+                                            position: interview.position,
+                                            applicationId: interview.applicationId,
                                           },
                                         },
                                       );

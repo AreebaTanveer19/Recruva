@@ -1,18 +1,16 @@
 import { useEffect, useState } from "react";
 import api from "../../api";
-import JobCard from "../../components/JobCard";
+import JobCardGrid from "../../components/JobCardGrid";
 
 export default function ClosedJobsPage() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedJobs, setExpandedJobs] = useState({});
 
   useEffect(() => {
     const fetchClosedJobsData = async () => {
       setLoading(true);
       try {
         const jobRes = await api.get("/closedJobs");
-        console.log("Closed jobs response:", jobRes.data);
         setJobs(jobRes.data.jobs || []);
       } catch (err) {
         console.error("Error fetching closed jobs:", err);
@@ -23,13 +21,6 @@ export default function ClosedJobsPage() {
 
     fetchClosedJobsData();
   }, []);
-
-  const toggleExpand = (jobId) => {
-    setExpandedJobs((prev) => ({
-      ...prev,
-      [jobId]: !prev[jobId],
-    }));
-  };
 
   if (loading) {
     return (
@@ -50,22 +41,17 @@ export default function ClosedJobsPage() {
         <p className="text-gray-600 mt-2">View completed and closed positions</p>
       </div>
 
-      {/* Jobs List */}
+      {/* Jobs Grid */}
       {jobs.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 px-6 py-12 text-center">
           <p className="text-gray-500 text-sm">No closed jobs yet</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-          {jobs.map((job) => (
-            <JobCard
-              key={job.id}
-              job={job}
-              isExpanded={expandedJobs[job.id] || false}
-              toggleExpand={() => toggleExpand(job.id)}
-            />
-          ))}
-        </div>
+        <JobCardGrid
+          jobs={jobs}
+          variant="dept"
+          detailRoute="/dept/dashboard/closed-jobs"
+        />
       )}
     </div>
   );

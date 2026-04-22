@@ -29,7 +29,7 @@ import VideocamIcon from "@mui/icons-material/Videocam";
 import LinkIcon from "@mui/icons-material/Link";
 import PlaceIcon from "@mui/icons-material/Place";
 import DescriptionIcon from "@mui/icons-material/Description";
-import { interviewModes, meetingLinkTemplates } from "../../../interviewData";
+import { interviewModes } from "../../../interviewData";
 import { getUsersByRole } from "../data/candidateList";
 
 
@@ -42,7 +42,6 @@ export default function ScheduleInterviewModal({
   const [date, setDate] = useState(null);
   const [time, setTime] = useState(null);
   const [mode, setMode] = useState("");
-  const [meetingLink, setMeetingLink] = useState("");
   const [notes, setNotes] = useState("");
   const [departmentUsers, setDepartmentUsers] = useState([]);
   const [assignedToId, setAssignedToId] = useState("");
@@ -67,7 +66,6 @@ export default function ScheduleInterviewModal({
 
   const handleModeChange = (value) => {
     setMode(value);
-    setMeetingLink(meetingLinkTemplates[value] || "");
   };
 
   const handleSubmit = () => {
@@ -78,21 +76,17 @@ export default function ScheduleInterviewModal({
   const formattedTime = dayjs(time).format("HH:mm");
 
   onSchedule({
-    candidateEmail: candidate.email,
-    candidateId: candidate.id,
+    applicationId: candidate.applicationId,
     date: formattedDate,
     startTime: formattedTime,
     mode,
-    meetingLink,
     notes,
     assignedToId: parseInt(assignedToId),
-    jobId: candidate.jobId,
   });
 
   setDate(null);
   setTime(null);
   setMode("");
-  setMeetingLink("");
   setNotes("");
   setAssignedToId("");
   onClose();

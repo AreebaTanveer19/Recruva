@@ -29,11 +29,7 @@ export default function ActiveJobsSection({ jobs }) {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {/* Inbox */}
-                <div className="px-2.5 py-1 bg-blue-50 rounded-full">
-                  <span className="text-xs font-semibold text-blue-600">{job.inboxCount || 0} Inbox</span>
-                </div>
-
+               
                 {/* Interviewed */}
                 <div className="px-2.5 py-1 bg-purple-50 rounded-full">
                   <span className="text-xs font-semibold text-purple-600">{job.interviewedCount || 0} Interviewed</span>

@@ -226,12 +226,29 @@ const googleRedirect = async (req, res) => {
 
 const scheduleInterview = async (req, res) => {
   try {
-    const {candidateName, candidateEmail, date, startTime, mode, notes, assignedToId, jobId } = req.body;
+    const { applicationId, date, startTime, mode, notes, assignedToId } = req.body;
 
-    if (!candidateEmail || !date || !startTime) {
+    // Validate required fields
+    if (!applicationId || !date || !startTime) {
       return res.status(400).json({
         success: false,
-        message: "Candidate email, date, and start time are required",
+        message: "Application ID, date, and start time are required",
+      });
+    }
+
+    // Fetch the application with candidate and job details
+    const application = await prisma.application.findUnique({
+      where: { id: parseInt(applicationId) },
+      include: {
+        candidate: true,
+        job: true,
+      },
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found",
       });
     }
 
@@ -262,7 +279,7 @@ const scheduleInterview = async (req, res) => {
       conferenceDataVersion: 1,
       requestBody: {
         summary: "Recruva Interview",
-        description: `Mode: ${mode}\nNotes: ${notes || "N/A"}`,
+        description: `Position: ${application.job.title}\nMode: ${mode}\nNotes: ${notes || "N/A"}`,
         start: {
           dateTime: startDateTime.toISOString(),
           timeZone: "Asia/Karachi",
@@ -271,7 +288,7 @@ const scheduleInterview = async (req, res) => {
           dateTime: endDateTime.toISOString(),
           timeZone: "Asia/Karachi",
         },
-        attendees: [{ email: candidateEmail }],
+        attendees: [{ email: application.candidate.email }],
         conferenceData:
           mode === "google_meet"
             ? {
@@ -284,31 +301,35 @@ const scheduleInterview = async (req, res) => {
       },
     });
 
+    // Create interview linked to application
     const interview = await prisma.interview.create({
       data: {
-        candidateEmail,
+        applicationId: parseInt(applicationId),
         scheduledBy: req.user.id,
         assignedToId: assignedToId ? parseInt(assignedToId) : null,
-        jobId: jobId ? parseInt(jobId) : null,
-        date: startDateTime.toDate(),
         startTime: startDateTime.toDate(),
         endTime: endDateTime.toDate(),
         mode: mode === "google_meet" ? "google_meet" : "on_site",
         meetLink: response.data.hangoutLink,
         notes,
-        candidateName
+        status: "scheduled",
+      },
+      include: {
+        application: {
+          include: { candidate: true, job: true },
+        },
       },
     });
 
+    // Send email to candidate
     await sendInterviewEmail({
-      to: candidateEmail,
-      candidateName: candidateName,
+      to: application.candidate.email,
+      candidateName: application.candidate.name,
       interviewerName: user.email,
       dateTime: startDateTime.format("DD MMM YYYY, hh:mm A"),
       meetLink: response.data.hangoutLink,
       mode: mode === "google_meet" ? "Google Meet" : "On-site",
       notes,
-      refreshToken: user.googleRefreshToken,
     });
 
     // Send email to assigned interviewer if assignedToId is provided
@@ -322,8 +343,8 @@ const scheduleInterview = async (req, res) => {
         if (interviewerUser) {
           await sendInterviewerEmail({
             to: interviewerUser.email,
-            candidateName: candidateName,
-            candidateEmail: candidateEmail,
+            candidateName: application.candidate.name,
+            candidateEmail: application.candidate.email,
             dateTime: startDateTime.format("DD MMM YYYY, hh:mm A"),
             meetLink: response.data.hangoutLink,
             mode: mode === "google_meet" ? "Google Meet" : "On-site",
@@ -333,7 +354,6 @@ const scheduleInterview = async (req, res) => {
         }
       } catch (emailError) {
         console.error("Failed to send interviewer email:", emailError);
-        // Don't fail the whole request if interviewer email fails
       }
     }
 
@@ -378,11 +398,17 @@ const disconnectCalendar = async (req, res) => {
   }
 };
 
-// GET /api/interviews
+// GET /api/interview
 const getAllInterviews = async (req, res) => {
   try {
     const interviews = await prisma.interview.findMany({
       include: {
+        application: {
+          include: {
+            candidate: true,
+            job: true,
+          },
+        },
         scheduler: {
           select: {
             id: true,
@@ -391,13 +417,39 @@ const getAllInterviews = async (req, res) => {
         },
       },
       orderBy: {
-        date: "asc",
+        startTime: "asc",
       },
     });
 
+    // Format interviews with flattened data for frontend
+    const formattedInterviews = interviews.map((interview) => ({
+      id: interview.id,
+      jobId: interview.application.job.id,
+      date: interview.startTime,
+      startTime: interview.startTime,
+      endTime: interview.endTime,
+      time: `${new Date(interview.startTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })} - ${new Date(interview.endTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`,
+      candidateName: interview.application.candidate.name,
+      candidateEmail: interview.application.candidate.email,
+      position: interview.application.job.title,
+      mode: interview.mode,
+      meetLink: interview.meetLink,
+      status: interview.status,
+      notes: interview.notes,
+      applicationId: interview.applicationId,
+      scheduledBy: interview.scheduler,
+      assignedToId: interview.assignedToId,
+    }));
+
     res.status(200).json({
       success: true,
-      data: interviews,
+      data: formattedInterviews,
     });
   } catch (error) {
     console.error("Error fetching interviews:", error);
@@ -419,6 +471,12 @@ const getInterviewById = async (req, res) => {
         id: parseInt(id),
       },
       include: {
+        application: {
+          include: {
+            candidate: true,
+            job: true,
+          },
+        },
         scheduler: true,
       },
     });
@@ -430,9 +488,35 @@ const getInterviewById = async (req, res) => {
       });
     }
 
+    // Format with flattened data
+    const formattedInterview = {
+      id: interview.id,
+      jobId: interview.application.job.id,
+      date: interview.startTime,
+      startTime: interview.startTime,
+      endTime: interview.endTime,
+      time: `${new Date(interview.startTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })} - ${new Date(interview.endTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`,
+      candidateName: interview.application.candidate.name,
+      candidateEmail: interview.application.candidate.email,
+      position: interview.application.job.title,
+      mode: interview.mode,
+      meetLink: interview.meetLink,
+      status: interview.status,
+      notes: interview.notes,
+      applicationId: interview.applicationId,
+      scheduledBy: interview.scheduler,
+      assignedToId: interview.assignedToId,
+    };
+
     res.status(200).json({
       success: true,
-      data: interview,
+      data: formattedInterview,
     });
   } catch (error) {
     console.error("Error fetching interview:", error);
@@ -443,8 +527,7 @@ const getInterviewById = async (req, res) => {
   }
 };
 
-// GET /api/interviews?status=scheduled&jobId=1
-
+// GET /api/interview?status=scheduled&jobId=1&candidateEmail=...
 const getFilteredInterviews = async (req, res) => {
   try {
     const { status, jobId, candidateEmail, startDate, endDate } = req.query;
@@ -452,22 +535,32 @@ const getFilteredInterviews = async (req, res) => {
     const interviews = await prisma.interview.findMany({
       where: {
         ...(status && { status }),
-        ...(jobId && { jobId: parseInt(jobId) }),
+        ...(jobId && { application: { jobId: parseInt(jobId) } }),
         ...(candidateEmail && {
-          candidateEmail: {
-            contains: candidateEmail,
-            mode: "insensitive",
+          application: {
+            candidate: {
+              email: {
+                contains: candidateEmail,
+                mode: "insensitive",
+              },
+            },
           },
         }),
         ...(startDate &&
           endDate && {
-            date: {
+            startTime: {
               gte: new Date(startDate),
               lte: new Date(endDate),
             },
           }),
       },
       include: {
+        application: {
+          include: {
+            candidate: true,
+            job: true,
+          },
+        },
         scheduler: {
           select: {
             id: true,
@@ -477,14 +570,40 @@ const getFilteredInterviews = async (req, res) => {
         },
       },
       orderBy: {
-        date: "asc",
+        startTime: "asc",
       },
     });
 
+    // Format interviews with flattened data for frontend
+    const formattedInterviews = interviews.map((interview) => ({
+      id: interview.id,
+      jobId: interview.application.job.id,
+      date: interview.startTime,
+      startTime: interview.startTime,
+      endTime: interview.endTime,
+      time: `${new Date(interview.startTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })} - ${new Date(interview.endTime).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`,
+      candidateName: interview.application.candidate.name,
+      candidateEmail: interview.application.candidate.email,
+      position: interview.application.job.title,
+      mode: interview.mode,
+      meetLink: interview.meetLink,
+      status: interview.status,
+      notes: interview.notes,
+      applicationId: interview.applicationId,
+      scheduledBy: interview.scheduler,
+      assignedToId: interview.assignedToId,
+    }));
+
     res.status(200).json({
       success: true,
-      count: interviews.length,
-      data: interviews,
+      count: formattedInterviews.length,
+      data: formattedInterviews,
     });
   } catch (error) {
     console.error("Error fetching filtered interviews:", error);

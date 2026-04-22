@@ -23,11 +23,20 @@ const getShortlistedCandidates = async (req, res) => {
 
     const { jobId, status } = req.query;
 
-    // Build status filter - default to shortlisted, can accept multiple statuses
+    // Build status filter - default to shortlisted only
+    // Valid statuses are: pending, reviewed, shortlisted, rejected, accepted
+    // Note: "scheduled" status has been moved to Interview model
     let statusFilter = ["shortlisted"];
     if (status) {
-      // Support comma-separated status values: ?status=shortlisted,scheduled
-      statusFilter = status.split(",").map(s => s.trim());
+      // Support comma-separated status values, but only valid ApplicationStatus values
+      const requestedStatuses = status.split(",").map(s => s.trim());
+      const validStatuses = ["pending", "reviewed", "shortlisted", "rejected", "accepted"];
+      statusFilter = requestedStatuses.filter(s => validStatuses.includes(s));
+
+      // If no valid statuses found, default to shortlisted
+      if (statusFilter.length === 0) {
+        statusFilter = ["shortlisted"];
+      }
     }
 
     const applications = await prisma.application.findMany({
@@ -114,7 +123,7 @@ const updateCandidateApplicationStatus = async (req, res) => {
     }
 
     // Validate status is a valid enum value
-    const validStatuses = ["pending", "reviewed", "shortlisted", "scheduled","rejected", "accepted"];
+    const validStatuses = ["pending", "reviewed", "shortlisted", "rejected", "accepted"];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,

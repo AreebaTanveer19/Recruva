@@ -28,8 +28,8 @@ export default function InterviewSession() {
   const [regeneratingId, setRegeneratingId] = useState(null);
   const [deletingId, setDeletingId]         = useState(null);
   const questionRefs = useRef({});
- const location = useLocation();
-  const { candidateName, candidateEmail, meetLink, jobId } = location.state || {};
+  const location = useLocation();
+  const { candidateName, candidateEmail, meetLink, jobId, position } = location.state || {};
 
  
   const showAlert = (type, title, message) => {
@@ -157,9 +157,9 @@ export default function InterviewSession() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: "background.default" }}>
- <FloatingMeetingWindow
+      <FloatingMeetingWindow
         candidateName={candidateName}
-        jobTitle="Software Engineering" // optional for now
+        jobTitle={position || "Interview"}
         meetLink={meetLink}
       />
 
@@ -170,7 +170,7 @@ export default function InterviewSession() {
           {/* Left */}
           <Box>
             <Typography variant="subtitle2" fontWeight={700} color="black">
-              Software Engineering
+              {position || "Interview"}
             </Typography>
             <Typography variant="caption" color="black">
               Candidate: {candidateName}
@@ -181,7 +181,7 @@ export default function InterviewSession() {
           {jobId ? (
             // If jobId is provided via params, show the job title as text
             <Typography variant="subtitle2" fontWeight={700} color="black">
-              {jobs.find((j) => j.id === jobId)?.title || "Loading..."}
+              {position || "Loading..."}
             </Typography>
           ) : (
             // Otherwise show the dropdown to select a job
