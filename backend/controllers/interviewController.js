@@ -615,10 +615,10 @@ const getCalendarStatus = async (req, res) => {
   }
 };
 
-// Finish interview and update interview status to "interviewed"
+// Finish interview and update interview status with decision
 const finishInterview = async (req, res) => {
   try {
-    const { interviewId } = req.body;
+    const { interviewId, interviewFeedback, interviewStatus } = req.body;
 
     // Validate required fields
     if (!interviewId) {
@@ -648,15 +648,27 @@ const finishInterview = async (req, res) => {
       });
     }
 
-    // Update interview status to "interviewed"
+    // Validate status if provided
+    const validStatuses = ["scheduled", "interviewed", "accepted", "rejected"];
+    if (interviewStatus && !validStatuses.includes(interviewStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+      });
+    }
+
+    // Update interview with feedback and status
     const updatedInterview = await prisma.interview.update({
       where: { id: parseInt(interviewId) },
-      data: { status: "interviewed" },
+      data: {
+        status: interviewStatus || "interviewed",
+        interviewFeedback: interviewFeedback || null,
+      },
     });
 
     res.status(200).json({
       success: true,
-      message: "Interview marked as completed",
+      message: "Interview completed",
       data: {
         interview: updatedInterview,
       },
@@ -666,6 +678,54 @@ const finishInterview = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to finish interview",
+      error: error.message,
+    });
+  }
+};
+
+// Get interview feedback
+const getInterviewFeedback = async (req, res) => {
+  try {
+    const { interviewId } = req.params;
+
+    if (!interviewId) {
+      return res.status(400).json({
+        success: false,
+        message: "Interview ID is required",
+      });
+    }
+
+    const interview = await prisma.interview.findUnique({
+      where: { id: parseInt(interviewId) },
+      select: {
+        id: true,
+        interviewFeedback: true,
+        status: true,
+        application: {
+          include: {
+            candidate: true,
+            job: true,
+          },
+        },
+      },
+    });
+
+    if (!interview) {
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: interview,
+    });
+  } catch (error) {
+    console.error("Get Interview Feedback Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch interview feedback",
       error: error.message,
     });
   }
@@ -681,4 +741,5 @@ module.exports = {
   getFilteredInterviews,
   getCalendarStatus,
   finishInterview,
+  getInterviewFeedback,
 };

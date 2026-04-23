@@ -12,6 +12,7 @@ const {
   getFilteredInterviews,
   getCalendarStatus,
   finishInterview,
+  getInterviewFeedback,
 } = require("../controllers/interviewController");
 
 router.get("/google-auth", auth, googleAuth);
@@ -19,6 +20,7 @@ router.get("/google/redirect", googleRedirect);
 router.post("/schedule-event", auth, scheduleInterview);
 router.post("/disconnect-calendar", auth, disconnectCalendar);
 router.post("/finish-interview", auth, finishInterview);
+router.get("/feedback/:interviewId", auth, getInterviewFeedback);
 router.get("/calendar-status", auth, getCalendarStatus);
 router.get("/:id", getInterviewById);
 router.get("/", getAllInterviews); 

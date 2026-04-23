@@ -5,8 +5,12 @@ import {
   Typography,
   Button,
   Box,
-  Grid,
-  Paper,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Divider,
 } from "@mui/material";
 import { useState } from "react";
 import api from "../../api";
@@ -14,6 +18,8 @@ import { ACCESS_TOKEN } from "../../constants";
 
 export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, interviewId, onFinish }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const [decision, setDecision] = useState("interviewed");
 
   const formatTime = (s) => {
     const h = Math.floor(s / 3600);
@@ -27,10 +33,14 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
       setIsSubmitting(true);
       const token = localStorage.getItem(ACCESS_TOKEN);
 
-      // Call the new finishInterview endpoint
+      // Call the finishInterview endpoint with feedback and decision
       const response = await api.post(
         "/interview/finish-interview",
-        { interviewId },
+        {
+          interviewId,
+          interviewFeedback: feedback,
+          interviewStatus: decision,
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -39,7 +49,9 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
       );
 
       if (response.data.success) {
-        // Close the modal
+        // Close the modal and reset
+        setFeedback("");
+        setDecision("interviewed");
         onOpenChange(false);
         if (onFinish) {
           onFinish();
@@ -53,16 +65,12 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
     }
   };
 
-  const easy   = questions.filter((q) => q.difficulty === "easy").length;
-  const medium = questions.filter((q) => q.difficulty === "medium").length;
-  const hard   = questions.filter((q) => q.difficulty === "hard").length;
-
   return (
     <Dialog
       open={open}
       onClose={() => onOpenChange(false)}
       fullWidth
-      maxWidth="xs"
+      maxWidth="sm"
       PaperProps={{
         sx: {
           borderRadius: 3,
@@ -77,82 +85,93 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
           Interview Complete
         </Typography>
         <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: "block" }}>
-          {formatTime(elapsed)} · {questions.length} questions
+          Duration: {formatTime(elapsed)} · {questions.length} questions
         </Typography>
       </DialogTitle>
 
       <DialogContent sx={{ px: 3, pb: 3, mt: 2 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
 
-          {/* Duration stat */}
-          <Paper
-            variant="outlined"
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              bgcolor: "#000",
-              border: "none",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.5)", letterSpacing: "0.06em", textTransform: "uppercase", fontSize: 10 }}>
-              Duration
+          {/* Interview Decision */}
+          <Box>
+            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+              Interview Decision
             </Typography>
-            <Typography variant="h6" fontWeight={700} fontFamily="monospace" sx={{ color: "#fff" }}>
-              {formatTime(elapsed)}
-            </Typography>
-          </Paper>
+            <FormControl fullWidth size="small">
+              <InputLabel>Decision</InputLabel>
+              <Select
+                value={decision}
+                label="Decision"
+                onChange={(e) => setDecision(e.target.value)}
+              >
+                <MenuItem value="interviewed">Pending Decision</MenuItem>
+                <MenuItem value="accepted">
+                  <span style={{ color: "#16a34a", fontWeight: 600 }}>✓ Accepted</span>
+                </MenuItem>
+                <MenuItem value="rejected">
+                  <span style={{ color: "#dc2626", fontWeight: 600 }}>✗ Rejected</span>
+                </MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
 
-          {/* Difficulty breakdown */}
-          <Grid container spacing={1}>
-            {[
-              { label: "Easy",   value: easy,   color: "#22c55e" },
-              { label: "Medium", value: medium, color: "#f59e0b" },
-              { label: "Hard",   value: hard,   color: "#ef4444" },
-            ].map(({ label, value, color }) => (
-              <Grid item xs={4} key={label}>
-                <Paper
-                  variant="outlined"
-                  sx={{
-                    p: 1.5,
-                    textAlign: "center",
-                    borderRadius: 2,
-                    bgcolor: "action.hover",
-                    border: "1px solid",
-                    borderColor: "divider",
-                  }}
-                >
-                  <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: color, mx: "auto", mb: 0.75 }} />
-                  <Typography variant="h6" fontWeight={700} color="text.primary">
-                    {value}
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontSize: 10, color: "text.disabled" }}>
-                    {label}
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
+          <Divider />
+
+          {/* Feedback Input */}
+          <Box>
+            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+              Interview Feedback
+            </Typography>
+            <Typography variant="caption" color="text.disabled" sx={{ display: "block", mb: 1.5 }}>
+              Add detailed feedback about the interview for the hiring manager
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={6}
+              placeholder="Add your interview feedback here... (e.g., candidate's technical skills, communication, problem-solving approach, strengths, areas for improvement)"
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              variant="outlined"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                },
+              }}
+            />
+          </Box>
 
           <Button
             variant="contained"
             fullWidth
             onClick={handleFinishInterview}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !feedback.trim()}
             sx={{
               bgcolor: "#000",
               color: "#fff",
               "&:hover": { bgcolor: "#222" },
+              "&:disabled": { bgcolor: "#ccc", color: "#999" },
               borderRadius: 1.5,
               py: 1.25,
               fontWeight: 600,
             }}
           >
-            {isSubmitting ? "Finishing..." : "Finish Interview"}
+            {isSubmitting ? "Submitting..." : "Submit"}
           </Button>
 
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+            sx={{
+              borderRadius: 1.5,
+              py: 1.25,
+              fontWeight: 600,
+            }}
+          >
+            Cancel
+          </Button>
         </Box>
       </DialogContent>
     </Dialog>

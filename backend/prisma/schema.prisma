@@ -115,6 +115,7 @@ model Interview {
   mode           InterviewMode
   meetLink       String?
   notes          String?
+  interviewFeedback String?
 
   status         InterviewStatus @default(scheduled)
 
@@ -216,9 +217,9 @@ enum InterviewMode {
 }
 
 enum InterviewStatus {
-  pending
   scheduled
-  interviewed
+  accepted
+  rejected
 }
 
 enum JobQuestionStatus {
