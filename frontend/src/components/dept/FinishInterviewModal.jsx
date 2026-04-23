@@ -8,13 +8,49 @@ import {
   Grid,
   Paper,
 } from "@mui/material";
+import { useState } from "react";
+import api from "../../api";
+import { ACCESS_TOKEN } from "../../constants";
 
-export function FinishInterviewModal({ open, onOpenChange, questions, elapsed }) {
+export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, interviewId, onFinish }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const formatTime = (s) => {
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
     const sec = s % 60;
     return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  const handleFinishInterview = async () => {
+    try {
+      setIsSubmitting(true);
+      const token = localStorage.getItem(ACCESS_TOKEN);
+
+      // Call the new finishInterview endpoint
+      const response = await api.post(
+        "/interview/finish-interview",
+        { interviewId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        // Close the modal
+        onOpenChange(false);
+        if (onFinish) {
+          onFinish();
+        }
+      }
+    } catch (error) {
+      console.error("Error finishing interview:", error);
+      alert("Failed to finish interview. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const easy   = questions.filter((q) => q.difficulty === "easy").length;
@@ -103,7 +139,8 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed })
           <Button
             variant="contained"
             fullWidth
-            onClick={() => onOpenChange(false)}
+            onClick={handleFinishInterview}
+            disabled={isSubmitting}
             sx={{
               bgcolor: "#000",
               color: "#fff",
@@ -113,7 +150,7 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed })
               fontWeight: 600,
             }}
           >
-            Close
+            {isSubmitting ? "Finishing..." : "Finish Interview"}
           </Button>
 
         </Box>

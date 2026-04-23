@@ -615,6 +615,62 @@ const getCalendarStatus = async (req, res) => {
   }
 };
 
+// Finish interview and update interview status to "interviewed"
+const finishInterview = async (req, res) => {
+  try {
+    const { interviewId } = req.body;
+
+    // Validate required fields
+    if (!interviewId) {
+      return res.status(400).json({
+        success: false,
+        message: "Interview ID is required",
+      });
+    }
+
+    // Find the interview
+    const interview = await prisma.interview.findUnique({
+      where: { id: parseInt(interviewId) },
+      include: {
+        application: {
+          include: {
+            candidate: true,
+            job: true,
+          },
+        },
+      },
+    });
+
+    if (!interview) {
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found",
+      });
+    }
+
+    // Update interview status to "interviewed"
+    const updatedInterview = await prisma.interview.update({
+      where: { id: parseInt(interviewId) },
+      data: { status: "interviewed" },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Interview marked as completed",
+      data: {
+        interview: updatedInterview,
+      },
+    });
+  } catch (error) {
+    console.error("Finish Interview Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to finish interview",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   googleAuth,
   googleRedirect,
@@ -623,5 +679,6 @@ module.exports = {
   getAllInterviews,
   getInterviewById,
   getFilteredInterviews,
-  getCalendarStatus
+  getCalendarStatus,
+  finishInterview,
 };

@@ -29,7 +29,7 @@ export default function InterviewSession() {
   const [deletingId, setDeletingId]         = useState(null);
   const questionRefs = useRef({});
   const location = useLocation();
-  const { candidateName, candidateEmail, meetLink, jobId, position } = location.state || {};
+  const { candidateName, candidateEmail, meetLink, jobId, position, applicationId, interviewId } = location.state || {};
 
  
   const showAlert = (type, title, message) => {
@@ -273,6 +273,8 @@ export default function InterviewSession() {
         onOpenChange={setShowSummary}
         questions={allQuestions}
         elapsed={elapsed}
+        interviewId={interviewId}
+        onFinish={() => setShowSummary(false)}
       />
 
     </Box>
