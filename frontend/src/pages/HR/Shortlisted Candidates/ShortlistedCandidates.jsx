@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import CandidateTable from "./CandidateTable";
+import ScheduledInterviewsTab from "./ScheduledInterviewsTab";
 import ScheduleInterviewModal from "./ScheduleInterviewModal";
 import { scheduleInterviewApi } from "../../../interviewData";
 import api from "../../../api";
@@ -9,6 +10,7 @@ import {  fetchShortlistedCandidates, updateCandidateStatus } from "../data/cand
 import { fetchOpenJobs } from "../../../helper";
 
 export default function ShortlistedCandidates() {
+  const [activeTab, setActiveTab] = useState("shortlisted");
   const [calendarStatus, setCalendarStatus] = useState("idle");
   const [openModal, setOpenModal] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
@@ -21,14 +23,16 @@ export default function ShortlistedCandidates() {
   const [loadingCandidates, setLoadingCandidates] = useState(true);
 
   const generateStats = () => {
-    const total = candidates.length;
-    const scheduled = candidates.filter(c => c.status === "scheduled").length;
-    const interviewed = candidates.filter(c => c.status === "interviewed").length;
-    const offered = candidates.filter(c => c.status === "offered").length;
+    // Exclude scheduled candidates for shortlisted tab stats
+    const shortlistedCandidates = candidates.filter(c => c.status !== "scheduled");
+    const total = shortlistedCandidates.length;
+    const pending = shortlistedCandidates.filter(c => c.status === "pending").length;
+    const interviewed = shortlistedCandidates.filter(c => c.status === "interviewed").length;
+    const offered = shortlistedCandidates.filter(c => c.status === "offered").length;
 
     return [
       { label: "Total Candidates", value: total, change: "+5%" },
-      { label: "Scheduled", value: scheduled, change: "+2%" },
+      { label: "Pending", value: pending, change: "+2%" },
       { label: "Interviewed", value: interviewed, change: "-1%" },
       { label: "Offered", value: offered, change: "+3%" },
     ];
@@ -66,6 +70,9 @@ export default function ShortlistedCandidates() {
 
   useEffect(() => {
     let filtered = [...candidates];
+
+    // Exclude scheduled candidates from shortlisted tab
+    filtered = filtered.filter((c) => c.status !== "scheduled");
 
     // Filter by job
     if (selectedJob) {
@@ -264,67 +271,101 @@ if (calendarStatus !== "connected") {
           </div>
         </div>
 
-        {/* Toolbar */}
-       <div className="flex flex-col md:flex-row justify-between gap-4 mb-6 items-center">
-  {/* Search */}
-  <div className="relative flex-1 w-full">
-    <input
-      type="text"
-      placeholder="Search candidates..."
-      value={searchTerm}
-      onChange={(e) => setSearchTerm(e.target.value)}
-      className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-    />
-    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-  </div>
-
-  {/* Job Dropdown */}
-  <div className="flex gap-3 mt-3 md:mt-0">
-    <select
-      value={selectedJob}
-      onChange={(e) => setSelectedJob(e.target.value)}
-      className="px-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-    >
-      <option value="">All Jobs</option>
-      {jobs.map((job) => (
-        <option key={job.id} value={job.title}>
-          {job.title}
-        </option>
-      ))}
-    </select>
-
-    {/* Status Dropdown */}
-    <select
-      value={selectedStatus}
-      onChange={(e) => setSelectedStatus(e.target.value)}
-      className="px-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-    >
-      <option value="">All Statuses</option>
-      <option value="pending">Pending</option>
-      <option value="scheduled">Scheduled</option>
-      <option value="offered">Offered</option>
-    </select>
-  </div>
-</div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="p-6 h-28 rounded-xl bg-white border shadow-sm"
-            >
-              <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
-              <p className="text-2xl font-bold">{stat.value}</p>
-            </div>
-          ))}
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab("shortlisted")}
+            className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "shortlisted"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Shortlisted Candidates
+          </button>
+          <button
+            onClick={() => setActiveTab("scheduled")}
+            className={`px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
+              activeTab === "scheduled"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Scheduled Interviews
+          </button>
         </div>
 
-        {/* Candidate Table */}
-        <CandidateTable
-          candidates={filteredCandidates}
-          onScheduleInterview={handleScheduleClick}
-        />
+        {/* Shortlisted Candidates Tab */}
+        {activeTab === "shortlisted" && (
+          <>
+            {/* Toolbar */}
+            <div className="flex flex-col md:flex-row justify-between gap-4 mb-6 items-center">
+              {/* Search */}
+              <div className="relative flex-1 w-full">
+                <input
+                  type="text"
+                  placeholder="Search candidates..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              </div>
+
+              {/* Job Dropdown */}
+              <div className="flex gap-3 mt-3 md:mt-0">
+                <select
+                  value={selectedJob}
+                  onChange={(e) => setSelectedJob(e.target.value)}
+                  className="px-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                >
+                  <option value="">All Jobs</option>
+                  {jobs.map((job) => (
+                    <option key={job.id} value={job.title}>
+                      {job.title}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Status Dropdown */}
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="px-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="interviewed">Interviewed</option>
+                  <option value="offered">Offered</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="p-6 h-28 rounded-xl bg-white border shadow-sm"
+                >
+                  <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Candidate Table */}
+            <CandidateTable
+              candidates={filteredCandidates}
+              onScheduleInterview={handleScheduleClick}
+            />
+          </>
+        )}
+
+        {/* Scheduled Interviews Tab */}
+        {activeTab === "scheduled" && (
+          <ScheduledInterviewsTab />
+        )}
 
         {/* Schedule Modal */}
         <ScheduleInterviewModal
