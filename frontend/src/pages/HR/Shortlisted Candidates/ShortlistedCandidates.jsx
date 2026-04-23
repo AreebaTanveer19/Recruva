@@ -6,7 +6,7 @@ import ScheduleInterviewModal from "./ScheduleInterviewModal";
 import { scheduleInterviewApi } from "../../../interviewData";
 import api from "../../../api";
 import { ACCESS_TOKEN } from "../../../constants";
-import {  fetchShortlistedCandidates, updateCandidateStatus } from "../data/candidateList.jsx";
+import { fetchShortlistedCandidates } from "../data/candidateList.jsx";
 import { fetchOpenJobs } from "../../../helper";
 
 export default function ShortlistedCandidates() {
@@ -23,8 +23,9 @@ export default function ShortlistedCandidates() {
   const [loadingCandidates, setLoadingCandidates] = useState(true);
 
   const generateStats = () => {
-    // Exclude scheduled candidates for shortlisted tab stats
-    const shortlistedCandidates = candidates.filter(c => c.status !== "scheduled");
+    const shortlistedCandidates = candidates.filter(
+      (c) => !["scheduled", "accepted", "rejected"].includes(c.status)
+    );
     const total = shortlistedCandidates.length;
     const pending = shortlistedCandidates.filter(c => c.status === "pending").length;
     const interviewed = shortlistedCandidates.filter(c => c.status === "interviewed").length;
@@ -71,8 +72,10 @@ export default function ShortlistedCandidates() {
   useEffect(() => {
     let filtered = [...candidates];
 
-    // Exclude scheduled candidates from shortlisted tab
-    filtered = filtered.filter((c) => c.status !== "scheduled");
+    // Exclude candidates who have an interview scheduled/completed
+    filtered = filtered.filter(
+      (c) => !["scheduled", "accepted", "rejected"].includes(c.status)
+    );
 
     // Filter by job
     if (selectedJob) {
@@ -170,18 +173,9 @@ if (calendarStatus !== "connected") {
       if (res.success) {
         alert(`Interview scheduled! Meet link: ${res.meetLink || "N/A"}`);
 
-        // Update candidate status to "scheduled" in the database
-        try {
-          await updateCandidateStatus(selectedCandidate.applicationId, "scheduled");
-        } catch (error) {
-          console.error("Failed to update candidate status:", error);
-          // Continue even if status update fails
-        }
-
+        // Remove the candidate from the local list immediately
         setCandidates((prev) =>
-          prev.map((c) =>
-            c.applicationId === selectedCandidate.applicationId ? { ...c, status: "scheduled" } : c,
-          ),
+          prev.filter((c) => c.applicationId !== selectedCandidate.applicationId),
         );
 
         handleCloseModal();

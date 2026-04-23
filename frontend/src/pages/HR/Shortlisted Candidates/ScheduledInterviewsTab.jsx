@@ -66,10 +66,23 @@ export default function ScheduledInterviewsTab() {
   const getStatusColor = (status) => {
     const statusMap = {
       scheduled: "bg-blue-100 text-blue-800",
-      completed: "bg-green-100 text-green-800",
-      cancelled: "bg-red-100 text-red-800",
+      interviewed: "bg-green-100 text-green-800",
+      accepted: "bg-emerald-100 text-emerald-800",
+      rejected: "bg-red-100 text-red-800",
+      cancelled: "bg-gray-100 text-gray-500",
     };
     return statusMap[status] || "bg-gray-100 text-gray-800";
+  };
+
+  const getStatusLabel = (status) => {
+    const labelMap = {
+      scheduled: "Scheduled",
+      interviewed: "Interviewed",
+      accepted: "Accepted",
+      rejected: "Rejected",
+      cancelled: "Cancelled",
+    };
+    return labelMap[status] || status;
   };
 
   const formatDateTime = (dateString) => {
@@ -225,19 +238,15 @@ export default function ScheduledInterviewsTab() {
                     {/* Status */}
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
-                          interview.status === "interviewed"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
+                        className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(interview.status)}`}
                       >
-                        {interview.status === "interviewed" ? "Interviewed" : "Scheduled"}
+                        {getStatusLabel(interview.status)}
                       </span>
                     </td>
 
                     {/* Feedback Button */}
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {interview.status === "interviewed" ? (
+                      {["interviewed", "accepted", "rejected"].includes(interview.status) ? (
                         <button
                           onClick={() => {
                             setSelectedInterview(interview);
