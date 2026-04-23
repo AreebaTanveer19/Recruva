@@ -21,7 +21,7 @@ export default function ScheduledInterviewsTab() {
         setLoading(true);
         const token = localStorage.getItem(ACCESS_TOKEN);
 
-        const response = await api.get("/interview?status=scheduled", {
+        const response = await api.get("/interview", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

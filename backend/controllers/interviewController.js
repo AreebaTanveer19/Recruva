@@ -24,7 +24,7 @@ const sendInterviewEmail = async ({
 
   // Compose email
   const mailOptions = {
-    from: `"${interviewerName}" <${process.env.EMAIL_USER}>`,
+    from: `"Recruva" <${process.env.EMAIL_USER}>`,
     to,
     subject: "Interview Scheduled - Recruva",
 html: `
