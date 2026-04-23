@@ -103,7 +103,7 @@ model CvData {
 model Interview {
   id             Int             @id @default(autoincrement())
 
-  applicationId  Int
+  applicationId  Int             @unique
   application    Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
   scheduledBy    Int
@@ -126,8 +126,6 @@ model Interview {
   scheduler      User            @relation("UserScheduledInterviews", fields: [scheduledBy], references: [id])
   assignedTo     User?           @relation("UserAssignedInterviews", fields: [assignedToId], references: [id])
 
-  @@unique([applicationId, startTime])
-  @@index([applicationId])
 }
 model Resume {
   id           Int           @id @default(autoincrement())
@@ -154,7 +152,7 @@ model Application {
   job            Job               @relation(fields: [jobId], references: [id])
   resume         Resume            @relation(fields: [resumeId], references: [id])
 
-interviews Interview[]
+  interview  Interview?
   @@unique([candidateId, jobId])
 }
 

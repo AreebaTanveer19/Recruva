@@ -45,7 +45,7 @@ const getShortlistedCandidates = async (req, res) => {
           in: statusFilter,
         },
         ...(jobId && { jobId: parseInt(jobId) }),
-        interviews: { none: {} },
+        interview: { is: null },
       },
       include: {
         candidate: {

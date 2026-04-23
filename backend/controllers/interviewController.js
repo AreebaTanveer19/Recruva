@@ -236,6 +236,18 @@ const scheduleInterview = async (req, res) => {
       });
     }
 
+    // Enforce one interview per application
+    const existingInterview = await prisma.interview.findFirst({
+      where: { applicationId: parseInt(applicationId) },
+    });
+
+    if (existingInterview) {
+      return res.status(409).json({
+        success: false,
+        message: `An interview is already scheduled for ${application.candidate.name} on the ${application.job.title} position.`,
+      });
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
     });
@@ -621,10 +633,18 @@ const finishInterview = async (req, res) => {
     const { interviewId, interviewFeedback, interviewStatus } = req.body;
 
     // Validate required fields
-    if (!interviewId) {
+    if (!interviewId || !interviewStatus) {
       return res.status(400).json({
         success: false,
-        message: "Interview ID is required",
+        message: "Interview ID and status are required",
+      });
+    }
+
+    const validStatuses = ["accepted", "rejected"];
+    if (!validStatuses.includes(interviewStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
       });
     }
 
@@ -648,20 +668,11 @@ const finishInterview = async (req, res) => {
       });
     }
 
-    // Validate status if provided
-    const validStatuses = ["scheduled", "interviewed", "accepted", "rejected"];
-    if (interviewStatus && !validStatuses.includes(interviewStatus)) {
-      return res.status(400).json({
-        success: false,
-        message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
-      });
-    }
-
-    // Update interview with feedback and status
+    // Update interview with feedback and decision
     const updatedInterview = await prisma.interview.update({
       where: { id: parseInt(interviewId) },
       data: {
-        status: interviewStatus || "interviewed",
+        status: interviewStatus,
         interviewFeedback: interviewFeedback || null,
       },
     });
