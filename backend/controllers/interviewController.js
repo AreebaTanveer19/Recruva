@@ -11,6 +11,7 @@ const sendInterviewEmail = async ({
   meetLink,
   mode,
   notes,
+  jobPosition,
 }) => {
   // Create a transporter using App Password
   const transporter = nodemailer.createTransport({
@@ -26,39 +27,31 @@ const sendInterviewEmail = async ({
     from: `"${interviewerName}" <${process.env.EMAIL_USER}>`,
     to,
     subject: "Interview Scheduled - Recruva",
-   html: `
-  <div style="font-family: Arial, sans-serif; color: #111; line-height: 1.5; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+html: `
+<div style="font-family: Arial, sans-serif; font-size: 15px; color: #000; line-height: 1.6; max-width: 600px;">
 
-    <!-- Header -->
-    <div style="background-color: #1a73e8; color: #fff; padding: 16px; text-align: center; font-size: 18px; font-weight: bold;">
-      Interview Scheduled
-    </div>
+  <p>Dear ${candidateName},</p>
 
-    <!-- Body -->
-    <div style="padding: 24px;">
-      <p>Hi ${candidateName},</p>
+  <p>We are pleased to inform you that your interview has been scheduled for the position of <b>${jobPosition}</b>. Please find the details below:</p>
 
-      <p>Congratulations! Your interview has been successfully scheduled. Please find the details below:</p>
+  <p>
+    <b>Position:</b> ${jobPosition}<br/>
+    <b>Date & Time:</b> ${dateTime}<br/>
+    <b>Mode:</b> ${mode}<br/>
+    ${meetLink ? `<b>Google Meet Link:</b> <a href="${meetLink}">${meetLink}</a><br/>` : ""}
+    ${notes ? `<b>Notes:</b> ${notes}<br/>` : ""}
+  </p>
 
-      <div style="background-color: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
-        <ul style="list-style: none; padding: 0; margin: 0;">
-          <li><b>Date & Time:</b> ${dateTime}</li>
-          <li><b>Mode:</b> ${mode}</li>
-          ${meetLink ? `<li><b>Google Meet Link:</b> <a href="${meetLink}" style="color: #1a73e8;">${meetLink}</a></li>` : ""}
-          ${notes ? `<li>${notes}</li>` : ""}
-        </ul>
-      </div>
+  <p>Please acknowledge this email to confirm your availability. We recommend joining 5 minutes before the scheduled time to avoid any inconvenience.</p>
 
-      <p>We look forward to speaking with you and wish you the best for your interview.</p>
+  <p>Good luck with your interview!</p>
 
-      <p>Best regards,<br/>${interviewerName}</p>
-    </div>
+  <p>
+    Regards,<br/>
+    ${interviewerName}
+  </p>
 
-    <!-- Footer -->
-    <div style="background-color: #f0f0f0; padding: 12px; text-align: center; font-size: 12px; color: #555;">
-      This is an automated email from Recruva. Please do not reply.
-    </div>
-  </div>
+</div>
 `,
 
   };
@@ -81,6 +74,7 @@ const sendInterviewerEmail = async ({
   mode,
   notes,
   hrEmail,
+  jobPosition,
 }) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -94,42 +88,32 @@ const sendInterviewerEmail = async ({
     from: `"Recruva" <${process.env.EMAIL_USER}>`,
     to,
     subject: "New Interview Assignment - Recruva",
-    html: `
-  <div style="font-family: Arial, sans-serif; color: #111; line-height: 1.5; max-width: 600px; margin: auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+html: `
+<div style="font-family: Arial, sans-serif; font-size: 15px; color: #000; line-height: 1.6; max-width: 600px;">
 
-    <!-- Header -->
-    <div style="background-color: #1a73e8; color: #fff; padding: 16px; text-align: center; font-size: 18px; font-weight: bold;">
-      Interview Assignment
-    </div>
+  <p>Hi,</p>
 
-    <!-- Body -->
-    <div style="padding: 24px;">
-      <p>Hi,</p>
+  <p>You have been assigned to conduct an interview for the position of <b>${jobPosition}</b>. Please find the candidate and session details below:</p>
 
-      <p>You have been assigned to conduct an interview. Please find the details below:</p>
+  <p>
+    <b>Position:</b> ${jobPosition}<br/>
+    <b>Candidate Name:</b> ${candidateName}<br/>
+    <b>Candidate Email:</b> <a href="mailto:${candidateEmail}">${candidateEmail}</a><br/>
+    <b>Date & Time:</b> ${dateTime}<br/>
+    <b>Mode:</b> ${mode}<br/>
+    ${meetLink ? `<b>Google Meet Link:</b> <a href="${meetLink}">${meetLink}</a><br/>` : ""}
+    ${notes ? `<b>Notes:</b> ${notes}<br/>` : ""}
+    <b>Scheduled By:</b> ${hrEmail}<br/>
+  </p>
 
-      <div style="background-color: #f5f5f5; padding: 16px; border-radius: 8px; margin: 16px 0;">
-        <ul style="list-style: none; padding: 0; margin: 0;">
-          <li><b>Candidate Name:</b> ${candidateName}</li>
-          <li><b>Candidate Email:</b> <a href="mailto:${candidateEmail}" style="color: #1a73e8;">${candidateEmail}</a></li>
-          <li><b>Date & Time:</b> ${dateTime}</li>
-          <li><b>Mode:</b> ${mode}</li>
-          ${meetLink ? `<li><b>Google Meet Link:</b> <a href="${meetLink}" style="color: #1a73e8;">${meetLink}</a></li>` : ""}
-          ${notes ? `<li><b>Notes:</b> ${notes}</li>` : ""}
-          <li><b>Scheduled By:</b> ${hrEmail}</li>
-        </ul>
-      </div>
+  <p>Please ensure you are available at the scheduled time. If you have any concerns, kindly reach out to the HR team.</p>
 
-      <p>Please ensure you are available at the scheduled time. If you have any questions, contact the HR team.</p>
+  <p>
+    Regards,<br/>
+    Recruva Team
+  </p>
 
-      <p>Best regards,<br/>Recruva Team</p>
-    </div>
-
-    <!-- Footer -->
-    <div style="background-color: #f0f0f0; padding: 12px; text-align: center; font-size: 12px; color: #555;">
-      This is an automated email from Recruva. Please do not reply.
-    </div>
-  </div>
+</div>
 `,
   };
 
@@ -330,6 +314,7 @@ const scheduleInterview = async (req, res) => {
       meetLink: response.data.hangoutLink,
       mode: mode === "google_meet" ? "Google Meet" : "On-site",
       notes,
+      jobPosition: application.job.title,
     });
 
     // Send email to assigned interviewer if assignedToId is provided
@@ -350,6 +335,7 @@ const scheduleInterview = async (req, res) => {
             mode: mode === "google_meet" ? "Google Meet" : "On-site",
             notes,
             hrEmail: user.email,
+            jobPosition: application.job.title,
           });
         }
       } catch (emailError) {
