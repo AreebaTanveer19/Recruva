@@ -39,6 +39,7 @@ export default function ScheduleInterviewModal({
   onClose,
   candidate,
   onSchedule,
+  isScheduling = false,
 }) {
   const [date, setDate] = useState(null);
   const [time, setTime] = useState(null);
@@ -93,13 +94,6 @@ export default function ScheduleInterviewModal({
     notes,
     assignedToId: parseInt(assignedToId),
   });
-
-  setDate(null);
-  setTime(null);
-  setMode("");
-  setNotes("");
-  setAssignedToId("");
-  onClose();
 };
 
   // const handleSubmit = () => {
@@ -122,7 +116,7 @@ export default function ScheduleInterviewModal({
   //   onClose();
   // };
 
-  const isFormValid = date && time && mode && assignedToId;
+  const isFormValid = date && time && mode && assignedToId && !isScheduling;
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -328,7 +322,7 @@ export default function ScheduleInterviewModal({
               py: 1,
             }}
           >
-            Schedule Interview
+            {isScheduling ? "Scheduling..." : "Schedule Interview"}
           </Button>
         </DialogActions>
       </Dialog>

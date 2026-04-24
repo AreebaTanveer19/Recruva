@@ -187,7 +187,7 @@ export default function InterviewsCalendar() {
 
           {calendarStatus !== "connected" && (
             <p className="mt-3 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 inline-block">
-              Connect your Google Calendar so you can be the host when interviews are scheduled and assigned to you.
+              Connect your Google Calendar.
             </p>
           )}
         </div>
