@@ -27,9 +27,10 @@ export default function InterviewSession() {
   const [alert, setAlert]             = useState({ type: "", title: "", message: "" });
   const [regeneratingId, setRegeneratingId] = useState(null);
   const [deletingId, setDeletingId]         = useState(null);
+  const [timerStopped, setTimerStopped]     = useState(false);
   const questionRefs = useRef({});
   const location = useLocation();
-  const { candidateName, candidateEmail, meetLink, jobId, position, applicationId, interviewId } = location.state || {};
+  const { candidateName,meetLink, jobId, position, interviewId } = location.state || {};
 
  
   const showAlert = (type, title, message) => {
@@ -161,6 +162,7 @@ export default function InterviewSession() {
         candidateName={candidateName}
         jobTitle={position || "Interview"}
         meetLink={meetLink}
+        stopped={timerStopped}
       />
 
       {/* Header */}
@@ -262,7 +264,7 @@ export default function InterviewSession() {
               onClick={() => setShowSummary(true)}
               sx={{ bgcolor: "#000", color: "#fff", "&:hover": { bgcolor: "#222" }, borderRadius: 1.5, px: 2.5 }}
             >
-              Finish Interview
+              Submit Feedback
             </Button>
           </Box>
         </Paper>
@@ -274,7 +276,7 @@ export default function InterviewSession() {
         questions={allQuestions}
         elapsed={elapsed}
         interviewId={interviewId}
-        onFinish={() => setShowSummary(false)}
+        onFinish={() => { setShowSummary(false); setTimerStopped(true); }}
       />
 
     </Box>

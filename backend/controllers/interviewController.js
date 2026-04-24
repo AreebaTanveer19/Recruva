@@ -444,7 +444,10 @@ const disconnectCalendar = async (req, res) => {
 // GET /api/interview
 const getAllInterviews = async (req, res) => {
   try {
+    const isDept = req.user.role === "DEPARTMENT";
+
     const interviews = await prisma.interview.findMany({
+      where: isDept ? { assignedToId: req.user.id } : undefined,
       include: {
         application: {
           include: {

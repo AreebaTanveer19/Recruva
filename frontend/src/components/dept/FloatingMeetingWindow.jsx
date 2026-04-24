@@ -14,15 +14,16 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import OpenInFullIcon from "@mui/icons-material/OpenInFull";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
-export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink }) {
+export function FloatingMeetingWindow({ candidateName, jobTitle, meetLink, stopped = false }) {
   const [minimized, setMinimized] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [toastOpen, setToastOpen] = useState(false);
- //const meetWindowRef = useRef(null);
+
   useEffect(() => {
+    if (stopped) return;
     const interval = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [stopped]);
 
   const formatTime = (s) => {
     const h = Math.floor(s / 3600);
@@ -47,32 +48,34 @@ const openMeet = () => {
     }
 };
 
-  /* ── Pulsing green dot ── */
-  const PulseDot = ({ size = 10 }) => (
+  /* ── Status dot ── */
+  const StatusDot = ({ size = 10 }) => (
     <Box
       sx={{ position: "relative", width: size, height: size, flexShrink: 0 }}
     >
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: "50%",
-          bgcolor: "success.main",
-          opacity: 0.75,
-          animation: "ping 1.2s cubic-bezier(0,0,0.2,1) infinite",
-          "@keyframes ping": {
-            "0%": { transform: "scale(1)", opacity: 0.75 },
-            "75%, 100%": { transform: "scale(2)", opacity: 0 },
-          },
-        }}
-      />
+      {!stopped && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            bgcolor: "success.main",
+            opacity: 0.75,
+            animation: "ping 1.2s cubic-bezier(0,0,0.2,1) infinite",
+            "@keyframes ping": {
+              "0%": { transform: "scale(1)", opacity: 0.75 },
+              "75%, 100%": { transform: "scale(2)", opacity: 0 },
+            },
+          }}
+        />
+      )}
       <Box
         sx={{
           position: "relative",
           width: size,
           height: size,
           borderRadius: "50%",
-          bgcolor: "success.main",
+          bgcolor: stopped ? "text.disabled" : "success.main",
         }}
       />
     </Box>
@@ -108,7 +111,7 @@ const openMeet = () => {
               borderColor: "divider",
             }}
           >
-            <PulseDot size={8} />
+            <StatusDot size={8} />
             <Typography variant="caption" fontWeight={600} color="text.primary">
               {candidateName}
             </Typography>
@@ -187,13 +190,13 @@ const openMeet = () => {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <PulseDot size={10} />
+              <StatusDot size={10} />
               <Typography
                 variant="caption"
                 fontWeight={600}
-                color="success.main"
+                color={stopped ? "text.disabled" : "success.main"}
               >
-                Live Interview
+                {stopped ? "Interview Ended" : "Live Interview"}
               </Typography>
             </Box>
             <IconButton
