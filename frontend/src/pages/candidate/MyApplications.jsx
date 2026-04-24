@@ -32,6 +32,7 @@ const MyApplications = () => {
   const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState('all');
 
   useEffect(() => {
     (async () => {
@@ -46,6 +47,25 @@ const MyApplications = () => {
     })();
   }, []);
 
+  const statuses = ['all', 'pending', 'reviewed', 'shortlisted', 'rejected', 'accepted'];
+
+  const filteredApplications = selectedStatus === 'all'
+    ? applications
+    : applications.filter((app) => app.status === selectedStatus);
+
+  const getStatusCount = (status) => {
+    if (status === 'all') return applications.length;
+    return applications.filter((app) => app.status === status).length;
+  };
+
+  const getFilterButtonClass = (status) => {
+    const baseClass = 'px-4 py-2 rounded-lg font-medium text-sm transition-colors';
+    const selectedClass = selectedStatus === status
+      ? 'bg-blue-600 text-white'
+      : 'bg-slate-100 text-slate-700 hover:bg-slate-200';
+    return `${baseClass} ${selectedClass}`;
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
@@ -59,6 +79,22 @@ const MyApplications = () => {
             </p>
           </div>
 
+          {/* Status Filters */}
+          <div className="mb-6 flex flex-wrap gap-2">
+            {statuses.map((status) => (
+              <button
+                key={status}
+                onClick={() => setSelectedStatus(status)}
+                className={getFilterButtonClass(status)}
+              >
+                <span className="capitalize">{status}</span>
+                <span className="ml-2 rounded-full bg-slate-200 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                  {getStatusCount(status)}
+                </span>
+              </button>
+            ))}
+          </div>
+
           {loading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
@@ -68,14 +104,16 @@ const MyApplications = () => {
                 />
               ))}
             </div>
-          ) : applications.length === 0 ? (
+          ) : filteredApplications.length === 0 ? (
             <div className="rounded-xl border border-slate-200 bg-white p-12 text-center shadow-sm">
               <Briefcase size={48} className="mx-auto text-slate-300" />
               <h3 className="mt-4 text-base font-semibold text-slate-900">
-                No applications yet
+                No applications found
               </h3>
               <p className="mt-2 text-sm text-slate-500">
-                Start applying to jobs from the dashboard to see them here.
+                {selectedStatus === 'all'
+                  ? 'Start applying to jobs from the dashboard to see them here.'
+                  : `You have no applications with status "${selectedStatus}".`}
               </p>
               <button
                 onClick={() => navigate('/candidate/dashboard')}
@@ -86,7 +124,7 @@ const MyApplications = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {applications.map((app) => (
+              {filteredApplications.map((app) => (
                 <div
                   key={app.id}
                   className="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow-md"

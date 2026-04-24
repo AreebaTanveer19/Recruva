@@ -17,6 +17,7 @@ import SidebarLayout from "./layouts/SidebarLayout";
 import ShortlistedCandidates from "./pages/HR/Shortlisted Candidates/ShortlistedCandidates";
 import InterviewsCalendar from "./pages/DEPT/Interview Scheduling/InterviewsCalendar";
 import MyApplications from "./pages/candidate/MyApplications";
+import CandidateInterviews from "./pages/candidate/CandidateInterviews";
 import JobApplications from "./pages/HR/JobApplications";
 import InterviewSession from "./pages/DEPT/Interview Questions/interviewSession";
 import EditJob from "./pages/DEPT/Jobs/EditJob";
@@ -72,6 +73,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["candidate"]}>
               <MyApplications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/candidate/interviews"
+          element={
+            <ProtectedRoute allowedRoles={["candidate"]}>
+              <CandidateInterviews />
             </ProtectedRoute>
           }
         />

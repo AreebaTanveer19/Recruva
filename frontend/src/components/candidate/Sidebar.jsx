@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiHome, FiBriefcase, FiFileText, FiUser, FiSettings, FiLogOut, FiX, FiMenu } from 'react-icons/fi';
+import { FiHome, FiBriefcase, FiFileText, FiUser, FiSettings, FiLogOut, FiX, FiMenu, FiCalendar } from 'react-icons/fi';
 import { ACCESS_TOKEN } from '../../constants';
 
 const Sidebar = ({ isMobileOpen: propIsMobileOpen, onClose: propOnClose }) => {
@@ -24,6 +24,7 @@ const Sidebar = ({ isMobileOpen: propIsMobileOpen, onClose: propOnClose }) => {
     { icon: <FiHome className="w-5 h-5" />, label: 'Dashboard', path: '/candidate/dashboard' },
     // { icon: <FiBriefcase className="w-5 h-5" />, label: 'Job Openings', path: '/candidate/jobs' },
     { icon: <FiFileText className="w-5 h-5" />, label: 'Applications', path: '/candidate/applications' },
+    { icon: <FiCalendar className="w-5 h-5" />, label: 'Interviews', path: '/candidate/interviews' },
     { icon: <FiUser className="w-5 h-5" />, label: 'Profile', path: '/candidate/profile' },
     // { icon: <FiSettings className="w-5 h-5" />, label: 'Settings', path: '/candidate/settings' },
   ];
