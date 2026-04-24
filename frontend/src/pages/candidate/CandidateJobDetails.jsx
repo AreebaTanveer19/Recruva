@@ -94,6 +94,10 @@ const CandidateJobDetails = () => {
   const [loadingPreviousData, setLoadingPreviousData] = useState(false);
   const [showPreviousPreview, setShowPreviousPreview] = useState(false);
 
+  // Resume upload state
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFileName, setSelectedFileName] = useState('');
+
   /* fetch job */
   useEffect(() => {
     (async () => {
@@ -159,6 +163,9 @@ const CandidateJobDetails = () => {
     setApplyStep('choose-source');
     setApplyError('');
     setSelectedResumeId(null);
+    setSelectedFile(null);
+    setSelectedFileName('');
+    setShowPreviousPreview(false);
   };
 
   const handleChooseProfile = async () => {
@@ -248,10 +255,22 @@ const CandidateJobDetails = () => {
   const handleNewFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Store file and show confirmation
+    setSelectedFile(file);
+    setSelectedFileName(file.name);
+    setApplyStep('upload-confirmation');
+  };
+
+  const handleConfirmUploadAndApply = async () => {
+    if (!selectedFile) return;
+
     setApplying(true);
     setApplyError('');
+
     try {
-      await applyWithNewResume(Number(id), file);
+      // Parse, store in Resume table, and apply all at once
+      await applyWithNewResume(Number(id), selectedFile);
       setApplySuccess('Application submitted successfully!');
       setCanApply(false);
       closeModal();
@@ -260,6 +279,14 @@ const CandidateJobDetails = () => {
     } finally {
       setApplying(false);
     }
+  };
+
+  const handleCancelUpload = () => {
+    setSelectedFile(null);
+    setSelectedFileName('');
+    setApplyStep('upload-resume');
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   /* ─── render helpers ─── */
@@ -580,6 +607,7 @@ const CandidateJobDetails = () => {
                     {applyStep === 'resume-options' && 'Choose resume'}
                     {applyStep === 'select-resume' && 'Select a resume'}
                     {applyStep === 'upload-resume' && 'Upload resume'}
+                    {applyStep === 'upload-confirmation' && 'Confirm file upload'}
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5 truncate">{job.title}</p>
                 </div>
@@ -918,31 +946,22 @@ const CandidateJobDetails = () => {
               {/* Step 3b: Upload new resume */}
               {applyStep === 'upload-resume' && (
                 <div className="space-y-4">
-                  <p className="text-sm text-slate-500">We'll automatically parse your resume.</p>
+                  <p className="text-sm text-slate-500">Select your resume file to proceed.</p>
                   <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleNewFileUpload} />
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={applying}
                     className="group flex w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50/50 px-4 py-10 text-sm transition-all hover:border-blue-400 hover:bg-blue-50/50 disabled:opacity-50"
                   >
-                    {applying ? (
-                      <>
-                        <Loader2 size={28} className="animate-spin text-blue-500" />
-                        <span className="font-medium text-blue-600">Processing & submitting…</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                          <Upload size={22} />
-                        </div>
-                        <div className="text-center">
-                          <span className="font-medium text-slate-700 group-hover:text-blue-700 transition-colors">
-                            Click to upload
-                          </span>
-                          <p className="text-xs text-slate-400 mt-1">PDF, DOC, or DOCX — max 5 MB</p>
-                        </div>
-                      </>
-                    )}
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                      <Upload size={22} />
+                    </div>
+                    <div className="text-center">
+                      <span className="font-medium text-slate-700 group-hover:text-blue-700 transition-colors">
+                        Click to upload
+                      </span>
+                      <p className="text-xs text-slate-400 mt-1">PDF, DOC, or DOCX — max 5 MB</p>
+                    </div>
                   </button>
                   <button
                     onClick={() => setApplyStep(hasPreviousResume ? 'resume-options' : 'choose-source')}
@@ -952,6 +971,55 @@ const CandidateJobDetails = () => {
                   </button>
                 </div>
               )}
+
+              {/* Step 3c: Confirm file upload */}
+              {applyStep === 'upload-confirmation' && selectedFile && (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                        <FileText size={20} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-900 truncate">{selectedFileName}</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {(selectedFile.size / 1024).toFixed(2)} KB
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleConfirmUploadAndApply}
+                      disabled={applying}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-md hover:bg-blue-700 disabled:opacity-50 transition-all"
+                    >
+                      {applying ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          Processing & Applying…
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 size={16} />
+                          Confirm & Apply
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={handleCancelUpload}
+                      disabled={applying}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition disabled:opacity-50"
+                    >
+                      <X size={16} />
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         </div>

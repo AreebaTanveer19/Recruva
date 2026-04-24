@@ -9,6 +9,7 @@ const {
   checkHasPreviousResume,
   applyWithExistingResume,
   applyWithNewResume,
+  previewResumeUpload,
   applyWithProfileData,
   getMyApplications,
   getJobApplications,
@@ -25,6 +26,7 @@ router.get('/resumes', auth, getCandidateResumes);
 router.get('/has-previous-resume', auth, checkHasPreviousResume);
 router.get('/previous-profile-data', auth, getPreviousProfileData);
 router.post('/apply/existing', auth, applyWithExistingResume);
+router.post('/preview-resume', auth, upload.single('resume'), previewResumeUpload);
 router.post('/apply/new', auth, upload.single('resume'), applyWithNewResume);
 router.post('/apply/profile', auth, applyWithProfileData);
 router.get('/my-applications', auth, getMyApplications);

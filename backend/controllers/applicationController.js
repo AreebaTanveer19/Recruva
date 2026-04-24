@@ -193,6 +193,70 @@ const applyWithExistingResume = async (req, res) => {
 };
 
 /**
+ * Preview uploaded resume without creating application
+ * Uploads file, parses it, stores in Resume table, returns parsed data for confirmation
+ * POST /api/application/preview-resume
+ */
+const previewResumeUpload = async (req, res) => {
+  let storagePath;
+
+  try {
+    const candidateId = req.user.id;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Resume file is required',
+      });
+    }
+
+    // Ingest and parse the resume
+    const ingestion = await ingestUploadedResume({
+      file: req.file,
+      candidateId,
+    });
+
+    const { parsedData, pdfUrl } = ingestion;
+    storagePath = ingestion.storagePath;
+
+    // Create resume record in database (without creating application)
+    const resume = await prisma.resume.create({
+      data: {
+        originalName: req.file.originalname,
+        parsedData,
+        pdfUrl,
+        candidateId,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Resume preview generated successfully',
+      data: {
+        resumeId: resume.id,
+        fileName: resume.originalName,
+        parsedData: parsedData,
+        pdfUrl: pdfUrl,
+      },
+    });
+  } catch (error) {
+    console.error('Error previewing resume:', error);
+
+    if (storagePath) {
+      await deleteResumeObject(storagePath).catch(() => {});
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process resume',
+      error: error.message,
+    });
+  } finally {
+    await cleanupLocalUpload(req.file);
+  }
+};
+
+/**
  * Apply with a new resume upload
  * POST /api/application/apply/new
  */
@@ -942,6 +1006,7 @@ module.exports = {
   checkHasPreviousResume,
   applyWithExistingResume,
   applyWithNewResume,
+  previewResumeUpload,
   applyWithProfileData,
   getMyApplications,
   getJobApplications,

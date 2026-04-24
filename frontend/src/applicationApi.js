@@ -18,6 +18,16 @@ export const checkHasPreviousResume = async () => {
   return response.data;
 };
 
+// Preview resume upload (parse and store without creating application)
+export const previewResumeUpload = async (file) => {
+  const formData = new FormData();
+  formData.append('resume', file);
+  const response = await api.post('/application/preview-resume', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
 // Apply with an existing resume
 export const applyWithExistingResume = async (jobId, resumeId) => {
   const response = await api.post('/application/apply/existing', { jobId, resumeId });

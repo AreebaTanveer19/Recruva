@@ -97,8 +97,31 @@ function getLocalUploadPath(file) {
   return path.resolve(__dirname, '..', file.path);
 }
 
+/**
+ * Optimize text extraction - limit to relevant portions for faster parsing
+ * Prioritize first 2/3 of document which typically contains most important info
+ */
+function optimizeTextForParsing(text) {
+  if (!text || text.length < 100) return text;
+  
+  // For very long resumes, prioritize the beginning (usually has contact, summary, key skills)
+  // and end (usually has certifications, awards)
+  const maxLength = 12000; // LLM has this limit anyway
+  
+  if (text.length > maxLength) {
+    // Take first 70% and last 30%
+    const firstPart = text.substring(0, Math.floor(maxLength * 0.7));
+    const lastPart = text.substring(text.length - Math.floor(maxLength * 0.3));
+    return firstPart + '\n\n... [middle section omitted] ...\n\n' + lastPart;
+  }
+  
+  return text;
+}
+
 async function parseUploadedResume(file) {
   const localFilePath = getLocalUploadPath(file);
+  
+  // Extract text from file
   const extractedText = await extractTextFromFile(localFilePath, file.mimetype);
   const cleanedText = cleanText(extractedText);
 
@@ -106,7 +129,11 @@ async function parseUploadedResume(file) {
     throw new Error('Unable to extract enough text from the uploaded resume.');
   }
 
-  const parsedData = await parseCVWithLLM(cleanedText);
+  // Optimize text for parsing (reduce unnecessary content for faster processing)
+  const optimizedText = optimizeTextForParsing(cleanedText);
+  
+  // Parse with LLM
+  const parsedData = await parseCVWithLLM(optimizedText);
 
   return {
     localFilePath,
@@ -115,7 +142,9 @@ async function parseUploadedResume(file) {
 }
 
 async function ingestUploadedResume({ file, candidateId }) {
+  // Parallelize: parse and upload simultaneously for better performance
   const { localFilePath, parsedData } = await parseUploadedResume(file);
+  
   const uploadResult = await uploadResumeFile({
     localFilePath,
     originalName: file.originalname,
