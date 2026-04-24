@@ -71,3 +71,12 @@ export const fetchInterviews = async () => {
     throw error;
   }
 };
+
+export const checkUserCalendarStatus = async (userId) => {
+  try {
+    const res = await api.get(`/interview/user-calendar-status/${userId}`);
+    return res.data.connected;
+  } catch {
+    return false;
+  }
+};

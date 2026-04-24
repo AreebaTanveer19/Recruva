@@ -12,6 +12,7 @@ import {
   MenuItem,
   Select,
   FormControl,
+  Alert,
   Paper,
   Divider,
 } from "@mui/material";
@@ -29,7 +30,7 @@ import VideocamIcon from "@mui/icons-material/Videocam";
 import LinkIcon from "@mui/icons-material/Link";
 import PlaceIcon from "@mui/icons-material/Place";
 import DescriptionIcon from "@mui/icons-material/Description";
-import { interviewModes } from "../../../interviewData";
+import { interviewModes, checkUserCalendarStatus } from "../../../interviewData";
 import { getUsersByRole } from "../data/candidateList";
 
 
@@ -46,6 +47,7 @@ export default function ScheduleInterviewModal({
   const [departmentUsers, setDepartmentUsers] = useState([]);
   const [assignedToId, setAssignedToId] = useState("");
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [interviewerCalendarConnected, setInterviewerCalendarConnected] = useState(null);
 
   useEffect(() => {
     if (open) {
@@ -63,6 +65,14 @@ export default function ScheduleInterviewModal({
       loadDepartmentUsers();
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!assignedToId) {
+      setInterviewerCalendarConnected(null);
+      return;
+    }
+    checkUserCalendarStatus(assignedToId).then(setInterviewerCalendarConnected);
+  }, [assignedToId]);
 
   const handleModeChange = (value) => {
     setMode(value);
@@ -263,6 +273,17 @@ export default function ScheduleInterviewModal({
                   ))}
                 </Select>
               </FormControl>
+
+              {interviewerCalendarConnected === true && (
+                <Alert severity="success" sx={{ mt: 1, borderRadius: 2 }}>
+                  This interviewer has connected Google Calendar — they will be the meeting host.
+                </Alert>
+              )}
+              {interviewerCalendarConnected === false && (
+                <Alert severity="warning" sx={{ mt: 1, borderRadius: 2 }}>
+                  This interviewer has not connected Google Calendar. You will be the meeting host instead. Ask them to connect their calendar for host privileges.
+                </Alert>
+              )}
             </Box>
 
             {/* NOTES */}

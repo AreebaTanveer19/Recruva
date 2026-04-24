@@ -11,12 +11,72 @@ import {
   fetchInterviews,
 } from "../../../interviewData.jsx";
 import { formatDate } from "../../../helper.js";
+import api from "../../../api";
+import { ACCESS_TOKEN } from "../../../constants";
 
 export default function InterviewsCalendar() {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [interviewsData, setInterviewsData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [calendarStatus, setCalendarStatus] = useState("idle");
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("calendar") === "connected") {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+
+    const checkStatus = async () => {
+      try {
+        const token = localStorage.getItem(ACCESS_TOKEN);
+        const res = await api.get("/interview/calendar-status", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setCalendarStatus(res.data.connected ? "connected" : "idle");
+      } catch {
+        setCalendarStatus("idle");
+      }
+    };
+
+    checkStatus();
+  }, []);
+
+  const connectCalendar = async () => {
+    setCalendarStatus("connecting");
+    try {
+      const token = localStorage.getItem(ACCESS_TOKEN);
+      const res = await api.get("/interview/google-auth", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      } else {
+        setCalendarStatus("idle");
+      }
+    } catch {
+      setCalendarStatus("idle");
+    }
+  };
+
+  const disconnectCalendar = async () => {
+    if (!window.confirm("Are you sure you want to disconnect Google Calendar?")) return;
+    setDisconnecting(true);
+    try {
+      const token = localStorage.getItem(ACCESS_TOKEN);
+      await api.post(
+        "/interview/disconnect-calendar",
+        {},
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setCalendarStatus("idle");
+    } catch {
+      alert("Failed to disconnect Google Calendar");
+    } finally {
+      setDisconnecting(false);
+    }
+  };
 
   useEffect(() => {
     const loadInterviews = async () => {
@@ -80,12 +140,56 @@ export default function InterviewsCalendar() {
     <div className="flex min-h-screen bg-gray-50">
       <main className="flex-1 p-8">
         <div className="mb-6">
-          <h1 className="text-4xl font-semibold text-neutral-900 tracking-tight">
-            Interviews Calendar
-          </h1>
-          <p className="text-neutral-500 text-[15px]">
-            View and manage all scheduled interviews
-          </p>
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-4xl font-semibold text-neutral-900 tracking-tight">
+                Interviews Calendar
+              </h1>
+              <p className="text-neutral-500 text-[15px]">
+                View and manage all scheduled interviews
+              </p>
+            </div>
+
+            {/* Google Calendar connection */}
+            <div className="flex items-center gap-3">
+              {calendarStatus === "connected" ? (
+                <>
+                  <span className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
+                    <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+                    Google Calendar Connected
+                  </span>
+                  <button
+                    onClick={disconnectCalendar}
+                    disabled={disconnecting}
+                    className="px-4 py-2 rounded-lg text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-100 transition disabled:opacity-50"
+                  >
+                    {disconnecting ? "Disconnecting..." : "Disconnect"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={connectCalendar}
+                  disabled={calendarStatus === "connecting"}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 transition disabled:opacity-50"
+                >
+                  {calendarStatus === "connecting" ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    "Connect Google Calendar"
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {calendarStatus !== "connected" && (
+            <p className="mt-3 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 inline-block">
+              Connect your Google Calendar so you can be the host when interviews are scheduled and assigned to you.
+            </p>
+          )}
         </div>
 
         <div className="w-full flex justify-center mt-10">
