@@ -458,6 +458,12 @@ const getAllInterviews = async (req, res) => {
             email: true,
           },
         },
+        assignedTo: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
       },
       orderBy: {
         startTime: "asc",
@@ -488,6 +494,7 @@ const getAllInterviews = async (req, res) => {
       applicationId: interview.applicationId,
       scheduledBy: interview.scheduler,
       assignedToId: interview.assignedToId,
+      interviewer: interview.assignedTo,
     }));
 
     res.status(200).json({

@@ -165,9 +165,13 @@ export default function ScheduledInterviewsTab() {
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
                     Position
                   </th>
+                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
+                    Interviewer
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
                     Date & Time
                   </th>
+               
                   <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
                     Mode
                   </th>
@@ -208,6 +212,13 @@ export default function ScheduledInterviewsTab() {
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm text-gray-700">
                         {interview.position}
+                      </span>
+                    </td>
+
+                    {/* Interviewer */}
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="text-sm text-gray-600">
+                        {interview.interviewer?.email ?? <span className="text-gray-400">—</span>}
                       </span>
                     </td>
 
