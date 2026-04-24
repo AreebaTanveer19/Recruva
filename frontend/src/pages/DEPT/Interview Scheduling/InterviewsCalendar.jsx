@@ -13,6 +13,7 @@ import {
 import { formatDate } from "../../../helper.js";
 import api from "../../../api";
 import { ACCESS_TOKEN } from "../../../constants";
+import { ConfirmDialog } from "../../../components/ConfirmDialog";
 
 export default function InterviewsCalendar() {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function InterviewsCalendar() {
   const [loading, setLoading] = useState(true);
   const [calendarStatus, setCalendarStatus] = useState("idle");
   const [disconnecting, setDisconnecting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -61,7 +63,6 @@ export default function InterviewsCalendar() {
   };
 
   const disconnectCalendar = async () => {
-    if (!window.confirm("Are you sure you want to disconnect Google Calendar?")) return;
     setDisconnecting(true);
     try {
       const token = localStorage.getItem(ACCESS_TOKEN);
@@ -72,9 +73,10 @@ export default function InterviewsCalendar() {
       );
       setCalendarStatus("idle");
     } catch {
-      alert("Failed to disconnect Google Calendar");
+      // keep status unchanged on failure
     } finally {
       setDisconnecting(false);
+      setConfirmOpen(false);
     }
   };
 
@@ -159,11 +161,11 @@ export default function InterviewsCalendar() {
                     Google Calendar Connected
                   </span>
                   <button
-                    onClick={disconnectCalendar}
+                    onClick={() => setConfirmOpen(true)}
                     disabled={disconnecting}
                     className="px-4 py-2 rounded-lg text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-100 transition disabled:opacity-50"
                   >
-                    {disconnecting ? "Disconnecting..." : "Disconnect"}
+                    Disconnect
                   </button>
                 </>
               ) : (
@@ -349,6 +351,17 @@ export default function InterviewsCalendar() {
           </div>
         </div>
       </main>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Disconnect Google Calendar"
+        message="Are you sure you want to disconnect your Google Calendar? You won't be the meeting host for future interviews until you reconnect."
+        confirmText="Disconnect"
+        confirmColor="error"
+        loading={disconnecting}
+        onConfirm={disconnectCalendar}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

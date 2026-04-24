@@ -8,11 +8,13 @@ import api from "../../../api";
 import { fetchShortlistedCandidates } from "../data/candidateList.jsx";
 import { fetchOpenJobs } from "../../../helper";
 import AlertDisplay from "../../../components/AlertDisplay";
+import { ConfirmDialog } from "../../../components/ConfirmDialog";
 
 export default function ShortlistedCandidates() {
   const [activeTab, setActiveTab] = useState("shortlisted");
   const [calendarStatus, setCalendarStatus] = useState("idle");
   const [disconnecting, setDisconnecting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [scheduling, setScheduling] = useState(false);
   const [pageAlert, setPageAlert] = useState({ type: "", title: "", message: "" });
   const [openModal, setOpenModal] = useState(false);
@@ -121,7 +123,6 @@ export default function ShortlistedCandidates() {
   };
 
   const handleDisconnect = async () => {
-    if (!window.confirm("Are you sure you want to disconnect Google Calendar?")) return;
     setDisconnecting(true);
     try {
       await api.post("/interview/disconnect-calendar", {});
@@ -130,6 +131,7 @@ export default function ShortlistedCandidates() {
       showPageAlert("error", "Disconnect Failed", "Failed to disconnect Google Calendar. Please try again.");
     } finally {
       setDisconnecting(false);
+      setConfirmOpen(false);
     }
   };
 
@@ -169,7 +171,7 @@ export default function ShortlistedCandidates() {
           "success",
           "Interview Scheduled",
           res.meetLink
-            ? `Interview scheduled successfully. Google Meet link: ${res.meetLink}`
+            ? `Interview scheduled successfully.`
             : "Interview scheduled successfully."
         );
       } else {
@@ -206,11 +208,11 @@ export default function ShortlistedCandidates() {
                     Google Calendar Connected
                   </span>
                   <button
-                    onClick={handleDisconnect}
+                    onClick={() => setConfirmOpen(true)}
                     disabled={disconnecting}
                     className="px-4 py-2 rounded-lg text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-100 transition disabled:opacity-50"
                   >
-                    {disconnecting ? "Disconnecting..." : "Disconnect"}
+                    Disconnect
                   </button>
                 </>
               ) : (
@@ -342,6 +344,17 @@ export default function ShortlistedCandidates() {
           candidate={selectedCandidate}
           onSchedule={handleScheduleInterview}
           isScheduling={scheduling}
+        />
+
+        <ConfirmDialog
+          open={confirmOpen}
+          title="Disconnect Google Calendar"
+          message="Are you sure you want to disconnect your Google Calendar? You won't be able to schedule Google Meet interviews until you reconnect."
+          confirmText="Disconnect"
+          confirmColor="error"
+          loading={disconnecting}
+          onConfirm={handleDisconnect}
+          onCancel={() => setConfirmOpen(false)}
         />
       </main>
     </div>

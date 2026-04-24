@@ -96,27 +96,17 @@ export default function ScheduleInterviewModal({
   });
 };
 
-  // const handleSubmit = () => {
-  //   if (!date || !time || !mode || !candidate) return;
 
-  //   onSchedule({
-  //     candidateId: candidate.id,
-  //     date,
-  //     time,
-  //     mode,
-  //     meetingLink,
-  //     notes,
-  //   });
+  const isPastDateTime =
+    date && time
+      ? dayjs(date)
+          .hour(dayjs(time).hour())
+          .minute(dayjs(time).minute())
+          .second(0)
+          .isBefore(dayjs())
+      : false;
 
-  //   setDate(null);
-  //   setTime(null);
-  //   setMode("");
-  //   setMeetingLink("");
-  //   setNotes("");
-  //   onClose();
-  // };
-
-  const isFormValid = date && time && mode && assignedToId && !isScheduling;
+  const isFormValid = date && time && mode && assignedToId && !isScheduling && !isPastDateTime;
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -205,9 +195,15 @@ export default function ScheduleInterviewModal({
                     textField: {
                       fullWidth: true,
                       size: "small",
+                      error: isPastDateTime,
                     },
                   }}
                 />
+                {isPastDateTime && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+                    This date and time has already passed.
+                  </Typography>
+                )}
               </Box>
             </Box>
 
@@ -270,12 +266,12 @@ export default function ScheduleInterviewModal({
 
               {interviewerCalendarConnected === true && (
                 <Alert severity="success" sx={{ mt: 1, borderRadius: 2 }}>
-                  This interviewer has connected Google Calendar — they will be the meeting host.
+                  This interviewer will be the meeting host.
                 </Alert>
               )}
               {interviewerCalendarConnected === false && (
                 <Alert severity="warning" sx={{ mt: 1, borderRadius: 2 }}>
-                  This interviewer has not connected Google Calendar. You will be the meeting host instead. Ask them to connect their calendar for host privileges.
+                  This interviewer has not connected Google Calendar.
                 </Alert>
               )}
             </Box>
