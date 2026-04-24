@@ -21,6 +21,31 @@ function toScore(similarity, type = 'skills') {
 
 async function scoreCandidate(job, parsedData, applicationId, resumeId) {
   //const jobText = prepareJobText(job);
+  const config = job.scoringConfig || {};
+
+  if (config.considerCGPA && config.minCGPA) {
+    const cgpa = parsedData.education?.[0]?.cgpa;
+  const candidateCGPA = parseFloat(cgpa);
+    if (!candidateCGPA || isNaN(candidateCGPA) || candidateCGPA < config.minCGPA) {
+      console.log(`❌ Candidate CGPA ${candidateCGPA} below minimum ${config.minCGPA} for application ${applicationId}`);
+      return {
+        applicationId,
+        finalScore: -1,
+        breakdown: {
+          reason: isNaN(candidateCGPA) 
+          ? `CGPA not mentioned, minimum requirement is ${config.minCGPA}`
+          : `CGPA ${candidateCGPA} below minimum requirement of ${config.minCGPA}`,
+        },
+      };
+    }
+  }
+
+  const weights = {
+    skills:     config.skillsWeight     ?? 0.5,
+    experience: config.experienceWeight ?? 0.5,
+    // education: config.educationWeight ?? 0.10,
+  };
+
   const candidateText = prepareCandidateText(parsedData);
 
    const [
@@ -30,13 +55,6 @@ async function scoreCandidate(job, parsedData, applicationId, resumeId) {
     getJobEmbeddings(job),
     getCandidateEmbeddings(resumeId, candidateText), // ✅ pass resumeId
   ]);
-
-  const config = job.scoringConfig || {};
-  const weights = {
-    skills:     config.skillsWeight     ?? 0.5,
-    experience: config.experienceWeight ?? 0.5,
-    // education: config.educationWeight ?? 0.10,
-  };
 
   const skillsScore = toScore(cosineSimilarity(requirementsEmb, skillsCandEmb), 'skills');
 

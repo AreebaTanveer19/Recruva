@@ -21,8 +21,8 @@ model User {
   googleAccessToken   String?
   googleRefreshToken  String?
   googleTokenExpiry   DateTime?
-  scheduledInterviews Interview[] @relation("UserScheduledInterviews")
   assignedInterviews  Interview[] @relation("UserAssignedInterviews")
+  scheduledInterviews Interview[] @relation("UserScheduledInterviews")
   createdJobs         Job[]       @relation("JobCreator")
   postedJobs          Job[]       @relation("JobPosters")
 }
@@ -69,8 +69,8 @@ model JobDetails {
   experienceLevel  Int
   salaryMin        Int
   salaryMax        Int
-  minDegreeLevel     String   @default("BSC")  // BSC, MSC, PhD
-  requiredDegrees    String[] @default([])     // CS, SE, IT, DS, AI
+  minDegreeLevel   String   @default("BSC")
+  requiredDegrees  String[] @default([])
   job              Job      @relation(fields: [jobId], references: [id])
 }
 
@@ -101,32 +101,25 @@ model CvData {
 }
 
 model Interview {
-  id             Int             @id @default(autoincrement())
-
-  applicationId  Int             @unique
-  application    Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  scheduledBy    Int
-  assignedToId   Int?
-
-  startTime      DateTime
-  endTime        DateTime
-
-  mode           InterviewMode
-  meetLink       String?
-  notes          String?
+  id                Int             @id @default(autoincrement())
+  scheduledBy       Int
+  startTime         DateTime
+  endTime           DateTime
+  mode              InterviewMode
+  meetLink          String?
+  notes             String?
+  status            InterviewStatus @default(scheduled)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  assignedToId      Int?
+  applicationId     Int             @unique
+  round             Int             @default(1)
   interviewFeedback String?
-
-  status         InterviewStatus @default(scheduled)
-
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  round Int @default(1)
-
-  scheduler      User            @relation("UserScheduledInterviews", fields: [scheduledBy], references: [id])
-  assignedTo     User?           @relation("UserAssignedInterviews", fields: [assignedToId], references: [id])
-
+  application       Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  assignedTo        User?           @relation("UserAssignedInterviews", fields: [assignedToId], references: [id])
+  scheduler         User            @relation("UserScheduledInterviews", fields: [scheduledBy], references: [id])
 }
+
 model Resume {
   id           Int           @id @default(autoincrement())
   originalName String
@@ -151,8 +144,8 @@ model Application {
   candidate      Candidate         @relation(fields: [candidateId], references: [id])
   job            Job               @relation(fields: [jobId], references: [id])
   resume         Resume            @relation(fields: [resumeId], references: [id])
+  interview      Interview?
 
-  interview  Interview?
   @@unique([candidateId, jobId])
 }
 

@@ -24,7 +24,7 @@ function HRDashboard() {
         const [appRes, jobRes, intRes] = await Promise.all([
           api.get("/application/"),   // adjust endpoint as needed
           api.get("/dashboard-jobs/"),           // adjust endpoint as needed
-          api.get("/interview/"),     // adjust endpoint as needed
+          // api.get("/interview/"),     // adjust endpoint as needed
         ]);
         setApplications(appRes.data.applications ?? []);
         setJobs(jobRes.data.jobs ?? []);
