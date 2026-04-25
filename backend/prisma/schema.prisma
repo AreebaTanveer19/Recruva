@@ -88,17 +88,17 @@ model JobScoringConfig {
 }
 
 model CvData {
-  id                Int       @id @default(autoincrement())
-  phone             String?
-  address           String?
-  education         Json?
-  work_experience   Json?
-  skills            String[]
-  projects          Json?
-  certifications    Json?
-  candidateId       Int       @unique
-  experienceSummary String?
-  candidate         Candidate @relation(fields: [candidateId], references: [id])
+  id                  Int       @id @default(autoincrement())
+  phone               String?
+  address             String?
+  education           Json?
+  work_experience     Json?
+  skills              String[]
+  projects            Json?
+  certifications      Json?
+  experienceSummary   String?
+  candidateId         Int       @unique
+  candidate           Candidate @relation(fields: [candidateId], references: [id])
 }
 
 model Interview {
