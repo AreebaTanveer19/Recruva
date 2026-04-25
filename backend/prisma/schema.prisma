@@ -173,6 +173,12 @@ model JobQuestion {
   @@unique([jobId, questionId])
 }
 
+model DegreeEmbedding {
+  id        Int     @id @default(autoincrement())
+  degree    String  @unique
+  embedding Float[]
+}
+
 enum ApplicationStatus {
   pending
   reviewed
