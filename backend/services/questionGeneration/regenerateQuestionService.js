@@ -1,35 +1,52 @@
-const { PrismaClient } = require("@prisma/client");
-const Groq = require("groq-sdk");
-const  {
-  getSignificantWords,
-  isQuestionDuplicate,
-} = require("./helperFunctions")
+/**
+ * regenerateQuestionService.js
+ *
+ * Fixes applied:
+ *   #2 — shared Prisma singleton via config/db
+ *   #3 — parallel fetch of oldQuestion + job via Promise.all
+ *   #4 — filterByTechnologyFit used instead of the broken filterRelevantQuestions
+ *          call (filterRelevantQuestions was referenced but never imported here —
+ *          the bank-alternative path has been throwing ReferenceError silently)
+ *   #6 — seniority context injected into regeneration prompt
+ */
 
-const prisma = new PrismaClient();
+const prisma = require("../../config/db");
+const Groq   = require("groq-sdk");
+
+const { getSignificantWords, isQuestionDuplicate }                           = require("./helperFunctions");
+const { extractSeniority, getSeniorityPromptContext }                        = require("../../utils/seniority");
+const { filterByTechnologyFit }                                              = require("../../utils/technologyConflicts");
+
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// ─── REGENERATE: Replace one question with a better one ───────────
-// Groq calls: 0-1 (bank alt check) + 1-3 (generation, 3 candidates per call)
-// Minimum: 0 calls (relevant bank alt found) | Maximum: 4 calls
 async function regenerateQuestion(jobId, oldQuestionId, jobDescription, requirements = []) {
-  const oldQuestion = await prisma.questionBank.findUnique({
-    where: { id: oldQuestionId },
-  });
-  if (!oldQuestion) throw new Error(`Question with id ${oldQuestionId} not found in bank`);
 
-  // Fetch job context
-  const job = await prisma.job.findUnique({
-    where:  { id: jobId },
-    select: { title: true, keywords: true, details: { select: { description: true, requirements: true } } },
-  });
-  if (!job) throw new Error(`Job with id ${jobId} not found`);
+  // Fix #3: fetch both records in parallel — they are fully independent queries.
+  // Previously these ran sequentially, adding an extra ~50ms round trip.
+  const [oldQuestion, job] = await Promise.all([
+    prisma.questionBank.findUnique({ where: { id: oldQuestionId } }),
+    prisma.job.findUnique({
+      where:  { id: jobId },
+      select: { title: true, keywords: true, details: { select: { description: true, requirements: true } } },
+    }),
+  ]);
+
+  if (!oldQuestion) throw new Error(`Question ${oldQuestionId} not found in bank`);
+  if (!job)         throw new Error(`Job ${jobId} not found`);
 
   const jobTitle        = job.title;
   const jobDesc         = jobDescription || job.details?.description || "";
   const jobRequirements = requirements.length > 0 ? requirements : (job.details?.requirements || []);
   const keywords        = job.keywords || [];
 
-  // ─── Try bank alternative first — 0 Groq calls ───────────────
+  // Fix #6: derive seniority from title for calibrated prompt depth
+  const seniority    = extractSeniority(jobTitle);
+  const seniorityCtx = getSeniorityPromptContext(seniority);
+
+  // ── Try bank alternative first — 0 LLM calls ────────────────────────────
+  // Fix #4: the previous code called filterRelevantQuestions here, which was
+  // never imported into this file — it would throw ReferenceError at runtime.
+  // We now use filterByTechnologyFit (local, deterministic) instead.
   const alternative = await prisma.questionBank.findFirst({
     where: {
       tags:         { hasSome: oldQuestion.tags },
@@ -40,78 +57,78 @@ async function regenerateQuestion(jobId, oldQuestionId, jobDescription, requirem
   });
 
   if (alternative) {
-    // 1 Groq call to verify relevance
-    const relevant = await filterRelevantQuestions([alternative], jobTitle, jobDesc, jobRequirements);
-    if (relevant.length > 0) {
-      console.log("Found relevant alternative in bank — 0 generation calls used");
+    const compatible = filterByTechnologyFit([alternative], keywords);
+    if (compatible.length > 0) {
+      console.log("Swapping in bank alternative — 0 LLM calls");
       await prisma.jobQuestion.update({
         where: { jobId_questionId: { jobId, questionId: oldQuestionId } },
         data:  { questionId: alternative.id },
       });
       return alternative;
     }
-    console.log("Bank alternative not relevant — generating new question");
+    console.log("Bank alternative conflicts with job stack — generating new question");
   }
 
-  // Fetch existing questions for similarity check — DB only
+  // ── Fetch existing questions for similarity check ────────────────────────
   const existingQuestions = await prisma.questionBank.findMany({
     where:  { jobQuestions: { some: { jobId } } },
     select: { question: true },
   });
 
-  // Pre-extract significant words once outside loop
+  // Pre-compute significant words once outside the retry loop
   const existingSignificantWords = existingQuestions.map(q => ({
     question: q.question,
     words:    getSignificantWords(q.question),
   }));
 
-  // Build existing summary once outside loop
   const existingSummary = existingQuestions
     .slice(0, 10)
     .map(q => `- ${q.question}`)
     .join("\n");
 
-  // ─── Generate 3 candidates per attempt, pick best locally ────
-  // Each attempt = 1 Groq call (instead of 2 with relevance check)
+  // ── Generate 3 candidates per attempt, pick first non-duplicate ──────────
+  // Asking for 3 candidates in one call avoids 3 separate LLM round-trips.
+  // Temperature ramps up on retries to increase lexical diversity.
   const MAX_RETRIES = 3;
   let saved = null;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    const prompt = `You are a technical interviewer. Generate 3 DIFFERENT replacement interview questions for this specific job.
+    const prompt = `You are a technical interviewer. Generate 3 different replacement questions.
 
-Job Title: ${jobTitle}
+Job Title: ${jobTitle} (${seniority.toUpperCase()})
+${seniorityCtx}
+
 Job Description: ${jobDesc}
 Key Skills: ${keywords.join(", ")}
 Requirements: ${jobRequirements.slice(0, 5).join(", ")}
 
+Replace this question: "${oldQuestion.question}"
+Tags to stay near: ${oldQuestion.tags.join(", ")}
 Difficulty: ${oldQuestion.difficulty}
-Tags to stay close to: ${oldQuestion.tags.join(", ")}
 
-STRICT RULES:
-1. All 3 questions MUST be directly relevant to this job
-2. Difficulty MUST stay: ${oldQuestion.difficulty}
-3. Each question MUST cover a DIFFERENT skill or sub-topic from each other
-4. Tags MUST include at least one of: ${keywords.slice(0, 5).join(", ")}
-5. Do NOT ask about the same concept as: "${oldQuestion.question}"
-6. Do NOT generate questions similar to these already linked to this job:
-${existingSummary}
+RULES:
+1. All 3 must be relevant to the job AND appropriate for ${seniority.toUpperCase()} level.
+2. Each must cover a DIFFERENT sub-topic from the others.
+3. Do NOT repeat the concept from the replaced question.
+4. Tags MUST include the specific technology (e.g. "Node.js" NOT just "Backend").
+5. Tags must include at least one of: ${keywords.slice(0, 5).join(", ")}.
+6. Do NOT generate questions similar to:
+${existingSummary || "  (none)"}
 
 Return ONLY a JSON array of exactly 3 objects:
-[
-  {
-    "question": "...",
-    "difficulty": "${oldQuestion.difficulty}",
-    "category": "Technical" | "Behavioral" | "Situational" | "HR",
-    "tags": ["tag1", "tag2", ...],
-    "briefAnswer": "one sentence"
-  }
-]
+[{
+  "question":    string,
+  "difficulty":  "${oldQuestion.difficulty}",
+  "category":    "Technical" | "Behavioral" | "Situational" | "HR",
+  "tags":        string[],
+  "briefAnswer": string
+}]
 No markdown, no explanation.`;
 
     const result = await groq.chat.completions.create({
       model:       "llama-3.3-70b-versatile",
       messages:    [{ role: "user", content: prompt }],
-      temperature: Math.min(0.9 + (attempt * 0.1), 1.2), // ramp up creativity per retry
+      temperature: Math.min(0.7 + attempt * 0.15, 1.2),
     });
 
     const raw = result.choices[0].message.content.trim()
@@ -122,37 +139,39 @@ No markdown, no explanation.`;
       candidates = JSON.parse(raw);
       if (!Array.isArray(candidates)) candidates = [candidates];
     } catch {
-      console.log(`Attempt ${attempt}: Failed to parse JSON, retrying...`);
+      console.log(`Attempt ${attempt}: JSON parse failed — retrying`);
       continue;
     }
 
-    console.log(`Attempt ${attempt}: Got ${candidates.length} candidates`);
+    console.log(`Attempt ${attempt}: received ${candidates.length} candidates`);
 
-    // Pick first non-duplicate — no extra Groq call
-    const validCandidate = candidates.find(newQ => {
-      const isDuplicate = isQuestionDuplicate(newQ.question, existingSignificantWords);
-      if (isDuplicate) console.log(`  Skipping (too similar): "${newQ.question}"`);
-      return !isDuplicate;
-    });
+    const valid = candidates.find(
+      c => !isQuestionDuplicate(c.question, existingSignificantWords)
+    );
 
-    if (!validCandidate) {
-      console.log(`Attempt ${attempt}: All candidates too similar — retrying with higher temperature`);
+    if (!valid) {
+      console.log(`Attempt ${attempt}: all candidates too similar — retrying with higher temperature`);
       continue;
     }
 
-    console.log(`Attempt ${attempt} selected: "${validCandidate.question}"`);
+    console.log(`Attempt ${attempt} selected: "${valid.question}"`);
 
     saved = await prisma.questionBank.upsert({
-      where:  { question: validCandidate.question },
+      where:  { question: valid.question },
       update: {},
-      create: { ...validCandidate },
+      create: {
+        question:    valid.question,
+        briefAnswer: valid.briefAnswer || null,
+        difficulty:  valid.difficulty,
+        category:    valid.category || "Technical",
+        tags:        Array.isArray(valid.tags) ? valid.tags : [],
+      },
     });
-
     break;
   }
 
   if (!saved) {
-    throw new Error("Failed to generate a unique question after maximum retries");
+    throw new Error("Failed to generate a unique replacement question after maximum retries");
   }
 
   await prisma.jobQuestion.update({
@@ -163,6 +182,4 @@ No markdown, no explanation.`;
   return saved;
 }
 
-module.exports = {
-  regenerateQuestion,
-};
+module.exports = { regenerateQuestion };

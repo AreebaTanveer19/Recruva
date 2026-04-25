@@ -1,5 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const prisma = require("../../config/db");
 
 const TARGET_PER_TAG = 4;
 const difficultyOrder = { easy: 0, medium: 1, hard: 2 };
