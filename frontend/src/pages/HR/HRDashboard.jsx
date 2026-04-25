@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import api from "./../../api";
-import StatCard from "../../components/hr/Statcard";
+import StatCard from "../../components/hr/StatCard";
 import Pipeline from "../../components/hr/Pipeline";
 import JobRow from "../../components/hr/Jobrow";
 import DeptBar from "../../components/hr/Deptbar";
