@@ -492,7 +492,10 @@ function convertProfileToText(cvData) {
   if (Array.isArray(cvData.education) && cvData.education.length > 0) {
     text += 'EDUCATION\n';
     cvData.education.forEach((edu) => {
-      text += `${edu.degree || ''} - ${edu.institution || ''} (${edu.year || ''})\n`;
+      const level = edu.degreeLevel || 'Unknown Degree';
+      const field = edu.degreeField ? ` in ${edu.degreeField}` : '';
+      const year = edu.graduationYear || '';
+      text += `${level}${field} - ${edu.institution || ''} (${year})\n`;
     });
     text += '\n';
   }

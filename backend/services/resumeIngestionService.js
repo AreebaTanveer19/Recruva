@@ -50,20 +50,54 @@ function normalizeEducation(education) {
     .filter((item) => item && typeof item === 'object')
     .map((item) => {
       const normalized = {
-        degree: toSafeString(item.degree),
-        institution: toSafeString(item.institution),
-        year: toSafeString(item.year),
+        degreeLevel: 'Other',
+        degreeField: toSafeString(item.degreeField || item.field || ''),
+        institution: toSafeString(item.institution || ''),
+        graduationYear: null,
+        cgpa: null,
       };
 
-      // Safely parse and validate CGPA
-      if (item.cgpa) {
-        const cgpaStr = toSafeString(item.cgpa);
-        // Validate CGPA is a valid number between 0-4
-        const cgpaNum = parseFloat(cgpaStr);
+      // Map degree level if provided as enum or convert from old format
+      if (item.degreeLevel) {
+        const validLevels = ['Matric', 'Intermediate', 'Bachelors', 'Masters', 'PhD', 'Other'];
+        normalized.degreeLevel = validLevels.includes(item.degreeLevel) ? item.degreeLevel : 'Other';
+      } else if (item.degreeName || item.degree) {
+        // Support old format: map to degreeLevel using keyword matching
+        const degreeText = toSafeString(item.degreeName || item.degree);
+        const lowerDegree = degreeText.toLowerCase();
+        
+        if (lowerDegree.includes('phd') || lowerDegree.includes('doctorate')) {
+          normalized.degreeLevel = 'PhD';
+        } else if (lowerDegree.includes('master') || lowerDegree.includes('mba') || lowerDegree.includes('m.')) {
+          normalized.degreeLevel = 'Masters';
+        } else if (lowerDegree.includes('bachelor') || lowerDegree.includes('b.')) {
+          normalized.degreeLevel = 'Bachelors';
+        } else if (lowerDegree.includes('intermediate') || lowerDegree.includes('hssc')) {
+          normalized.degreeLevel = 'Intermediate';
+        } else if (lowerDegree.includes('matric') || lowerDegree.includes('ssc')) {
+          normalized.degreeLevel = 'Matric';
+        }
+      }
+
+      // Parse and validate graduationYear (numeric, defaults to null)
+      if (item.graduationYear || item.graduationYear === 0) {
+        const yearNum = typeof item.graduationYear === 'number' ? item.graduationYear : parseInt(String(item.graduationYear), 10);
+        if (!isNaN(yearNum) && yearNum > 1900 && yearNum <= new Date().getFullYear() + 10) {
+          normalized.graduationYear = yearNum;
+        }
+      } else if (item.year) {
+        // Support old 'year' field
+        const yearNum = typeof item.year === 'number' ? item.year : parseInt(String(item.year), 10);
+        if (!isNaN(yearNum) && yearNum > 1900 && yearNum <= new Date().getFullYear() + 10) {
+          normalized.graduationYear = yearNum;
+        }
+      }
+
+      // Parse and validate CGPA (numeric, defaults to null)
+      if (item.cgpa || item.cgpa === 0) {
+        const cgpaNum = typeof item.cgpa === 'number' ? item.cgpa : parseFloat(String(item.cgpa));
         if (!isNaN(cgpaNum) && cgpaNum >= 0 && cgpaNum <= 4.5) {
-          normalized.cgpa = cgpaNum.toFixed(2);
-        } else if (cgpaStr) {
-          normalized.cgpa = cgpaStr;
+          normalized.cgpa = parseFloat(cgpaNum.toFixed(2));
         }
       }
 
@@ -188,6 +222,7 @@ async function syncCandidateCvData(tx, candidateId, parsedData) {
     skills: normalized.skills,
     projects: normalized.projects,
     certifications: normalized.certifications,
+    experienceSummary: normalized.experienceSummary || null,
   };
 
   const existing = await tx.cvData.findUnique({ where: { candidateId } });
@@ -225,6 +260,10 @@ async function syncCandidateCvData(tx, candidateId, parsedData) {
 
   if (normalized.certifications.length > 0) {
     updatePayload.certifications = normalized.certifications;
+  }
+
+  if (normalized.experienceSummary) {
+    updatePayload.experienceSummary = normalized.experienceSummary;
   }
 
   if (Object.keys(updatePayload).length === 0) {
