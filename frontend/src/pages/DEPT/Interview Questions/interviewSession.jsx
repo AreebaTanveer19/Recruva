@@ -27,9 +27,10 @@ export default function InterviewSession() {
   const [alert, setAlert]             = useState({ type: "", title: "", message: "" });
   const [regeneratingId, setRegeneratingId] = useState(null);
   const [deletingId, setDeletingId]         = useState(null);
+  const [timerStopped, setTimerStopped]     = useState(false);
   const questionRefs = useRef({});
   const location = useLocation();
-  const { candidateName, candidateEmail, meetLink, jobId, position, applicationId, interviewId } = location.state || {};
+  const { candidateName,meetLink, jobId, position, interviewId } = location.state || {};
 
  
   const showAlert = (type, title, message) => {
@@ -147,10 +148,21 @@ export default function InterviewSession() {
   /* ---------------- Flat list for finish modal ---------------- */
 
   const allQuestions = useMemo(() => Object.values(grouped).flat(), [grouped]);
- if (!candidateName || !meetLink) {
+  if (!candidateName || !meetLink) {
     return (
-      <div className="p-8 text-center text-red-500">
-        No interview data available!
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 gap-4 text-center px-6">
+        <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-lg font-semibold text-gray-800">No interview selected</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Open your Interviews Calendar and click <span className="font-medium">Conduct Interview</span> on a scheduled interview to begin.
+          </p>
+        </div>
       </div>
     );
   }
@@ -161,6 +173,7 @@ export default function InterviewSession() {
         candidateName={candidateName}
         jobTitle={position || "Interview"}
         meetLink={meetLink}
+        stopped={timerStopped}
       />
 
       {/* Header */}
@@ -262,7 +275,7 @@ export default function InterviewSession() {
               onClick={() => setShowSummary(true)}
               sx={{ bgcolor: "#000", color: "#fff", "&:hover": { bgcolor: "#222" }, borderRadius: 1.5, px: 2.5 }}
             >
-              Finish Interview
+              Submit Feedback
             </Button>
           </Box>
         </Paper>
@@ -274,7 +287,11 @@ export default function InterviewSession() {
         questions={allQuestions}
         elapsed={elapsed}
         interviewId={interviewId}
-        onFinish={() => setShowSummary(false)}
+        onFinish={() => {
+          setShowSummary(false);
+          setTimerStopped(true);
+          showAlert("success", "Feedback Submitted", "Your interview feedback has been recorded successfully.");
+        }}
       />
 
     </Box>

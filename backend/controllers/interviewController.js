@@ -1,4 +1,5 @@
 const dayjs = require("dayjs");
+const { google } = require("googleapis");
 const { oauth2Client, calendar } = require("../config/googleAuth");
 const nodemailer = require("nodemailer");
 const { PrismaClient } = require("@prisma/client");
@@ -193,10 +194,13 @@ const googleRedirect = async (req, res) => {
 
     oauth2Client.setCredentials(tokens);
 
-    // 5. Redirect to frontend
-    res.redirect(
-      "http://localhost:5173/hr/shortlisted-candidates?calendar=connected",
-    );
+    // Redirect to the correct frontend page based on the user's role
+    const redirectPath =
+      user.role === "DEPARTMENT"
+        ? "/dept/dashboard/interviews?calendar=connected"
+        : "/hr/shortlisted-candidates?calendar=connected";
+
+    res.redirect(`http://localhost:5173${redirectPath}`);
   } catch (error) {
     console.error("OAuth Callback Error:", error);
     res.status(500).json({
@@ -259,17 +263,54 @@ const scheduleInterview = async (req, res) => {
       });
     }
 
-    oauth2Client.setCredentials({
-      access_token: user.googleAccessToken,
-      refresh_token: user.googleRefreshToken,
-      expiry_date: user.googleTokenExpiry?.getTime(),
-    });
+    // Determine which account creates the event (organizer = Meet host).
+    // If the assigned interviewer has connected their Google account, use their
+    // credentials so they become the host. Otherwise fall back to the scheduler.
+    let calendarClient = calendar;
+
+    if (assignedToId) {
+      const interviewer = await prisma.user.findUnique({
+        where: { id: parseInt(assignedToId) },
+        select: {
+          googleAccessToken: true,
+          googleRefreshToken: true,
+          googleTokenExpiry: true,
+        },
+      });
+
+      if (interviewer?.googleRefreshToken) {
+        const interviewerAuth = new google.auth.OAuth2(
+          process.env.CLIENT_ID,
+          process.env.CLIENT_SECRET,
+          process.env.REDIRECT_URL,
+        );
+        interviewerAuth.setCredentials({
+          access_token: interviewer.googleAccessToken,
+          refresh_token: interviewer.googleRefreshToken,
+          expiry_date: interviewer.googleTokenExpiry?.getTime(),
+        });
+        calendarClient = google.calendar({ version: "v3", auth: interviewerAuth });
+      } else {
+        // Interviewer hasn't connected Google — fall back to scheduler as host
+        oauth2Client.setCredentials({
+          access_token: user.googleAccessToken,
+          refresh_token: user.googleRefreshToken,
+          expiry_date: user.googleTokenExpiry?.getTime(),
+        });
+      }
+    } else {
+      oauth2Client.setCredentials({
+        access_token: user.googleAccessToken,
+        refresh_token: user.googleRefreshToken,
+        expiry_date: user.googleTokenExpiry?.getTime(),
+      });
+    }
 
     const [hours, minutes] = startTime.split(":").map(Number);
     const startDateTime = dayjs(date).hour(hours).minute(minutes);
     const endDateTime = startDateTime.add(1, "hour");
 
-    const response = await calendar.events.insert({
+    const response = await calendarClient.events.insert({
       calendarId: "primary",
       sendUpdates: "all",
       conferenceDataVersion: 1,
@@ -284,7 +325,11 @@ const scheduleInterview = async (req, res) => {
           dateTime: endDateTime.toISOString(),
           timeZone: "Asia/Karachi",
         },
-        attendees: [{ email: application.candidate.email }],
+        attendees: [
+          { email: application.candidate.email },
+          // Include scheduler so they still get the invite when interviewer is host
+          ...(assignedToId ? [{ email: user.email }] : []),
+        ],
         conferenceData:
           mode === "google_meet"
             ? {
@@ -399,7 +444,10 @@ const disconnectCalendar = async (req, res) => {
 // GET /api/interview
 const getAllInterviews = async (req, res) => {
   try {
+    const isDept = req.user.role === "DEPARTMENT";
+
     const interviews = await prisma.interview.findMany({
+      where: isDept ? { assignedToId: req.user.id } : undefined,
       include: {
         application: {
           include: {
@@ -408,6 +456,12 @@ const getAllInterviews = async (req, res) => {
           },
         },
         scheduler: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+        assignedTo: {
           select: {
             id: true,
             email: true,
@@ -443,6 +497,7 @@ const getAllInterviews = async (req, res) => {
       applicationId: interview.applicationId,
       scheduledBy: interview.scheduler,
       assignedToId: interview.assignedToId,
+      interviewer: interview.assignedTo,
     }));
 
     res.status(200).json({
@@ -627,6 +682,20 @@ const getCalendarStatus = async (req, res) => {
   }
 };
 
+const getUserCalendarStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId) },
+      select: { googleRefreshToken: true },
+    });
+
+    res.status(200).json({ connected: !!user?.googleRefreshToken });
+  } catch (err) {
+    res.status(500).json({ connected: false });
+  }
+};
+
 // Finish interview and update interview status with decision
 const finishInterview = async (req, res) => {
   try {
@@ -751,6 +820,7 @@ module.exports = {
   getInterviewById,
   getFilteredInterviews,
   getCalendarStatus,
+  getUserCalendarStatus,
   finishInterview,
   getInterviewFeedback,
 };

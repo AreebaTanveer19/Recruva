@@ -11,6 +11,7 @@ const {
   getInterviewById,
   getFilteredInterviews,
   getCalendarStatus,
+  getUserCalendarStatus,
   finishInterview,
   getInterviewFeedback,
 } = require("../controllers/interviewController");
@@ -22,7 +23,8 @@ router.post("/disconnect-calendar", auth, disconnectCalendar);
 router.post("/finish-interview", auth, finishInterview);
 router.get("/feedback/:interviewId", auth, getInterviewFeedback);
 router.get("/calendar-status", auth, getCalendarStatus);
+router.get("/user-calendar-status/:userId", auth, getUserCalendarStatus);
 router.get("/:id", getInterviewById);
-router.get("/", getAllInterviews); 
+router.get("/", auth, getAllInterviews);
 
 module.exports = router;

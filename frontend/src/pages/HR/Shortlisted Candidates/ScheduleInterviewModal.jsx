@@ -12,6 +12,7 @@ import {
   MenuItem,
   Select,
   FormControl,
+  Alert,
   Paper,
   Divider,
 } from "@mui/material";
@@ -29,7 +30,7 @@ import VideocamIcon from "@mui/icons-material/Videocam";
 import LinkIcon from "@mui/icons-material/Link";
 import PlaceIcon from "@mui/icons-material/Place";
 import DescriptionIcon from "@mui/icons-material/Description";
-import { interviewModes } from "../../../interviewData";
+import { interviewModes, checkUserCalendarStatus } from "../../../interviewData";
 import { getUsersByRole } from "../data/candidateList";
 
 
@@ -38,6 +39,7 @@ export default function ScheduleInterviewModal({
   onClose,
   candidate,
   onSchedule,
+  isScheduling = false,
 }) {
   const [date, setDate] = useState(null);
   const [time, setTime] = useState(null);
@@ -46,6 +48,7 @@ export default function ScheduleInterviewModal({
   const [departmentUsers, setDepartmentUsers] = useState([]);
   const [assignedToId, setAssignedToId] = useState("");
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [interviewerCalendarConnected, setInterviewerCalendarConnected] = useState(null);
 
   useEffect(() => {
     if (open) {
@@ -63,6 +66,14 @@ export default function ScheduleInterviewModal({
       loadDepartmentUsers();
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!assignedToId) {
+      setInterviewerCalendarConnected(null);
+      return;
+    }
+    checkUserCalendarStatus(assignedToId).then(setInterviewerCalendarConnected);
+  }, [assignedToId]);
 
   const handleModeChange = (value) => {
     setMode(value);
@@ -83,36 +94,19 @@ export default function ScheduleInterviewModal({
     notes,
     assignedToId: parseInt(assignedToId),
   });
-
-  setDate(null);
-  setTime(null);
-  setMode("");
-  setNotes("");
-  setAssignedToId("");
-  onClose();
 };
 
-  // const handleSubmit = () => {
-  //   if (!date || !time || !mode || !candidate) return;
 
-  //   onSchedule({
-  //     candidateId: candidate.id,
-  //     date,
-  //     time,
-  //     mode,
-  //     meetingLink,
-  //     notes,
-  //   });
+  const isPastDateTime =
+    date && time
+      ? dayjs(date)
+          .hour(dayjs(time).hour())
+          .minute(dayjs(time).minute())
+          .second(0)
+          .isBefore(dayjs())
+      : false;
 
-  //   setDate(null);
-  //   setTime(null);
-  //   setMode("");
-  //   setMeetingLink("");
-  //   setNotes("");
-  //   onClose();
-  // };
-
-  const isFormValid = date && time && mode && assignedToId;
+  const isFormValid = date && time && mode && assignedToId && !isScheduling && !isPastDateTime;
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -201,9 +195,15 @@ export default function ScheduleInterviewModal({
                     textField: {
                       fullWidth: true,
                       size: "small",
+                      error: isPastDateTime,
                     },
                   }}
                 />
+                {isPastDateTime && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+                    This date and time has already passed.
+                  </Typography>
+                )}
               </Box>
             </Box>
 
@@ -263,6 +263,17 @@ export default function ScheduleInterviewModal({
                   ))}
                 </Select>
               </FormControl>
+
+              {interviewerCalendarConnected === true && (
+                <Alert severity="success" sx={{ mt: 1, borderRadius: 2 }}>
+                  This interviewer will be the meeting host.
+                </Alert>
+              )}
+              {interviewerCalendarConnected === false && (
+                <Alert severity="warning" sx={{ mt: 1, borderRadius: 2 }}>
+                  This interviewer has not connected Google Calendar.
+                </Alert>
+              )}
             </Box>
 
             {/* NOTES */}
@@ -307,7 +318,7 @@ export default function ScheduleInterviewModal({
               py: 1,
             }}
           >
-            Schedule Interview
+            {isScheduling ? "Scheduling..." : "Schedule Interview"}
           </Button>
         </DialogActions>
       </Dialog>
