@@ -145,134 +145,147 @@ export default function ScheduledInterviewsTab() {
         </div>
       </div>
 
-      {/* Interviews Table */}
+      {/* Interviews — card list on mobile, table on lg+ */}
       <div className="rounded-xl shadow-lg bg-white overflow-hidden">
         {filteredInterviews.length === 0 ? (
           <div className="flex justify-center items-center py-12">
             <div className="text-gray-600">No scheduled interviews found</div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-100 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
-                    Candidate
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
-                    Email
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
-                    Position
-                  </th>
-                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
-                    Interviewer
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
-                    Date & Time
-                  </th>
-               
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
-                    Mode
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">
-                    Feedback
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredInterviews.map((interview) => (
-                  <tr key={interview.id} className="hover:bg-gray-50 transition-colors">
-                    {/* Candidate Name */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gray-300 flex items-center justify-center text-xs font-semibold text-gray-700 flex-shrink-0">
-                          {interview.candidateName
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </div>
-                        <span className="text-sm font-medium text-gray-900">
-                          {interview.candidateName}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Email */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm text-gray-600 truncate max-w-xs">
-                        {interview.candidateEmail}
+          <>
+            {/* ── Mobile / tablet card layout (hidden on lg+) ── */}
+            <div className="lg:hidden divide-y divide-gray-200">
+              {filteredInterviews.map((interview) => (
+                <div key={interview.id} className="p-2 space-y-3">
+                  {/* Row 1: avatar + name + status */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm font-semibold text-gray-900 truncate">
+                        {interview.candidateName}
                       </span>
-                    </td>
+                    </div>
+                    <span
+                      className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${getStatusColor(interview.status)}`}
+                    >
+                      {getStatusLabel(interview.status)}
+                    </span>
+                  </div>
 
-                    {/* Position */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm text-gray-700">
-                        {interview.position}
-                      </span>
-                    </td>
+                  {/* Row 2: details grid */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
+                    <div>
+                      <span className="font-medium text-gray-500 uppercase tracking-wide text-[10px]">Email</span>
+                      <p className="truncate">{interview.candidateEmail}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-500 uppercase tracking-wide text-[10px]">Position</span>
+                      <p className="truncate">{interview.position}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-500 uppercase tracking-wide text-[10px]">Interviewer</span>
+                      <p className="truncate">{interview.interviewer?.email ?? "—"}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-500 uppercase tracking-wide text-[10px]">Date & Time</span>
+                      <p>{formatDateTime(interview.startTime)}</p>
+                    </div>
+                  </div>
 
-                    {/* Interviewer */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm text-gray-600">
-                        {interview.interviewer?.email ?? <span className="text-gray-400">—</span>}
-                      </span>
-                    </td>
-
-                    {/* Date & Time */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm text-gray-600">
-                        {formatDateTime(interview.startTime)}
-                      </span>
-                    </td>
-
-                    {/* Mode */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
-                          interview.mode === "google_meet"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-purple-100 text-purple-800"
-                        }`}
+                  {/* Row 3: mode badge + feedback button */}
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
+                        interview.mode === "google_meet"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-purple-100 text-purple-800"
+                      }`}
+                    >
+                      {interview.mode === "google_meet" ? "Google Meet" : "On-site"}
+                    </span>
+                    {["accepted", "rejected"].includes(interview.status) ? (
+                      <button
+                        onClick={() => { setSelectedInterview(interview); setFeedbackModalOpen(true); }}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded-md transition"
                       >
-                        {interview.mode === "google_meet" ? "Google Meet" : "On-site"}
-                      </span>
-                    </td>
+                        <MessageSquare className="w-3 h-3" />
+                        View Feedback
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
 
-                    {/* Status */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(interview.status)}`}
-                      >
-                        {getStatusLabel(interview.status)}
-                      </span>
-                    </td>
-
-                    {/* Feedback Button */}
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      {["accepted", "rejected"].includes(interview.status) ? (
-                        <button
-                          onClick={() => {
-                            setSelectedInterview(interview);
-                            setFeedbackModalOpen(true);
-                          }}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded-md transition whitespace-nowrap"
-                        >
-                          <MessageSquare className="w-3 h-3" />
-                          View
-                        </button>
-                      ) : (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
-                    </td>
+            {/* ── Desktop table (hidden below lg) ── */}
+            <div className="hidden lg:block">
+              <table className="w-full">
+                <thead className="bg-gray-100 border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">Candidate</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">Email</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">Position</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">Interviewer</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide whitespace-nowrap">Date & Time</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">Mode</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">Feedback</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredInterviews.map((interview) => (
+                    <tr key={interview.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <span className="text-sm font-medium text-gray-900">{interview.candidateName}</span>
+                      </td>
+                      <td className="px-4 py-3 max-w-[160px]">
+                        <span className="text-sm text-gray-600 block truncate">{interview.candidateEmail}</span>
+                      </td>
+                      <td className="px-4 py-3 max-w-[160px]">
+                        <span className="text-sm text-gray-700 block truncate">{interview.position}</span>
+                      </td>
+                      <td className="px-4 py-3 max-w-[160px]">
+                        <span className="text-sm text-gray-600 block truncate">
+                          {interview.interviewer?.email ?? "—"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="text-sm text-gray-600">{formatDateTime(interview.startTime)}</span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
+                            interview.mode === "google_meet" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
+                          }`}
+                        >
+                          {interview.mode === "google_meet" ? "Google Meet" : "On-site"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(interview.status)}`}>
+                          {getStatusLabel(interview.status)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {["accepted", "rejected"].includes(interview.status) ? (
+                          <button
+                            onClick={() => { setSelectedInterview(interview); setFeedbackModalOpen(true); }}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded-md transition"
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                            View
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

@@ -22,7 +22,6 @@ export default function ShortlistedCandidates() {
   const [candidates, setCandidates] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
   const [filteredCandidates, setFilteredCandidates] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loadingCandidates, setLoadingCandidates] = useState(true);
@@ -31,24 +30,6 @@ export default function ShortlistedCandidates() {
     setPageAlert({ type, title, message });
     setTimeout(() => setPageAlert({ type: "", title: "", message: "" }), 5000);
   };
-
-  const generateStats = () => {
-    const shortlistedCandidates = candidates.filter(
-      (c) => !["scheduled", "accepted", "rejected"].includes(c.status)
-    );
-    const total = shortlistedCandidates.length;
-    const pending = shortlistedCandidates.filter((c) => c.status === "pending").length;
-    const interviewed = shortlistedCandidates.filter((c) => c.status === "interviewed").length;
-    const offered = shortlistedCandidates.filter((c) => c.status === "offered").length;
-    return [
-      { label: "Total Candidates", value: total },
-      { label: "Pending", value: pending },
-      { label: "Interviewed", value: interviewed },
-      { label: "Offered", value: offered },
-    ];
-  };
-
-  const stats = generateStats();
 
   useEffect(() => {
     const loadShortlistedCandidates = async () => {
@@ -83,14 +64,13 @@ export default function ShortlistedCandidates() {
       (c) => !["scheduled", "accepted", "rejected"].includes(c.status)
     );
     if (selectedJob) filtered = filtered.filter((c) => c.position === selectedJob);
-    if (selectedStatus) filtered = filtered.filter((c) => c.status === selectedStatus);
     if (searchTerm.trim() !== "") {
       filtered = filtered.filter((c) =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     setFilteredCandidates(filtered);
-  }, [candidates, selectedJob, selectedStatus, searchTerm]);
+  }, [candidates, selectedJob, searchTerm]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -188,29 +168,29 @@ export default function ShortlistedCandidates() {
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
-      <main className="flex-1 p-8 overflow-auto">
+      <main className="flex-1 p-4 md:p-8 overflow-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-start justify-between flex-wrap gap-4">
+        <div className="mb-6 md:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">Shortlisted Candidates</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Shortlisted Candidates</h2>
               <p className="text-sm text-gray-500">
                 Manage and schedule interviews for qualified candidates
               </p>
             </div>
 
             {/* Google Calendar connect/disconnect */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               {calendarStatus === "connected" ? (
                 <>
-                  <span className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-medium">
-                    <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+                  <span className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 border border-green-200 text-green-700 text-xs sm:text-sm font-medium whitespace-nowrap">
+                    <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0" />
                     Google Calendar Connected
                   </span>
                   <button
                     onClick={() => setConfirmOpen(true)}
                     disabled={disconnecting}
-                    className="px-4 py-2 rounded-lg text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-100 transition disabled:opacity-50"
+                    className="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium border border-neutral-300 text-neutral-600 hover:bg-neutral-100 transition disabled:opacity-50 whitespace-nowrap"
                   >
                     Disconnect
                   </button>
@@ -219,7 +199,7 @@ export default function ShortlistedCandidates() {
                 <button
                   onClick={connectCalendar}
                   disabled={calendarStatus === "connecting"}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm font-medium hover:bg-gray-800 transition disabled:opacity-50"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-black text-white text-xs sm:text-sm font-medium hover:bg-gray-800 transition disabled:opacity-50 whitespace-nowrap"
                 >
                   {calendarStatus === "connecting" ? (
                     <>
@@ -235,7 +215,7 @@ export default function ShortlistedCandidates() {
           </div>
 
           {calendarStatus !== "connected" && (
-            <p className="mt-3 text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 inline-block">
+            <p className="mt-3 text-xs sm:text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 inline-block">
               Connect your Google Calendar to schedule Google Meet interviews.
             </p>
           )}
@@ -306,33 +286,35 @@ export default function ShortlistedCandidates() {
                   ))}
                 </select>
 
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="px-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                >
-                  <option value="">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="interviewed">Interviewed</option>
-                  <option value="offered">Offered</option>
-                </select>
+              
               </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              {stats.map((stat) => (
-                <div key={stat.label} className="p-6 h-28 rounded-xl bg-white border shadow-sm">
-                  <p className="text-sm text-gray-500 mb-1">{stat.label}</p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
+            {loadingCandidates ? (
+              <div className="rounded-xl shadow-lg bg-white overflow-hidden animate-pulse">
+                {/* skeleton header */}
+                <div className="bg-gray-100 border-b border-gray-200 px-4 py-3 hidden lg:flex gap-6">
+                  {[140, 180, 140, 80, 120].map((w, i) => (
+                    <div key={i} className="h-3 rounded bg-gray-300" style={{ width: w }} />
+                  ))}
                 </div>
-              ))}
-            </div>
-
-            <CandidateTable
-              candidates={filteredCandidates}
-              onScheduleInterview={handleScheduleClick}
-            />
+                {/* skeleton rows */}
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="px-4 py-4 border-b border-gray-100 flex flex-col lg:flex-row gap-3 lg:items-center lg:gap-6">
+                    <div className="h-3 rounded bg-gray-200 w-36" />
+                    <div className="h-3 rounded bg-gray-200 w-44" />
+                    <div className="h-3 rounded bg-gray-200 w-32" />
+                    <div className="h-5 rounded-full bg-gray-200 w-20" />
+                    <div className="h-7 rounded-lg bg-gray-200 w-36" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <CandidateTable
+                candidates={filteredCandidates}
+                onScheduleInterview={handleScheduleClick}
+              />
+            )}
           </>
         )}
 
