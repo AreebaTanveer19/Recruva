@@ -3,7 +3,7 @@ import axios from "axios";
 import { ACCESS_TOKEN } from "./constants";
 
 const api = axios.create({
-  baseURL: "https://recruva.azurewebsites.net/api", 
+  baseURL: "http://localhost:3000/api", 
 });
 
 
