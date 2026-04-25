@@ -224,14 +224,28 @@ const scheduleInterview = async (req, res) => {
       });
     }
 
-    // Fetch the application with candidate and job details
-    const application = await prisma.application.findUnique({
-      where: { id: parseInt(applicationId) },
-      include: {
-        candidate: true,
-        job: true,
-      },
-    });
+    // Run all DB reads in parallel before touching Google Calendar
+    const [application, existingInterview, user, interviewerRaw] = await Promise.all([
+      prisma.application.findUnique({
+        where: { id: parseInt(applicationId) },
+        include: { candidate: true, job: true },
+      }),
+      prisma.interview.findFirst({
+        where: { applicationId: parseInt(applicationId) },
+      }),
+      prisma.user.findUnique({ where: { id: req.user.id } }),
+      assignedToId
+        ? prisma.user.findUnique({
+            where: { id: parseInt(assignedToId) },
+            select: {
+              email: true,
+              googleAccessToken: true,
+              googleRefreshToken: true,
+              googleTokenExpiry: true,
+            },
+          })
+        : Promise.resolve(null),
+    ]);
 
     if (!application) {
       return res.status(404).json({
@@ -240,21 +254,12 @@ const scheduleInterview = async (req, res) => {
       });
     }
 
-    // Enforce one interview per application
-    const existingInterview = await prisma.interview.findFirst({
-      where: { applicationId: parseInt(applicationId) },
-    });
-
     if (existingInterview) {
       return res.status(409).json({
         success: false,
         message: `An interview is already scheduled for ${application.candidate.name} on the ${application.job.title} position.`,
       });
     }
-
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-    });
 
     if (!user?.googleRefreshToken) {
       return res.status(400).json({
@@ -269,14 +274,7 @@ const scheduleInterview = async (req, res) => {
     let calendarClient = calendar;
 
     if (assignedToId) {
-      const interviewer = await prisma.user.findUnique({
-        where: { id: parseInt(assignedToId) },
-        select: {
-          googleAccessToken: true,
-          googleRefreshToken: true,
-          googleTokenExpiry: true,
-        },
-      });
+      const interviewer = interviewerRaw;
 
       if (interviewer?.googleRefreshToken) {
         const interviewerAuth = new google.auth.OAuth2(
@@ -327,8 +325,6 @@ const scheduleInterview = async (req, res) => {
         },
         attendees: [
           { email: application.candidate.email },
-          // Include scheduler so they still get the invite when interviewer is host
-          ...(assignedToId ? [{ email: user.email }] : []),
         ],
         conferenceData:
           mode === "google_meet"
@@ -362,8 +358,15 @@ const scheduleInterview = async (req, res) => {
       },
     });
 
-    // Send email to candidate
-    await sendInterviewEmail({
+    // Respond immediately — emails are fire-and-forget so they don't block the client
+    res.status(200).json({
+      success: true,
+      meetLink: response.data.hangoutLink,
+      interviewId: interview.id,
+    });
+
+    // Send emails after responding (non-blocking)
+    sendInterviewEmail({
       to: application.candidate.email,
       candidateName: application.candidate.name,
       interviewerName: user.email,
@@ -372,39 +375,22 @@ const scheduleInterview = async (req, res) => {
       mode: mode === "google_meet" ? "Google Meet" : "On-site",
       notes,
       jobPosition: application.job.title,
-    });
+    }).catch((err) => console.error("Failed to send candidate email:", err));
 
-    // Send email to assigned interviewer if assignedToId is provided
-    if (assignedToId) {
-      try {
-        const interviewerUser = await prisma.user.findUnique({
-          where: { id: parseInt(assignedToId) },
-          select: { email: true },
-        });
-
-        if (interviewerUser) {
-          await sendInterviewerEmail({
-            to: interviewerUser.email,
-            candidateName: application.candidate.name,
-            candidateEmail: application.candidate.email,
-            dateTime: startDateTime.format("DD MMM YYYY, hh:mm A"),
-            meetLink: response.data.hangoutLink,
-            mode: mode === "google_meet" ? "Google Meet" : "On-site",
-            notes,
-            hrEmail: user.email,
-            jobPosition: application.job.title,
-          });
-        }
-      } catch (emailError) {
-        console.error("Failed to send interviewer email:", emailError);
-      }
+    if (assignedToId && interviewerRaw) {
+      sendInterviewerEmail({
+        to: interviewerRaw.email,
+        candidateName: application.candidate.name,
+        candidateEmail: application.candidate.email,
+        dateTime: startDateTime.format("DD MMM YYYY, hh:mm A"),
+        meetLink: response.data.hangoutLink,
+        mode: mode === "google_meet" ? "Google Meet" : "On-site",
+        notes,
+        hrEmail: user.email,
+        jobPosition: application.job.title,
+      }).catch((err) => console.error("Failed to send interviewer email:", err));
     }
 
-    res.status(200).json({
-      success: true,
-      meetLink: response.data.hangoutLink,
-      interviewId: interview.id,
-    });
   } catch (error) {
     console.error("Schedule Interview Error:", error);
     res.status(500).json({
