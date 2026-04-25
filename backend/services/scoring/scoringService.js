@@ -38,7 +38,8 @@ async function computeEducationScore(requiredDegrees, candidateDegreeField) {
   // Embed candidate's degree field on the fly
   let candidateEmb;
   try {
-    candidateEmb = await getEmbedding(candidateDegreeField);
+    const enriched = `University academic degree program in ${candidateDegreeField}, covering related coursework, skills and knowledge`;
+    candidateEmb = await getEmbedding(enriched);
   } catch (err) {
     console.error(`❌ Failed to embed candidate degree field "${candidateDegreeField}":`, err);
     return 0; // degrade gracefully
@@ -48,6 +49,7 @@ async function computeEducationScore(requiredDegrees, candidateDegreeField) {
   let maxSimilarity = 0;
   for (const { degree, embedding } of degreeEmbeddings) {
     const sim = cosineSimilarity(candidateEmb, embedding);
+    console.log(`🎓 Degree similarity — candidate: "${candidateDegreeField}" vs required: "${degree}" = ${sim.toFixed(4)}`);
     if (sim > maxSimilarity) maxSimilarity = sim;
   }
 

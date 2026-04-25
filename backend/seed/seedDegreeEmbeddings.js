@@ -15,7 +15,8 @@ const degrees = [
 
 async function main() {
   for (const degree of degrees) {
-    const embedding = await getEmbedding(degree);
+    const enriched = `University academic degree program in ${degree}, covering related coursework, skills and knowledge`;
+    const embedding = await getEmbedding(enriched);
 
     await prisma.degreeEmbedding.upsert({
       where: { degree },
