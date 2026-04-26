@@ -14,6 +14,7 @@ const {
   getUserCalendarStatus,
   finishInterview,
   getInterviewFeedback,
+  getInterviewResults,
 } = require("../controllers/interviewController");
 
 router.get("/google-auth", auth, googleAuth);
@@ -24,6 +25,7 @@ router.post("/finish-interview", auth, finishInterview);
 router.get("/feedback/:interviewId", auth, getInterviewFeedback);
 router.get("/calendar-status", auth, getCalendarStatus);
 router.get("/user-calendar-status/:userId", auth, getUserCalendarStatus);
+router.get("/results", auth, getInterviewResults);
 router.get("/:id", getInterviewById);
 router.get("/", auth, getAllInterviews);
 

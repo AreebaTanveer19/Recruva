@@ -9,6 +9,7 @@ const {
 } = require('../services/resumeIngestionService');
 const { deleteResumeObject } = require('../services/supabaseStorageService');
 const { triggerApplicationScoring } = require('../services/scoring/triggerScoring');
+const { sendRejectionEmail, sendSelectionEmail } = require("./interviewController");
 
 async function cleanupLocalUpload(file) {
   if (!file?.path) {
@@ -1003,6 +1004,88 @@ const getPreviousProfileData = async (req, res) => {
   }
 };
 
+// PATCH /api/application/:id/decide
+// HR makes final call — accepts or rejects the application
+// Fires rejection email when decision is "rejected"
+const decideApplication = async (req, res) => {
+  try {
+    const applicationId = parseInt(req.params.id);
+    const { decision } = req.body;
+
+    if (!decision || !["accepted", "rejected"].includes(decision)) {
+      return res.status(400).json({
+        success: false,
+        message: "Decision must be either 'accepted' or 'rejected'",
+      });
+    }
+
+    const application = await prisma.application.findUnique({
+      where: { id: applicationId },
+      include: {
+        candidate: true,
+        job: true,
+      },
+    });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found",
+      });
+    }
+
+    if (application.status !== "shortlisted") {
+      return res.status(400).json({
+        success: false,
+        message: "Only shortlisted applications can be decided on",
+      });
+    }
+
+    const updated = await prisma.application.update({
+      where: { id: applicationId },
+      data: { status: decision },
+    });
+
+    if (decision === "rejected") {
+      try {
+        await sendRejectionEmail({
+          to: application.candidate.email,
+          candidateName: application.candidate.name,
+          jobPosition: application.job.title,
+        });
+      } catch (emailError) {
+        console.error("Rejection email failed:", emailError);
+        // don't fail the request if email fails
+      }
+    }
+
+    if (decision === "accepted") {
+  try {
+    await sendSelectionEmail({
+      to: application.candidate.email,
+      candidateName: application.candidate.name,
+      jobPosition: application.job.title,
+    });
+  } catch (emailError) {
+    console.error("Selection email failed:", emailError);
+  }
+}
+
+    res.status(200).json({
+      success: true,
+      message: `Application ${decision === "accepted" ? "accepted" : "rejected"} successfully`,
+      data: updated,
+    });
+  } catch (error) {
+    console.error("Decide Application Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update application decision",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   checkApplicationStatus,
   getCandidateResumes,
@@ -1018,4 +1101,5 @@ module.exports = {
   getPreviousProfileData,
   bulkUpdateStatus,
   getApplicationById,
+  decideApplication,
 };

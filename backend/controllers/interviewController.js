@@ -127,6 +127,92 @@ html: `
   }
 };
 
+const sendRejectionEmail = async ({ to, candidateName, jobPosition }) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: `"Recruva" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "Application Update - Recruva",
+    html: `
+<div style="font-family: Arial, sans-serif; font-size: 15px; color: #000; line-height: 1.6; max-width: 600px;">
+
+  <p>Dear ${candidateName},</p>
+
+  <p>Thank you for your time and effort throughout the interview process for the position of <b>${jobPosition}</b>.</p>
+
+  <p>After careful consideration, we regret to inform you that we will not be moving forward with your application at this time. This was a difficult decision as we had many strong candidates.</p>
+
+  <p>We appreciate your interest in joining our team and encourage you to apply for future openings that match your skills and experience.</p>
+
+  <p>We wish you all the best in your career journey.</p>
+
+  <p>
+    Regards,<br/>
+    Recruva Team
+  </p>
+
+</div>
+`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Rejection email sent successfully to", to);
+  } catch (error) {
+    console.error("Error sending rejection email:", error);
+    throw new Error("Failed to send rejection email");
+  }
+};
+
+const sendSelectionEmail = async ({ to, candidateName, jobPosition }) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: `"Recruva" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "Congratulations! Application Update - Recruva",
+    html: `
+<div style="font-family: Arial, sans-serif; font-size: 15px; color: #000; line-height: 1.6; max-width: 600px;">
+
+  <p>Dear ${candidateName},</p>
+
+  <p>We are delighted to inform you that you have been selected for the position of <b>${jobPosition}</b> following your interview with our team.</p>
+
+  <p>Our HR team will be in touch with you shortly regarding the next steps, including offer details and onboarding information.</p>
+
+  <p>Congratulations and welcome aboard!</p>
+
+  <p>
+    Regards,<br/>
+    Recruva Team
+  </p>
+
+</div>
+`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Selection email sent successfully to", to);
+  } catch (error) {
+    console.error("Error sending selection email:", error);
+    throw new Error("Failed to send selection email");
+  }
+};
+
 /**
  * Redirect HR / Hiring Manager to Google OAuth
  */
@@ -797,6 +883,61 @@ const getInterviewFeedback = async (req, res) => {
   }
 };
 
+
+// GET /api/interview/results
+// Returns all interviews where dept has given verdict (accepted/rejected)
+// and application is still shortlisted (HR hasn't acted yet)
+const getInterviewResults = async (req, res) => {
+  try {
+    const interviews = await prisma.interview.findMany({
+      where: {
+        status: { in: ["accepted", "rejected"] },
+        application: { status: "shortlisted" },
+      },
+      include: {
+        application: {
+          include: {
+            candidate: true,
+            job: true,
+            resume: { select: { pdfUrl: true } },
+          },
+        },
+      },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    const results = interviews.map((interview) => ({
+      id: interview.id,
+      status: interview.status,
+      interviewFeedback: interview.interviewFeedback,
+      applicationId: interview.applicationId,
+      application: {
+        id: interview.application.id,
+        score: interview.application.score,
+        resume: interview.application.resume,
+        candidate: {
+          name: interview.application.candidate.name,
+          email: interview.application.candidate.email,
+        },
+        job: {
+          title: interview.application.job.title,
+          department: interview.application.job.department,
+        },
+      },
+    }));
+
+    res.status(200).json({ success: true, results });
+  } catch (error) {
+    console.error("Get Interview Results Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch interview results",
+    });
+  }
+};
+
+
+
 module.exports = {
   googleAuth,
   googleRedirect,
@@ -809,4 +950,7 @@ module.exports = {
   getUserCalendarStatus,
   finishInterview,
   getInterviewFeedback,
+  getInterviewResults,
+  sendRejectionEmail,
+  sendSelectionEmail,
 };
