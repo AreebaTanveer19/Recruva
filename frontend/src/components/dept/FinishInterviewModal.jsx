@@ -106,10 +106,10 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
               >
                 <MenuItem value="interviewed">Pending Decision</MenuItem>
                 <MenuItem value="accepted">
-                  <span style={{ color: "#16a34a", fontWeight: 600 }}>✓ Accepted</span>
+                  <span style={{ color: "#16a34a", fontWeight: 500 }}>Accepted</span>
                 </MenuItem>
                 <MenuItem value="rejected">
-                  <span style={{ color: "#dc2626", fontWeight: 600 }}>✗ Rejected</span>
+                  <span style={{ color: "#dc2626", fontWeight: 500 }}>Rejected</span>
                 </MenuItem>
               </Select>
             </FormControl>
