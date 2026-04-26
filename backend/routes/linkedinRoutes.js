@@ -6,6 +6,7 @@ const { auth } = require("../middleware/auth");
 const roleCheck = require("../middleware/role");
 const jwt = require("jsonwebtoken");
 const {addJobPoster} = require("../controllers/jobController");
+require('dotenv').config();
 
 const router = express.Router();
 
@@ -83,7 +84,7 @@ router.get("/callback", async (req, res) => {
     },
     });
 
-    res.redirect("http://localhost:5173/hr/open-jobs");
+    res.redirect(`${process.env.FRONTEND_URL}/hr/open-jobs`);
   } catch (error) {
     console.error("LinkedIn callback error:", error.response?.data || error);
     res.status(500).send("LinkedIn auth failed");
@@ -134,7 +135,7 @@ router.post("/post/:jobId", auth , roleCheck("HR"), async (req, res) => {
     postText += `💰 Salary Range: $${job.details.salaryMin} – $${job.details.salaryMax}\n`;
 
   // Application link
-  postText += `\n📩 Apply here 👉 https://yourjobportal.com/jobs/${job.id}`;
+  postText += `\n📩 Apply here 👉 ${process.env.PORTAL_URL}`;
 
 const postContent = {
   author: `urn:li:person:${user.linkedinId}`,

@@ -25,6 +25,7 @@ import CandidateDetailPage from "./pages/HR/CandidateDetailPage";
 import HiringManagerDashboard from "./pages/DEPT/HiringManagerDashboard";
 import ClosedJobsPage from "./pages/DEPT/ClosedJobsPage";
 import ClosedJobDetails from "./pages/DEPT/ClosedJobDetails";
+import InterviewResultsPage from "./pages/HR/InterviewResults";
 
 function App() {
   return (
@@ -103,6 +104,7 @@ function App() {
           <Route path="posted-jobs/:id" element={<JobDetails />} />
           <Route path="applications/:id" element={<CandidateDetailPage />} />
           <Route path="applications" element={<JobApplications />} />
+          <Route path="interview-results" element={<InterviewResultsPage />} />
            <Route
             path="shortlisted-candidates"
             element={<ShortlistedCandidates />}
