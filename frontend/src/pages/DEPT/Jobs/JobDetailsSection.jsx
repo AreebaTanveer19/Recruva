@@ -1,8 +1,31 @@
-const degreeLevels = ["BSC", "MSC", "PhD"];
-const degreeTypes = ["CS", "SE", "IT", "DS", "AI"];
+import { useState, useEffect } from "react";
+import api from "../../../api";
 
-const JobDetailsSection = ({ register, errors, watch }) => {
-  const requiredDegrees = watch("requiredDegrees") || [];
+const degreeLevels = ["BSC", "MSC", "PhD"];
+const FALLBACK_DEGREES = [
+  "Computer Science",
+  "Software Engineering",
+  "Information Technology",
+  "Data Science",
+  "Artificial Intelligence",
+  "Cybersecurity",
+];
+
+const JobDetailsSection = ({ register, errors }) => {
+  const [degreeTypes, setDegreeTypes] = useState([]);
+
+
+  useEffect(() => {
+    api.get("/degrees")
+      .then((res) => {
+        const list = res.data.degrees;
+        setDegreeTypes(list.length > 0 ? list : FALLBACK_DEGREES);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch degrees:", err);
+        setDegreeTypes(FALLBACK_DEGREES);
+      });
+  }, []);
 
   return (
     <div className="border-b border-gray-200 pb-6">

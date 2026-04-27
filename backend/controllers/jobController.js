@@ -425,4 +425,17 @@ const getClosedJobs = async (req, res) => {
   }
 };
 
-module.exports =  { createJob, getOpenJobs, getJobsPostedByHR, getJobsPendingForHR, addJobPoster, editJob, getJobById, getClosedJobs };
+const getDegrees = async (req, res) => {
+  try {
+    const degrees = await prisma.degreeEmbedding.findMany({
+      select: { degree: true },
+      orderBy: { degree: "asc" },
+    });
+    res.json({ degrees: degrees.map((d) => d.degree) });
+  } catch (error) {
+    console.error("Error fetching degrees:", error);
+    res.status(500).json({ error: "Failed to fetch degrees" });
+  }
+};
+
+module.exports =  { createJob, getOpenJobs, getJobsPostedByHR, getJobsPendingForHR, addJobPoster, editJob, getJobById, getClosedJobs, getDegrees };
