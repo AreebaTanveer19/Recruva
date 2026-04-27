@@ -10,13 +10,18 @@ import {
   Paper,
   Select,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@mui/material";
 import { useLocation } from "react-router-dom";
 import { FloatingMeetingWindow } from "../../../components/dept/FloatingMeetingWindow";
 import { TopicSection } from "../../../components/dept/TopicSection";
 import { FinishInterviewModal } from "../../../components/dept/FinishInterviewModal";
 import AlertDisplay from "../../../components/AlertDisplay";
-import { fetchOpenJobs, deleteQuestion, regenerateQuestion } from "../../../helper";
+import { fetchOpenJobs, deleteQuestion, regenerateQuestion, generateMoreQuestions } from "../../../helper";
 
 export default function InterviewSession() {
   const [jobs, setJobs]               = useState([]);
@@ -28,6 +33,12 @@ export default function InterviewSession() {
   const [regeneratingId, setRegeneratingId] = useState(null);
   const [deletingId, setDeletingId]         = useState(null);
   const [timerStopped, setTimerStopped]     = useState(false);
+  const [showGenerateMore, setShowGenerateMore] = useState(false);
+  const [moreCount, setMoreCount]               = useState(5);
+  const [moreDifficulty, setMoreDifficulty]     = useState("any");
+  const [moreKeywords, setMoreKeywords]         = useState("");
+  const [generatingMore, setGeneratingMore]     = useState(false);
+  const [newQuestionIds, setNewQuestionIds]     = useState(new Set());
   const questionRefs = useRef({});
   const location = useLocation();
   const { candidateName,meetLink, jobId, position, interviewId } = location.state || {};
@@ -145,6 +156,28 @@ export default function InterviewSession() {
       setRegeneratingId(null);
     }
   };
+  /* ---------------- Generate More Questions ---------------- */
+
+  const handleGenerateMore = async () => {
+    if (!selectedJob) return;
+    try {
+      setGeneratingMore(true);
+      showAlert("info", "Generating", "Generating additional questions, please wait...");
+      const keywords = moreKeywords.split(",").map(k => k.trim()).filter(Boolean);
+      const res = await generateMoreQuestions(selectedJob, moreCount, moreDifficulty, keywords);
+      setNewQuestionIds(new Set(res.newIds || []));
+      setGrouped(res.questions.grouped || {});
+      setShowGenerateMore(false);
+      setMoreKeywords("");
+      showAlert("success", "Done", `${res.newIds?.length ?? moreCount} new question${moreCount > 1 ? "s" : ""} added successfully.`);
+    } catch (err) {
+      console.error("Error generating more questions:", err);
+      showAlert("error", "Failed", "Could not generate more questions. Please try again.");
+    } finally {
+      setGeneratingMore(false);
+    }
+  };
+
   /* ---------------- Flat list for finish modal ---------------- */
 
   const allQuestions = useMemo(() => Object.values(grouped).flat(), [grouped]);
@@ -258,6 +291,7 @@ export default function InterviewSession() {
                 onRegenerate={handleRegenerateQuestion}
                 regeneratingId={regeneratingId}
                 deletingId={deletingId}
+                newQuestionIds={newQuestionIds}
               />
             ))
           )}
@@ -265,10 +299,99 @@ export default function InterviewSession() {
         </Box>
       </Box>
 
+      {/* Generate More Dialog */}
+      <Dialog
+        open={showGenerateMore}
+        onClose={() => !generatingMore && setShowGenerateMore(false)}
+        PaperProps={{ sx: { borderRadius: 2, width: 420 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, fontSize: 16, pb: 1 }}>
+          Generate More Questions
+        </DialogTitle>
+
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}>
+          {/* Count */}
+          <Box>
+            <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+              Number of Questions (1–10)
+            </Typography>
+            <TextField
+              type="number"
+              size="small"
+              fullWidth
+              value={moreCount}
+              onChange={e => setMoreCount(Math.min(10, Math.max(1, parseInt(e.target.value) || 1)))}
+              inputProps={{ min: 1, max: 10 }}
+            />
+          </Box>
+
+          {/* Difficulty */}
+          <Box>
+            <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+              Difficulty
+            </Typography>
+            <Select
+              size="small"
+              fullWidth
+              value={moreDifficulty}
+              onChange={e => setMoreDifficulty(e.target.value)}
+            >
+              <MenuItem value="any">Any (mixed)</MenuItem>
+              <MenuItem value="easy">Easy</MenuItem>
+              <MenuItem value="medium">Medium</MenuItem>
+              <MenuItem value="hard">Hard</MenuItem>
+            </Select>
+          </Box>
+
+          {/* Keywords */}
+          <Box>
+            <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+              Focus Keywords <Box component="span" sx={{ fontWeight: 400, color: "text.disabled" }}>(optional, comma-separated)</Box>
+            </Typography>
+            <TextField
+              size="small"
+              fullWidth
+              placeholder="e.g. React hooks, async/await, system design"
+              value={moreKeywords}
+              onChange={e => setMoreKeywords(e.target.value)}
+            />
+            <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: "block" }}>
+              Leave blank to use the job's existing tech stack keywords.
+            </Typography>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button
+            onClick={() => setShowGenerateMore(false)}
+            disabled={generatingMore}
+            sx={{ color: "#6b7280" }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleGenerateMore}
+            disabled={generatingMore}
+            sx={{ bgcolor: "#000", "&:hover": { bgcolor: "#222" }, borderRadius: 1.5, px: 3 }}
+          >
+            {generatingMore ? "Generating..." : "Generate"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Bottom Bar */}
       <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} style={{ position: "sticky", bottom: 0 }}>
         <Paper elevation={0} square sx={{ borderTop: 1, borderColor: "divider", bgcolor: "background.paper" }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", height: 56, px: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 1.5, height: 56, px: 3 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setShowGenerateMore(true)}
+              sx={{ borderColor: "#d1d5db", color: "#374151", "&:hover": { borderColor: "#000", color: "#000" }, borderRadius: 1.5, px: 2.5 }}
+            >
+              Generate More
+            </Button>
             <Button
               variant="contained"
               size="small"

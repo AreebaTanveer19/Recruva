@@ -18,6 +18,7 @@ export function TopicSection({
   onRegenerate,
   regeneratingId,
   deletingId,
+  newQuestionIds = new Set(),
 }) {
   const [expanded, setExpanded] = useState(true);
 
@@ -152,6 +153,7 @@ export function TopicSection({
               onRegenerate={onRegenerate}
               isRegenerating={regeneratingId === q.id}
               isDeleting={deletingId === q.id}
+              isNew={newQuestionIds.has(q.id)}
             />
           ))}
         </Box>
