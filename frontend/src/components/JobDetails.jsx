@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Users } from "lucide-react";
 import api from "./../api";
 import { ACCESS_TOKEN } from "../constants";
@@ -18,9 +18,8 @@ function JobDetails() {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const res = await api.get("/openJobs");
-        const jobData = res.data.jobs.find((j) => j.id === parseInt(id));
-        setJob(jobData);
+        const res = await api.get(`/openJob/${id}`);
+        setJob(res.data.job);
       } catch (error) {
         console.error("Error fetching job details:", error);
       } finally {

@@ -12,9 +12,8 @@ function ClosedJobDetails() {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const res = await api.get("/closedJobs");
-        const jobData = res.data.jobs.find((j) => j.id === parseInt(id));
-        setJob(jobData);
+        const res = await api.get(`/openJob/${id}`);
+        setJob(res.data.job);
       } catch (error) {
         console.error("Error fetching closed job details:", error);
       } finally {

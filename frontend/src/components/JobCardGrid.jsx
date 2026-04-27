@@ -35,7 +35,7 @@ const JobCardGrid = ({ jobs = [], isLinkedInConnected, postingJobId, postToLinke
 
         {variant === "dept" && (
              <button
-                onClick={() => navigate(`/${detailRoute}/${job.id}`)}
+                onClick={() => navigate(`${detailRoute}/${job.id}`)}
                 className="flex-1 w-full bg-gray-900 text-white py-2 rounded-lg font-semibold hover:bg-black transition"
               >
                 View Details
