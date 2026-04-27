@@ -27,12 +27,19 @@ async function getJobQuestions(jobId) {
     };
 
     const jobKeywordsLower = job.keywords.map((k) => k.toLowerCase());
+    const questionTagsLower = q.question.tags.map((t) => t.toLowerCase());
 
-    const matchedKeyword = jobKeywordsLower.find((keyword) =>
-      q.question.tags.map((t) => t.toLowerCase()).includes(keyword)
-    );
-
-    const groupKey = (matchedKeyword || q.question.tags[0] || "general").toLowerCase();
+    // Prioritize first tag if it's a job keyword (respects LLM targeting)
+    let groupKey;
+    if (questionTagsLower.length > 0 && jobKeywordsLower.includes(questionTagsLower[0])) {
+      groupKey = questionTagsLower[0];
+    } else {
+      // Otherwise, find any matching job keyword
+      const matchedKeyword = jobKeywordsLower.find((keyword) =>
+        questionTagsLower.includes(keyword)
+      );
+      groupKey = (matchedKeyword || questionTagsLower[0] || "general").toLowerCase();
+    }
 
     if (!grouped[groupKey]) grouped[groupKey] = [];
     grouped[groupKey].push(questionData);

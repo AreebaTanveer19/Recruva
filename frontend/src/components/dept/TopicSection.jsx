@@ -22,9 +22,15 @@ export function TopicSection({
 }) {
   const [expanded, setExpanded] = useState(true);
 
-  const sorted = [...questions].sort(
-    (a, b) => difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty],
-  );
+  const sorted = [...questions].sort((a, b) => {
+    // New questions appear first
+    const aIsNew = newQuestionIds.has(a.id);
+    const bIsNew = newQuestionIds.has(b.id);
+    if (aIsNew && !bIsNew) return -1;
+    if (!aIsNew && bIsNew) return 1;
+    // Within new or existing questions, sort by difficulty
+    return difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty];
+  });
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column" }}>

@@ -37,6 +37,7 @@ export default function InterviewSession() {
   const [moreCount, setMoreCount]               = useState(5);
   const [moreDifficulty, setMoreDifficulty]     = useState("any");
   const [moreKeywords, setMoreKeywords]         = useState("");
+  const [targetKeyword, setTargetKeyword]       = useState("");
   const [generatingMore, setGeneratingMore]     = useState(false);
   const [newQuestionIds, setNewQuestionIds]     = useState(new Set());
   const questionRefs = useRef({});
@@ -164,11 +165,12 @@ export default function InterviewSession() {
       setGeneratingMore(true);
       showAlert("info", "Generating", "Generating additional questions, please wait...");
       const keywords = moreKeywords.split(",").map(k => k.trim()).filter(Boolean);
-      const res = await generateMoreQuestions(selectedJob, moreCount, moreDifficulty, keywords);
+      const res = await generateMoreQuestions(selectedJob, moreCount, moreDifficulty, keywords, targetKeyword || null);
       setNewQuestionIds(new Set(res.newIds || []));
       setGrouped(res.questions.grouped || {});
       setShowGenerateMore(false);
       setMoreKeywords("");
+      setTargetKeyword("");
       showAlert("success", "Done", `${res.newIds?.length ?? moreCount} new question${moreCount > 1 ? "s" : ""} added successfully.`);
     } catch (err) {
       console.error("Error generating more questions:", err);
@@ -310,6 +312,27 @@ export default function InterviewSession() {
         </DialogTitle>
 
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}>
+          {/* Target Keyword */}
+          <Box>
+            <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+              Add Questions Under Keyword
+            </Typography>
+            <Select
+              size="small"
+              fullWidth
+              value={targetKeyword}
+              onChange={e => setTargetKeyword(e.target.value)}
+            >
+              <MenuItem value="">Auto-group by tags (recommended)</MenuItem>
+              {Object.keys(grouped).map(keyword => (
+                <MenuItem key={keyword} value={keyword}>{keyword}</MenuItem>
+              ))}
+            </Select>
+            <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: "block" }}>
+              Select a keyword to ensure new questions are grouped under it.
+            </Typography>
+          </Box>
+
           {/* Count */}
           <Box>
             <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: "block", mb: 0.75 }}>

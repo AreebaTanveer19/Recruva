@@ -40,9 +40,9 @@ export const regenerateQuestion = async (jobId, questionId) => {
   }
 };
 
-export const generateMoreQuestions = async (jobId, count, difficulty, keywords = []) => {
+export const generateMoreQuestions = async (jobId, count, difficulty, keywords = [], targetKeyword = null) => {
   try {
-    const res = await api.post(`/jobs/${jobId}/questions/generate-more`, { count, difficulty, keywords });
+    const res = await api.post(`/jobs/${jobId}/questions/generate-more`, { count, difficulty, keywords, targetKeyword });
     return res.data; // { message, questions: { grouped, total }, newIds }
   } catch (error) {
     console.error("Error generating more questions:", error);

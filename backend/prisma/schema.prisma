@@ -165,7 +165,7 @@ model JobQuestion {
   id         Int               @id @default(autoincrement())
   jobId      Int
   questionId Int
-  status     JobQuestionStatus @default(pending)
+  status     JobQuestionStatus @default(saved)
   addedAt    DateTime          @default(now())
   job        Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
   question   QuestionBank      @relation(fields: [questionId], references: [id], onDelete: Cascade)

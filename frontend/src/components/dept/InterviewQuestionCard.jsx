@@ -15,8 +15,9 @@ export function InterviewQuestionCard({
   innerRef,
   onDelete,
   onRegenerate,
-    isRegenerating,
+  isRegenerating,
   isDeleting,
+  isNew = false,
 }) {
   return (
     <motion.div
@@ -68,6 +69,27 @@ export function InterviewQuestionCard({
               >
                 {question.number}
               </Typography>
+
+              {isNew && (
+                <Box
+                  component="span"
+                  sx={{
+                    fontSize: 9,
+                    fontWeight: 700,
+                    letterSpacing: "0.05em",
+                    color: "#16a34a",
+                    bgcolor: "#dcfce7",
+                    px: 0.75,
+                    py: 0.25,
+                    borderRadius: 0.75,
+                    lineHeight: 1.4,
+                    flexShrink: 0,
+                    alignSelf: "center",
+                  }}
+                >
+                  NEW
+                </Box>
+              )}
 
               <Box
                 sx={{

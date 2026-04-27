@@ -8,10 +8,11 @@
  *   #10 — specific error messages: 400 for known bad states, detail field on 500s
  */
 
-const prisma                   = require("../config/db");
-const { populateJobQuestions } = require("../services/questionGeneration/questionGenerationService");
-const { regenerateQuestion }   = require("../services/questionGeneration/regenerateQuestionService");
-const { getJobQuestions }      = require("../services/questionGeneration/questionService");
+const prisma                          = require("../config/db");
+const { populateJobQuestions }        = require("../services/questionGeneration/questionGenerationService");
+const { regenerateQuestion }          = require("../services/questionGeneration/regenerateQuestionService");
+const { getJobQuestions }             = require("../services/questionGeneration/questionService");
+const { generateAdditionalQuestions } = require("../services/questionGeneration/generateMoreService");
 
 // POST /jobs/:jobId/questions/generate
 const generateQuestions = async (req, res) => {
@@ -115,10 +116,38 @@ const regenerateQuestionController = async (req, res) => {
   }
 };
 
-// Fix #9: export using the correct name — old code exported regenerateQuestion
-// pointing to the controller but named after the service function, which was confusing
+// POST /jobs/:jobId/questions/generate-more
+const generateMoreQuestions = async (req, res) => {
+  try {
+    const jobId = parseInt(req.params.jobId);
+    if (isNaN(jobId)) {
+      return res.status(400).json({ error: "Invalid jobId — must be a number" });
+    }
+
+    const count        = parseInt(req.body.count) || 5;
+    const difficulty   = req.body.difficulty || "any";
+    const extraKeywords = Array.isArray(req.body.keywords) ? req.body.keywords : [];
+    const targetKeyword = req.body.targetKeyword || null;
+
+    if (count < 1 || count > 10) {
+      return res.status(400).json({ error: "Count must be between 1 and 10" });
+    }
+    if (!["any", "easy", "medium", "hard"].includes(difficulty)) {
+      return res.status(400).json({ error: "Difficulty must be any, easy, medium, or hard" });
+    }
+
+    const newIds  = await generateAdditionalQuestions(jobId, count, difficulty, extraKeywords, targetKeyword);
+    const questions = await getJobQuestions(jobId);
+    return res.status(200).json({ message: "Additional questions generated", questions, newIds });
+  } catch (error) {
+    console.error("generateMoreQuestions error:", error);
+    res.status(500).json({ error: "Failed to generate more questions", detail: error.message });
+  }
+};
+
 module.exports = {
   generateQuestions,
   deleteQuestion,
   regenerateQuestion: regenerateQuestionController,
+  generateMoreQuestions,
 };
