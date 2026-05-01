@@ -1,12 +1,11 @@
 const PIPE_STYLES = {
   pending:     { bg: "bg-yellow-50",  num: "text-yellow-800", lbl: "text-yellow-700" },
-  reviewed:    { bg: "bg-blue-50",    num: "text-blue-800",   lbl: "text-blue-700"   },
   shortlisted: { bg: "bg-green-50",   num: "text-green-800",  lbl: "text-green-700"  },
   rejected:    { bg: "bg-red-50",     num: "text-red-800",    lbl: "text-red-700"    },
   accepted:    { bg: "bg-purple-50",  num: "text-purple-800", lbl: "text-purple-700" },
 };
 
-const STATUSES = ["pending", "reviewed", "shortlisted", "rejected", "accepted"];
+const STATUSES = ["pending", "shortlisted", "rejected", "accepted"];
 
 function Pipeline({ counts }) {
   return (

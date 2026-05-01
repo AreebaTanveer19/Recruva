@@ -12,6 +12,8 @@ const InputField = ({
   registration,
   error,
   placeholder,
+  value,
+  onChange,
 }) => (
   <div>
     <label className="block text-sm font-medium text-slate-500 mb-1">{label}</label>
@@ -22,6 +24,8 @@ const InputField = ({
       <input
         type={type}
         placeholder={placeholder}
+        value={value}
+        onChange={onChange}
         {...registration}
         className={`w-full pl-12 pr-4 py-3 rounded-2xl border bg-white/80 backdrop-blur-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 transition-all duration-300 shadow-sm ${
           error ? 'border-red-400' : 'border-slate-200'
@@ -35,7 +39,7 @@ const InputField = ({
 
 const AuthPage = () => {
   const [activeForm, setActiveForm] = useState('login'); // 'login' or 'signup'
-  const [authMode, setAuthMode] = useState('form'); // 'form', 'otp', 'verified'
+  const [authMode, setAuthMode] = useState('form'); // 'form', 'otp', 'verified', 'forgot-password', 'forgot-password-otp', 'reset-password'
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [userEmail, setUserEmail] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -48,6 +52,14 @@ const AuthPage = () => {
   const [verificationMessage, setVerificationMessage] = useState('');
   const [currentAction, setCurrentAction] = useState('verify'); // 'verify' or 'register'
   const [pendingRegistration, setPendingRegistration] = useState(null);
+  
+  // Forgot password state
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   
   // Google auth state
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -390,6 +402,174 @@ const AuthPage = () => {
     handleSignupWithOtp(data);
   };
 
+  // Forgot password handlers
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    if (!forgotPasswordEmail) {
+      showError('Please enter your email address');
+      return;
+    }
+
+    setIsSendingOtp(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/candidate/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: forgotPasswordEmail }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUserEmail(forgotPasswordEmail);
+        setOtp(['', '', '', '', '', '']);
+        setAuthMode('forgot-password-otp');
+        setTimer(120);
+        setTimerActive(true);
+      } else {
+        showError(data.message || 'Failed to send OTP');
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      showError('Failed to send OTP. Please try again.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyResetOtp = async () => {
+    const otpValue = otp.join('');
+    if (otpValue.length !== 6) {
+      showError('Please enter complete OTP');
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/candidate/verify-reset-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: userEmail, otp: otpValue }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setResetToken(data.resetToken);
+        setAuthMode('reset-password');
+        setShowPasswordReset(true);
+      } else {
+        showError(data.message || 'Invalid OTP');
+      }
+    } catch (error) {
+      console.error('OTP verification failed:', error);
+      showError(error.message || 'Invalid OTP. Please try again.');
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    
+    if (!newPassword || !confirmPassword) {
+      showError('Please enter both passwords');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      showError('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      showError('Password must be at least 6 characters long');
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/candidate/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          newPassword,
+          resetToken,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setVerificationMessage('Password reset successfully! Redirecting to login...');
+        setAuthMode('verified');
+        setTimeout(() => {
+          resetToFormFromForgotPassword();
+          setActiveForm('login');
+          setAuthMode('form');
+        }, 2000);
+      } else {
+        showError(data.message || 'Failed to reset password');
+      }
+    } catch (error) {
+      console.error('Password reset error:', error);
+      showError('Failed to reset password. Please try again.');
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const handleResendResetOtp = async () => {
+    setTimer(120);
+    setTimerActive(true);
+    setIsSendingOtp(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/candidate/resend-reset-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: userEmail }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setOtp(['', '', '', '', '', '']);
+        // Auto-focus first input
+        setTimeout(() => {
+          document.getElementById('otp-0')?.focus();
+        }, 100);
+      } else {
+        showError(data.message || 'Failed to resend OTP');
+      }
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      showError('Failed to resend OTP. Please try again.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const resetToFormFromForgotPassword = () => {
+    setAuthMode('form');
+    setForgotPasswordEmail('');
+    setResetToken('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setOtp(['', '', '', '', '', '']);
+    setTimer(120);
+    setTimerActive(false);
+    setShowPasswordReset(false);
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 auth-container">
       <div className="pointer-events-none absolute inset-0">
@@ -555,6 +735,181 @@ const AuthPage = () => {
                   Continue
                 </motion.button>
               </div>
+            ) : authMode === 'forgot-password' ? (
+              <div className="mt-8 space-y-6">
+                <div className="space-y-2 text-center">
+                  <h3 className="text-2xl font-semibold text-slate-900">Forgot Password?</h3>
+                  <p className="text-sm text-slate-500">Enter your email address and we'll send you an OTP to reset your password</p>
+                </div>
+
+                <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+                  <InputField
+                    icon={FaEnvelope}
+                    label="Email address"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={forgotPasswordEmail}
+                    onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                    error=""
+                  />
+
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: isSendingOtp ? 1 : 1.01 }}
+                    whileTap={{ scale: isSendingOtp ? 1 : 0.98 }}
+                    disabled={isSendingOtp}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30 transition disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSendingOtp ? (
+                      <>
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Sending OTP...
+                      </>
+                    ) : (
+                      <>
+                        Send Reset OTP
+                        <FaArrowRight />
+                      </>
+                    )}
+                  </motion.button>
+                </form>
+
+                <button
+                  type="button"
+                  onClick={() => setAuthMode('form')}
+                  className="w-full text-center text-sm text-slate-500 underline-offset-4 transition hover:text-slate-700"
+                >
+                  ← Back to Login
+                </button>
+              </div>
+            ) : authMode === 'forgot-password-otp' ? (
+              <div className="mt-8 space-y-6 text-center">
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-semibold text-slate-900">Verify your email</h3>
+                  <p className="text-sm text-slate-500">Enter the 6-digit code we sent to {userEmail}</p>
+                </div>
+
+                <div className="flex justify-center gap-3">
+                  {otp.map((digit, index) => (
+                    <input
+                      key={index}
+                      id={`otp-${index}`}
+                      type="text"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      className="h-14 w-12 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-semibold text-slate-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-300"
+                      placeholder="0"
+                    />
+                  ))}
+                </div>
+
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: isVerifyingOtp ? 1 : 1.01 }}
+                  whileTap={{ scale: isVerifyingOtp ? 1 : 0.98 }}
+                  onClick={handleVerifyResetOtp}
+                  disabled={isVerifyingOtp}
+                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30 transition disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isVerifyingOtp ? (
+                    <>
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <FaCheck />
+                      Verify OTP
+                    </>
+                  )}
+                </motion.button>
+
+                <button
+                  type="button"
+                  onClick={handleResendResetOtp}
+                  disabled={timerActive || isSendingOtp}
+                  className="text-sm font-medium text-indigo-600 transition hover:text-indigo-500 disabled:cursor-not-allowed disabled:text-slate-400"
+                >
+                  {isSendingOtp ? 'Sending OTP…' : timerActive ? `Resend OTP in ${timer}s` : 'Resend OTP'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={resetToFormFromForgotPassword}
+                  className="text-sm text-slate-500 underline-offset-4 transition hover:text-slate-700"
+                >
+                  ← Back to Forgot Password
+                </button>
+              </div>
+            ) : authMode === 'reset-password' ? (
+              <div className="mt-8 space-y-6">
+                <div className="space-y-2 text-center">
+                  <h3 className="text-2xl font-semibold text-slate-900">Reset Password</h3>
+                  <p className="text-sm text-slate-500">Create a new password for your account</p>
+                </div>
+
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-500 mb-1">New Password</label>
+                    <div className="relative group">
+                      <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors duration-300" />
+                      <input
+                        type="password"
+                        placeholder="••••••••"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className={`w-full pl-12 pr-4 py-3 rounded-2xl border bg-white/80 backdrop-blur-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 transition-all duration-300 shadow-sm border-slate-200`}
+                      />
+                      <span className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 transition-opacity duration-300 border border-indigo-500/50"></span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-500 mb-1">Confirm Password</label>
+                    <div className="relative group">
+                      <FaLock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors duration-300" />
+                      <input
+                        type="password"
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className={`w-full pl-12 pr-4 py-3 rounded-2xl border bg-white/80 backdrop-blur-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500 transition-all duration-300 shadow-sm border-slate-200`}
+                      />
+                      <span className="absolute inset-0 rounded-2xl pointer-events-none opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 transition-opacity duration-300 border border-indigo-500/50"></span>
+                    </div>
+                  </div>
+
+                  <motion.button
+                    type="submit"
+                    whileHover={{ scale: isResettingPassword ? 1 : 1.01 }}
+                    whileTap={{ scale: isResettingPassword ? 1 : 0.98 }}
+                    disabled={isResettingPassword}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30 transition disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isResettingPassword ? (
+                      <>
+                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        Resetting Password...
+                      </>
+                    ) : (
+                      <>
+                        <FaCheck />
+                        Reset Password
+                      </>
+                    )}
+                  </motion.button>
+                </form>
+
+                <button
+                  type="button"
+                  onClick={resetToFormFromForgotPassword}
+                  className="w-full text-center text-sm text-slate-500 underline-offset-4 transition hover:text-slate-700"
+                >
+                  ← Back
+                </button>
+              </div>
             ) : activeForm === 'login' ? (
               <form onSubmit={handleLoginSubmit(onLoginSubmit)} className="mt-8 space-y-6">
                 <InputField
@@ -596,6 +951,16 @@ const AuthPage = () => {
                     Forgot password?
                   </button>
                 </div> */}
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setAuthMode('forgot-password')}
+                    className="text-sm font-semibold text-indigo-600 transition hover:text-indigo-500"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
 
                 <motion.button
                   type="submit"

@@ -1,5 +1,5 @@
 const express = require('express');
-const { sendOtpEmail, verifyEmailConfig } = require('./emailService');
+const { sendOtpEmail, sendContactEmail, verifyEmailConfig } = require('./emailService');
 const prisma = require('./config/db');
 const { verifyCandidateEmail } = require('./controllers/candidateAuthController');
 
@@ -194,6 +194,52 @@ router.get('/health', (req, res) => {
       emailUser: emailConfig.user ? 'Configured' : 'Not configured'
     }
   });
+});
+
+// Contact form endpoint
+router.post('/contact', async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({
+        success: false,
+        message: 'All fields (name, email, subject, message) are required'
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid email format'
+      });
+    }
+
+    // Send contact email
+    const result = await sendContactEmail(name, email, subject, message);
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Your message has been sent successfully. We will get back to you soon!'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Failed to send your message',
+        error: result.error
+      });
+    }
+  } catch (error) {
+    console.error('Contact form error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
 });
 
 module.exports = router;

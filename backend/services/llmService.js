@@ -690,3 +690,4 @@ module.exports = {
   mapDegreeToDegreeLevel,
   generateFallbackExperienceSummary
 };
+

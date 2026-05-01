@@ -199,7 +199,7 @@ export default function FinalisedCandidatesPage() {
               <table className="w-full text-sm text-gray-800">
                 <thead>
                   <tr className="bg-gray-900 text-white text-left">
-                    {["Candidate", "Email", "Job", "Department", "Score", "Dept Verdict", "HR Decision", "Finalised", ""].map((h) => (
+                    {["Candidate", "Email", "Job", "Department", "Score", "Decision", "Finalised", ""].map((h) => (
                       <th key={h} className="px-4 py-4 font-semibold text-xs uppercase tracking-wide whitespace-nowrap">
                         {h}
                       </th>
@@ -228,14 +228,6 @@ export default function FinalisedCandidatesPage() {
                           ) : <span className="text-xs text-gray-400">—</span>}
                         </td>
 
-                        {/* Dept verdict */}
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${DEPT_COLORS[r.interview?.status] ?? "bg-gray-100 text-gray-500"}`}>
-                            {r.interview?.status === "accepted"
-                              ? <><CheckCircleIcon className="w-3 h-3" />Accept</>
-                              : <><XCircleIcon className="w-3 h-3" />Reject</>}
-                          </span>
-                        </td>
 
                         {/* HR decision */}
                         <td className="px-4 py-3 whitespace-nowrap">
