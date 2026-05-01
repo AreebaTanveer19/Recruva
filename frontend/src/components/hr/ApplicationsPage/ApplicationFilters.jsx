@@ -1,5 +1,12 @@
 const STATUSES = ["pending", "reviewed", "shortlisted", "rejected", "accepted"];
 
+const SCORE_FILTERS = [
+  { value: "strong", label: "Strong (75-100%)", color: "bg-emerald-100 text-emerald-700" },
+  { value: "good", label: "Good (60-75%)", color: "bg-amber-100 text-amber-700" },
+  { value: "weak", label: "Weak (<60%)", color: "bg-rose-100 text-rose-700" },
+  { value: "unmet", label: "Unmet Criteria (-1)", color: "bg-red-100 text-red-700" },
+];
+
 function ApplicationFilters({
   search, setSearch,
   filterStatus, setFilterStatus,
@@ -7,6 +14,7 @@ function ApplicationFilters({
   filterDept, setFilterDept,
   filterDateFrom, setFilterDateFrom,
   filterDateTo, setFilterDateTo,
+  filterScore, setFilterScore,
   departments,
   jobs,
   clearFilters,
@@ -59,6 +67,14 @@ function ApplicationFilters({
           {jobs
             .filter((j) => !filterDept || j.department === filterDept)
             .map((j) => <option key={j.id} value={j.id}>{j.title}</option>)}
+        </select>
+        <select
+          value={filterScore}
+          onChange={(e) => setFilterScore(e.target.value)}
+          className="flex-1 min-w-[140px] px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-800 focus:border-transparent transition text-sm"
+        >
+          <option value="">All Scores</option>
+          {SCORE_FILTERS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
       </div>
 

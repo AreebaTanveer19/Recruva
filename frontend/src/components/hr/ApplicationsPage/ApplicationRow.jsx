@@ -10,12 +10,14 @@ const STATUS_COLORS = {
 };
 
 const scoreColor = (s) => {
+  if (s === -1) return "bg-red-500";
   if (s >= 80) return "bg-green-500";
   if (s >= 60) return "bg-yellow-400";
   return "bg-red-400";
 };
 
 const scoreTextColor = (s) => {
+  if (s === -1) return "text-red-700";
   if (s >= 80) return "text-green-700";
   if (s >= 60) return "text-yellow-700";
   return "text-red-600";
@@ -49,17 +51,23 @@ function ApplicationRow({ app, idx, isChecked, toggleOne }) {
       <td className="px-3 py-4 text-gray-500 truncate">{app.job.department}</td>
       <td className="px-3 py-4">
         {score != null ? (
-          <div className="flex items-center gap-1.5">
-            <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden flex-shrink-0">
-              <div
-                className={`h-full rounded-full ${scoreColor(score)}`}
-                style={{ width: `${score}%` }}
-              />
-            </div>
-            <span className={`text-xs font-semibold ${scoreTextColor(score)}`}>
-              {score}%
+          score === -1 ? (
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap inline-block">
+              Unmet
             </span>
-          </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden flex-shrink-0">
+                <div
+                  className={`h-full rounded-full ${scoreColor(score)}`}
+                  style={{ width: `${score}%` }}
+                />
+              </div>
+              <span className={`text-xs font-semibold ${scoreTextColor(score)}`}>
+                {score}%
+              </span>
+            </div>
+          )
         ) : (
           <span className="text-xs text-gray-400 italic">—</span>
         )}

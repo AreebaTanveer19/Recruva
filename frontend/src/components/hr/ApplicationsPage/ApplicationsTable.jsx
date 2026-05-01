@@ -21,12 +21,14 @@ function ApplicationsTable({ filteredApplications, selected, toggleOne, allSelec
   };
 
   const scoreColor = (s) => {
+    if (s === -1) return "bg-red-500";
     if (s >= 80) return "bg-green-500";
     if (s >= 60) return "bg-yellow-400";
     return "bg-red-400";
   };
 
   const scoreTextColor = (s) => {
+    if (s === -1) return "text-red-700";
     if (s >= 80) return "text-green-700";
     if (s >= 60) return "text-yellow-700";
     return "text-red-600";
@@ -148,17 +150,23 @@ function ApplicationsTable({ filteredApplications, selected, toggleOne, allSelec
               <div className="mb-3 pb-3 border-b border-gray-100">
                 <p className="text-xs text-gray-500 font-medium mb-2">Scoring</p>
                 {score != null ? (
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${scoreColor(score)}`}
-                        style={{ width: `${score}%` }}
-                      />
+                  score === -1 ? (
+                    <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200">
+                      <span className="text-xs font-semibold text-red-700">Did not meet minimum criteria</span>
                     </div>
-                    <span className={`text-xs font-bold ${scoreTextColor(score)}`}>
-                      {score}%
-                    </span>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${scoreColor(score)}`}
+                          style={{ width: `${score}%` }}
+                        />
+                      </div>
+                      <span className={`text-xs font-bold ${scoreTextColor(score)}`}>
+                        {score}%
+                      </span>
+                    </div>
+                  )
                 ) : (
                   <span className="text-xs text-gray-400 italic">—</span>
                 )}

@@ -15,6 +15,7 @@ function AllJobApplications() {
   const [filterDateTo, setFilterDateTo]   = useState("");
   const [selected, setSelected]           = useState(new Set());
   const [bulkLoading, setBulkLoading]     = useState(false);
+  const [filterScore, setFilterScore]     = useState("");
 
   const fetchApplications = async () => {
     setLoading(true);
@@ -56,15 +57,26 @@ function AllJobApplications() {
       const appliedAt      = new Date(app.appliedAt);
       const matchesDateFrom = !filterDateFrom || appliedAt >= new Date(filterDateFrom);
       const matchesDateTo   = !filterDateTo   || appliedAt <= new Date(filterDateTo + "T23:59:59");
-      return matchesSearch && matchesStatus && matchesJobId && matchesDept && matchesDateFrom && matchesDateTo;
+      
+      // Score filter
+      let matchesScore = !filterScore;
+      if (filterScore && app.score != null) {
+        const score = app.score;
+        if (filterScore === "strong") matchesScore = score >= 75;
+        else if (filterScore === "good") matchesScore = score >= 60 && score < 75;
+        else if (filterScore === "weak") matchesScore = score < 60 && score !== -1;
+        else if (filterScore === "unmet") matchesScore = score === -1;
+      }
+      
+      return matchesSearch && matchesStatus && matchesJobId && matchesDept && matchesDateFrom && matchesDateTo && matchesScore;
     });
-  }, [applications, search, filterStatus, filterJobId, filterDept, filterDateFrom, filterDateTo]);
+  }, [applications, search, filterStatus, filterJobId, filterDept, filterDateFrom, filterDateTo, filterScore]);
 
   const clearFilters = () => {
     setSearch(""); setFilterStatus(""); setFilterJobId("");
-    setFilterDept(""); setFilterDateFrom(""); setFilterDateTo("");
+    setFilterDept(""); setFilterDateFrom(""); setFilterDateTo(""); setFilterScore("");
   };
-  const hasActiveFilters = search || filterStatus || filterJobId || filterDept || filterDateFrom || filterDateTo;
+  const hasActiveFilters = search || filterStatus || filterJobId || filterDept || filterDateFrom || filterDateTo || filterScore;
 
   // ── selection ──
   const allVisibleIds = filteredApplications.map((a) => a.id);
@@ -124,6 +136,7 @@ function AllJobApplications() {
         filterDept={filterDept} setFilterDept={setFilterDept}
         filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom}
         filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo}
+        filterScore={filterScore} setFilterScore={setFilterScore}
         departments={departments}
         jobs={jobs}
         clearFilters={clearFilters}
