@@ -50,9 +50,11 @@ export const scheduleInterviewApi = async (payload) => {
   });
 
   if (!res.ok) {
-    const text = await res.text(); 
-    console.error("API Error:", text);
-    throw new Error(`API request failed with status ${res.status}`);
+    const data = await res.json().catch(() => ({}));
+    const err = new Error(data.message || `API request failed with status ${res.status}`);
+    err.code = data.code;
+    err.status = res.status;
+    throw err;
   }
   return res.json();
 };

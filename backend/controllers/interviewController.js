@@ -49,7 +49,8 @@ html: `
 
   <p>
     Regards,<br/>
-    ${interviewerName}
+    HR Team<br/>
+    Recruva
   </p>
 
 </div>
@@ -273,7 +274,7 @@ const googleRedirect = async (req, res) => {
       where: { id: userId },
       data: {
         googleAccessToken: tokens.access_token,
-        googleRefreshToken: tokens.refresh_token || user.googleRefreshToken,
+        googleRefreshToken: tokens.refresh_token ?? user.googleRefreshToken,
         googleTokenExpiry: new Date(tokens.expiry_date),
       },
     });
@@ -394,35 +395,47 @@ const scheduleInterview = async (req, res) => {
     const startDateTime = dayjs(date).hour(hours).minute(minutes);
     const endDateTime = startDateTime.add(1, "hour");
 
-    const response = await calendarClient.events.insert({
-      calendarId: "primary",
-      sendUpdates: "all",
-      conferenceDataVersion: 1,
-      requestBody: {
-        summary: "Recruva Interview",
-        description: `Position: ${application.job.title}\nMode: ${mode}\nNotes: ${notes || "N/A"}`,
-        start: {
-          dateTime: startDateTime.toISOString(),
-          timeZone: "Asia/Karachi",
+    let response;
+    try {
+      response = await calendarClient.events.insert({
+        calendarId: "primary",
+        sendUpdates: "all",
+        conferenceDataVersion: 1,
+        requestBody: {
+          summary: "Recruva Interview",
+          description: `Position: ${application.job.title}\nMode: ${mode}\nNotes: ${notes || "N/A"}`,
+          start: {
+            dateTime: startDateTime.toISOString(),
+            timeZone: "Asia/Karachi",
+          },
+          end: {
+            dateTime: endDateTime.toISOString(),
+            timeZone: "Asia/Karachi",
+          },
+          attendees: [
+            { email: application.candidate.email },
+          ],
+          conferenceData:
+            mode === "google_meet"
+              ? {
+                  createRequest: {
+                    requestId: Date.now().toString(),
+                    conferenceSolutionKey: { type: "hangoutsMeet" },
+                  },
+                }
+              : undefined,
         },
-        end: {
-          dateTime: endDateTime.toISOString(),
-          timeZone: "Asia/Karachi",
-        },
-        attendees: [
-          { email: application.candidate.email },
-        ],
-        conferenceData:
-          mode === "google_meet"
-            ? {
-                createRequest: {
-                  requestId: Date.now().toString(),
-                  conferenceSolutionKey: { type: "hangoutsMeet" },
-                },
-              }
-            : undefined,
-      },
-    });
+      });
+    } catch (error) {
+      if (error?.response?.data?.error === "invalid_grant") {
+        return res.status(401).json({
+          success: false,
+          message: "Google Calendar access expired. Please reconnect your Google account.",
+          code: "GOOGLE_AUTH_EXPIRED",
+        });
+      }
+      throw error;
+    }
 
     // Create interview linked to application
     const interview = await prisma.interview.create({

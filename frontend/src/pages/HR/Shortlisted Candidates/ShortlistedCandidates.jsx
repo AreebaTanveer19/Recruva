@@ -159,8 +159,12 @@ export default function ShortlistedCandidates() {
       }
     } catch (error) {
       console.error(error);
-      const msg = error?.response?.data?.message || "Something went wrong while scheduling.";
-      showPageAlert("error", "Scheduling Failed", msg);
+      if (error?.code === "GOOGLE_AUTH_EXPIRED") {
+        showPageAlert("error", "Google Calendar Disconnected", "Your Google Calendar access has expired. Please reconnect your Google account.");
+      } else {
+        const msg = error?.message || "Something went wrong while scheduling.";
+        showPageAlert("error", "Scheduling Failed", msg);
+      }
     } finally {
       setScheduling(false);
     }
