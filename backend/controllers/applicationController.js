@@ -1086,6 +1086,67 @@ const decideApplication = async (req, res) => {
   }
 };
 
+const getFinalisedCandidates = async (req, res) => {
+  try {
+    const applications = await prisma.application.findMany({
+      where: {
+        status: { in: ["accepted", "rejected"] },
+      },
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        status: true,
+        score: true,
+        scoreBreakdown: true,
+        updatedAt: true,
+        candidate: {
+          select: { id: true, name: true, email: true },
+        },
+        job: {
+          select: { id: true, title: true, department: true },
+        },
+        resume: {
+          select: { id: true, originalName: true, pdfUrl: true},
+        },
+        interview: {
+          select: { status: true, interviewFeedback: true, startTime: true },
+        },
+      },
+    });
+
+    res.status(200).json({ success: true, data: applications });
+  } catch (error) {
+    console.error("Error fetching finalised candidates:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch finalised candidates",
+    });
+  }
+};
+
+// controller
+const getResumeProfile = async (req, res) => {
+  try {
+    const resume = await prisma.resume.findUnique({
+      where: { id: parseInt(req.params.resumeId) },
+      select: {
+        originalName: true,
+        parsedData: true,
+        candidate: { select: { name: true } },
+      },
+    });
+
+    if (!resume || resume.originalName !== "Profile Data") {
+      return res.status(404).json({ success: false, message: "Profile not found" });
+    }
+
+    res.json({ success: true, data: { parsedData: resume.parsedData, candidateName: resume.candidate.name } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Failed to fetch profile" });
+  }
+};
+
+
 module.exports = {
   checkApplicationStatus,
   getCandidateResumes,
@@ -1102,4 +1163,6 @@ module.exports = {
   bulkUpdateStatus,
   getApplicationById,
   decideApplication,
+  getFinalisedCandidates,
+  getResumeProfile,
 };

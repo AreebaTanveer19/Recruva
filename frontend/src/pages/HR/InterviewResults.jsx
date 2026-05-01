@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Loader2 } from "lucide-react";
 import api from "./../../api";
 import { FeedbackViewerModal } from "../../components/hr/FeedbackViewerModal";
 
@@ -257,17 +257,31 @@ function InterviewResultsPage() {
                           <button
                             disabled={loading}
                             onClick={() => decide(app.id, r.status)}
-                            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-500 text-white font-semibold transition disabled:cursor-not-allowed whitespace-nowrap inline-flex items-center gap-1.5"
                           >
-                            {loading ? "..." : "Finalise & Send Offer"}
+                            {loading ? (
+                              <>
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Processing
+                              </>
+                            ) : (
+                              "Finalise & Send Offer"
+                            )}
                           </button>
                         ) : (
                           <button
                             disabled={loading}
                             onClick={() => decide(app.id, r.status)}
-                            className="text-xs px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            className="text-xs px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 disabled:bg-rose-500 text-white font-semibold transition disabled:cursor-not-allowed whitespace-nowrap inline-flex items-center gap-1.5"
                           >
-                            {loading ? "..." : "Confirm & Notify"}
+                            {loading ? (
+                              <>
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                                Processing
+                              </>
+                            ) : (
+                              "Confirm & Notify"
+                            )}
                           </button>
                         )}
                       </td>

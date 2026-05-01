@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 import { ACCESS_TOKEN } from "../constants";
 import { jwtDecode } from "jwt-decode";
 import HRSidebar from "../components/HRSidebar";
-import { Home, Briefcase, FileText, Clock, Archive, ClipboardList, Hourglass } from "lucide-react";
+import { Home, Briefcase, FileText, Clock, Archive, ClipboardList, Hourglass, Users} from "lucide-react";
 import { MdDashboard, MdWork, MdPeople, MdGroups } from "react-icons/md";
 
 const SidebarLayout = () => {
@@ -31,6 +31,10 @@ const SidebarLayout = () => {
   name: "Interview Results",
   path: "/hr/interview-results",
   icon: <ClipboardList  size={20} />,
+},
+  { name: "Finalised Candidates", 
+  path: "/hr/candidates/final",       
+  icon: <Users size={20} /> 
 },
   ];
 
