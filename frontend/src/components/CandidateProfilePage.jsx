@@ -1,10 +1,10 @@
-// src/pages/hr/CandidateProfilePage.jsx
+// src/pages/components/CandidateProfilePage.jsx
 // Route: /hr/candidates/profile/:resumeId
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, MapPin, Mail, Phone, ExternalLink } from "lucide-react";
-import api from "../../api";
+import api from "../api";
 
 // ── Section wrapper ────────────────────────────────────────────────────────────
 const Section = ({ title, children }) => (
