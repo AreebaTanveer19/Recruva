@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { FileText, User } from "lucide-react";
 
 const STATUS_COLORS = {
   pending:     "bg-yellow-100 text-yellow-800 border border-yellow-300",
@@ -23,6 +24,7 @@ const scoreTextColor = (s) => {
 function ApplicationRow({ app, idx, isChecked, toggleOne }) {
   const navigate = useNavigate();
   const score = app.score != null ? Math.round(app.score) : null;
+  const isProfileData = app.resume?.originalName === "Profile Data";
 
   return (
     <tr
@@ -75,14 +77,21 @@ function ApplicationRow({ app, idx, isChecked, toggleOne }) {
         })}
       </td>
       <td className="px-3 py-4" onClick={(e) => e.stopPropagation()}>
-        {app.resume?.pdfUrl ? (
+        {isProfileData ? (
+          <button
+            onClick={() => navigate(`/hr/candidates/profile/${app.resume.id}`)}
+            className="inline-flex items-center justify-center gap-1 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-md transition whitespace-nowrap"
+          >
+            <User className="w-3 h-3" /> View
+          </button>
+        ) : app.resume?.pdfUrl ? (
           <a
             href={app.resume.pdfUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-900 underline underline-offset-2 font-medium hover:text-black transition truncate block"
+            className="inline-flex items-center justify-center gap-1 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-md transition whitespace-nowrap"
           >
-            View
+            <FileText className="w-3 h-3" /> View
           </a>
         ) : (
           <span className="text-gray-400 italic">N/A</span>

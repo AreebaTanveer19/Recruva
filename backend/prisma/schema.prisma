@@ -116,6 +116,7 @@ model Interview {
   applicationId     Int             @unique
   round             Int             @default(1)
   interviewFeedback String?
+  attended          Boolean?
   application       Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   assignedTo        User?           @relation("UserAssignedInterviews", fields: [assignedToId], references: [id])
   scheduler         User            @relation("UserScheduledInterviews", fields: [scheduledBy], references: [id])
@@ -219,6 +220,8 @@ enum InterviewStatus {
   accepted
   rejected
   waiting
+  missed
+  expired
 }
 
 enum JobQuestionStatus {

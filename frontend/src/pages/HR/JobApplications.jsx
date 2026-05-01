@@ -113,7 +113,7 @@ function AllJobApplications() {
   ).length;
 
   return (
-    <div className="flex-1 py-10 px-4 sm:px-6 md:px-8 overflow-y-auto bg-gray-100 min-h-screen">
+    <div className="flex-1 py-6 sm:py-10 px-3 sm:px-6 md:px-8 overflow-y-auto bg-gray-100 min-h-screen">
       <h2 className="text-2xl font-semibold mb-1 text-gray-900">Job Applications</h2>
       <p className="text-sm text-gray-500 mb-6">Review, filter, and manage all candidate applications.</p>
 

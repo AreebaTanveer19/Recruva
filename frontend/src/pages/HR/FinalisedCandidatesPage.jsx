@@ -173,7 +173,7 @@ export default function FinalisedCandidatesPage() {
 
                       {isProfileData(r) ? (
                         <button
-                          onClick={() => window.open(`/hr/candidates/profile/${r.resume.id}`, "_blank")}
+                          onClick={() => navigate(`/hr/candidates/profile/${r.resume.id}`)}
                           className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md transition"
                         >
                           <User className="w-3 h-3" /> View Profile
@@ -245,7 +245,7 @@ export default function FinalisedCandidatesPage() {
                         <td className="px-4 py-3 whitespace-nowrap">
                           {isProfileData(r) ? (
                             <button
-                              onClick={() => window.open(`/hr/candidates/profile/${r.resume.id}`, "_blank")}
+                              onClick={() => navigate(`/hr/candidates/profile/${r.resume.id}`)}
                               className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md transition"
                             >
                               <User className="w-3 h-3" /> View Profile

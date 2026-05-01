@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { FileText, User } from "lucide-react";
 import api from "./../../api";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
+
+const isProfileData = (r) => r.resume?.originalName === "Profile Data";
 
 const STATUS_COLORS = {
   pending:     "bg-yellow-100 text-yellow-800 border border-yellow-300",
@@ -39,6 +42,28 @@ function Section({ title, children }) {
 // ─── score breakdown ──────────────────────────────────────────────────────────
 
 function ScoreBreakdown({ scoreBreakdown, totalScore }) {
+  const isUnmet = totalScore === -1;
+  
+  if (isUnmet) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-red-900">Does not meet minimum criteria</p>
+            <p className="text-xs text-red-700 mt-1 leading-relaxed">
+              This candidate does not meet the minimum CGPA requirements for the job.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!scoreBreakdown) return <p className="text-sm text-gray-400 italic">No score data available.</p>;
 
   const entries = Object.entries(scoreBreakdown);
@@ -267,7 +292,8 @@ function CandidateDetailPage() {
 
   const { candidate, job, score, scoreBreakdown, appliedAt, resume } = application;
   const totalScore = score != null ? Math.round(score) : null;
-  const colors     = totalScore != null ? scoreColor(totalScore) : null;
+  const isUnmetCriteria = totalScore === -1;
+  const colors = !isUnmetCriteria && totalScore != null ? scoreColor(totalScore) : null;
 
   // resume parsedData lives on the Resume model; CV data from CvData model
   const parsed = cvData ?? resume?.parsedData ?? null;
@@ -313,10 +339,19 @@ function CandidateDetailPage() {
 
           {/* score badge */}
           {totalScore != null && (
-            <div className={`flex flex-col items-center justify-center w-16 h-16 rounded-full ring-4 ${colors.ring} flex-shrink-0`}>
-              <span className={`text-xl font-bold leading-none ${colors.text}`}>{totalScore}%</span>
-              <span className="text-[9px] text-gray-400 mt-0.5">match</span>
-            </div>
+            isUnmetCriteria ? (
+              <div className="flex flex-col items-center justify-center w-16 h-16 rounded-full ring-4 ring-red-200 bg-red-50 flex-shrink-0">
+                <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span className="text-[9px] text-red-600 mt-1 font-semibold">Unmet</span>
+              </div>
+            ) : (
+              <div className={`flex flex-col items-center justify-center w-16 h-16 rounded-full ring-4 ${colors.ring} flex-shrink-0`}>
+                <span className={`text-xl font-bold leading-none ${colors.text}`}>{totalScore}%</span>
+                <span className="text-[9px] text-gray-400 mt-0.5">match</span>
+              </div>
+            )
           )}
         </div>
 
@@ -337,18 +372,26 @@ function CandidateDetailPage() {
               {s}
             </button>
           ))}
-          {resume?.pdfUrl && (
-            <a
-              href={resume.pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-black text-white text-xs font-medium transition"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-              </svg>
-              View Resume
-            </a>
+          {resume && (
+            isProfileData(application) ? (
+              <button
+                onClick={() => navigate(`/hr/candidates/profile/${resume.id}`)}
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition"
+              >
+                <User className="w-3.5 h-3.5" />
+                View Profile
+              </button>
+            ) : (
+              <a
+                href={resume.pdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 hover:bg-black text-white text-xs font-medium transition"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                View Resume
+              </a>
+            )
           )}
         </div>
       </div>
