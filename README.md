@@ -1,8 +1,8 @@
 # 🚀 Recruva – Next-Gen Recruitment Platform  
 
-![GitHub repo size](https://img.shields.io/github/repo-size/yourusername/recruva)  
-![GitHub stars](https://img.shields.io/github/stars/yourusername/recruva?style=social)  
-![GitHub forks](https://img.shields.io/github/forks/yourusername/recruva?style=social)  
+![GitHub repo size](https://img.shields.io/github/repo-size/AreebaTanveer19/recruva)  
+![GitHub stars](https://img.shields.io/github/stars/AreebaTanveer19/recruva?style=social)  
+![GitHub forks](https://img.shields.io/github/forks/AreebaTanveer19/recruva?style=social)  
 ![License](https://img.shields.io/badge/license-MIT-green)  
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)  
 
