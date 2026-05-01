@@ -20,6 +20,7 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [decision, setDecision] = useState("waiting");
+  const [attended, setAttended] = useState(null); // null = not answered (optional)
 
   const formatTime = (s) => {
     const h = Math.floor(s / 3600);
@@ -38,8 +39,9 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
         "/interview/finish-interview",
         {
           interviewId,
-          interviewFeedback: feedback,
-          interviewStatus: decision,
+          interviewFeedback: attended === false ? null : feedback,
+          interviewStatus: attended === false ? "missed" : decision,
+          ...(attended !== null && { attended }),
         },
         {
           headers: {
@@ -92,62 +94,112 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
       <DialogContent sx={{ px: 3, pb: 3, mt: 2 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
 
-          {/* Interview Decision */}
+          {/* Attendance */}
           <Box>
             <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
-              Interview Decision
+              Did the candidate attend? <Typography component="span" variant="caption" color="text.disabled">(optional)</Typography>
             </Typography>
-            <FormControl fullWidth size="small">
-              <InputLabel>Decision</InputLabel>
-              <Select
-                value={decision}
-                label="Decision"
-                onChange={(e) => setDecision(e.target.value)}
+            <Box sx={{ display: "flex", gap: 1.5 }}>
+              <Button
+                variant={attended === true ? "contained" : "outlined"}
+                size="small"
+                onClick={() => setAttended(attended === true ? null : true)}
+                sx={{
+                  borderRadius: 1.5,
+                  fontWeight: 600,
+                  ...(attended === true
+                    ? { bgcolor: "#16a34a", "&:hover": { bgcolor: "#15803d" } }
+                    : { borderColor: "#d1d5db", color: "#374151" }),
+                }}
               >
-                <MenuItem value="waiting">
-                  <span style={{ color: "#d97706", fontWeight: 500 }}>Waiting</span>
-                </MenuItem>
-                <MenuItem value="accepted">
-                  <span style={{ color: "#16a34a", fontWeight: 500 }}>Accepted</span>
-                </MenuItem>
-                <MenuItem value="rejected">
-                  <span style={{ color: "#dc2626", fontWeight: 500 }}>Rejected</span>
-                </MenuItem>
-              </Select>
-            </FormControl>
+                Yes
+              </Button>
+              <Button
+                variant={attended === false ? "contained" : "outlined"}
+                size="small"
+                onClick={() => setAttended(attended === false ? null : false)}
+                sx={{
+                  borderRadius: 1.5,
+                  fontWeight: 600,
+                  ...(attended === false
+                    ? { bgcolor: "#dc2626", "&:hover": { bgcolor: "#b91c1c" } }
+                    : { borderColor: "#d1d5db", color: "#374151" }),
+                }}
+              >
+                No
+              </Button>
+            </Box>
+            {attended === false && (
+              <Typography variant="caption" sx={{ mt: 1, display: "block", color: "#b45309", bgcolor: "#fffbeb", px: 1.5, py: 0.75, borderRadius: 1, border: "1px solid #fde68a" }}>
+                Status will be set to <strong>Candidate Missed</strong>
+              </Typography>
+            )}
           </Box>
 
           <Divider />
 
-          {/* Feedback Input */}
-          <Box>
-            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
-              Interview Feedback
-            </Typography>
-            <Typography variant="caption" color="text.disabled" sx={{ display: "block", mb: 1.5 }}>
-              Add detailed feedback about the interview for the hiring manager
-            </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={6}
-              placeholder="Add your interview feedback here... (e.g., candidate's technical skills, communication, problem-solving approach, strengths, areas for improvement)"
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                },
-              }}
-            />
-          </Box>
+          {/* Interview Decision — hidden when no-show */}
+          {attended !== false && (
+            <Box>
+              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+                Interview Decision
+              </Typography>
+              <FormControl fullWidth size="small">
+                <InputLabel>Decision</InputLabel>
+                <Select
+                  value={decision}
+                  label="Decision"
+                  onChange={(e) => setDecision(e.target.value)}
+                >
+                  <MenuItem value="waiting">
+                    <span style={{ color: "#d97706", fontWeight: 500 }}>Waiting</span>
+                  </MenuItem>
+                  <MenuItem value="accepted">
+                    <span style={{ color: "#16a34a", fontWeight: 500 }}>Accepted</span>
+                  </MenuItem>
+                  <MenuItem value="rejected">
+                    <span style={{ color: "#dc2626", fontWeight: 500 }}>Rejected</span>
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          )}
+
+          {attended !== false && (
+            <>
+              <Divider />
+
+              {/* Feedback Input */}
+              <Box>
+                <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+                  Interview Feedback
+                </Typography>
+                <Typography variant="caption" color="text.disabled" sx={{ display: "block", mb: 1.5 }}>
+                  Add detailed feedback about the interview for the hiring manager
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={6}
+                  placeholder="Add your interview feedback here... (e.g., candidate's technical skills, communication, problem-solving approach, strengths, areas for improvement)"
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  variant="outlined"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                    },
+                  }}
+                />
+              </Box>
+            </>
+          )}
 
           <Button
             variant="contained"
             fullWidth
             onClick={handleFinishInterview}
-            disabled={isSubmitting || !feedback.trim()}
+            disabled={isSubmitting || (attended !== false && !feedback.trim())}
             sx={{
               bgcolor: "#000",
               color: "#fff",

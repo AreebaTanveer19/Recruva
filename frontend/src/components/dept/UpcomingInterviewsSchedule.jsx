@@ -1,7 +1,9 @@
 import { Calendar as CalendarIcon, Clock } from "lucide-react";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 export default function UpcomingInterviewsSchedule({ interviews }) {
+  const navigate = useNavigate();
   const getInterviewTimeColor = (time) => {
     const hour = new Date(time).getHours();
     if (hour < 12) return "bg-blue-50 border-l-4 border-blue-500";
@@ -59,6 +61,22 @@ export default function UpcomingInterviewsSchedule({ interviews }) {
                   </div>
                   <button
                     disabled={isPassed}
+                    onClick={() => {
+                      if (!isPassed) {
+                        navigate("/dept/dashboard/interview-session", {
+                          state: {
+                            candidateName: interview.candidateName,
+                            candidateEmail: interview.candidateEmail,
+                            meetLink: interview.meetLink,
+                            mode: interview.mode,
+                            jobId: interview.jobId,
+                            interviewId: interview.id,
+                            position: interview.position,
+                            applicationId: interview.applicationId,
+                          },
+                        });
+                      }
+                    }}
                     className={`w-full py-2 px-3 rounded-lg text-sm font-semibold transition-colors ${
                       isPassed
                         ? "bg-gray-200 text-gray-500 cursor-not-allowed"
