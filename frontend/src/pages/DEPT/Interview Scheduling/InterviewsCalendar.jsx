@@ -120,10 +120,10 @@ export default function InterviewsCalendar() {
   const getButtonState = (interview) => {
     if (interview.status === "missed")
       return { label: "Candidate Missed", disabled: true };
+    if (interview.status === "expired")
+      return { label: "Interview Missed", disabled: true };
     if (interview.status !== "scheduled")
       return { label: "Interview Done", disabled: true };
-    if (new Date(interview.date) < new Date())
-      return { label: "Interview Missed", disabled: true };
     return { label: "Conduct Interview", disabled: false };
   };
 

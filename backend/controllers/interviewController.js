@@ -532,6 +532,15 @@ const getAllInterviews = async (req, res) => {
   try {
     const isDept = req.user.role === "DEPARTMENT";
 
+    // Auto-expire any scheduled interviews whose end time has passed
+    await prisma.interview.updateMany({
+      where: {
+        status: "scheduled",
+        endTime: { lt: new Date() },
+      },
+      data: { status: "expired" },
+    });
+
     const interviews = await prisma.interview.findMany({
       where: isDept ? { assignedToId: req.user.id } : undefined,
       include: {

@@ -221,6 +221,7 @@ enum InterviewStatus {
   rejected
   waiting
   missed
+  expired
 }
 
 enum JobQuestionStatus {
