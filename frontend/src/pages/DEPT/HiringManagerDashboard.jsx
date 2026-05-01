@@ -51,7 +51,7 @@ export default function HiringManagerDashboard() {
 
   const conductedThisMonth = useMemo(() =>
     interviews.filter(iv =>
-      ["accepted", "rejected"].includes(iv.status) &&
+      ["accepted", "rejected", "waiting", "missed"].includes(iv.status) &&
       sameMonthYear(dayjs(iv.startTime), now)
     ),
     [interviews, now]

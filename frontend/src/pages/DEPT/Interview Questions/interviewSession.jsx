@@ -42,7 +42,7 @@ export default function InterviewSession() {
   const [newQuestionIds, setNewQuestionIds]     = useState(new Set());
   const questionRefs = useRef({});
   const location = useLocation();
-  const { candidateName,meetLink, jobId, position, interviewId } = location.state || {};
+  const { candidateName, meetLink, mode, jobId, position, interviewId } = location.state || {};
 
  
   const showAlert = (type, title, message) => {
@@ -183,7 +183,7 @@ export default function InterviewSession() {
   /* ---------------- Flat list for finish modal ---------------- */
 
   const allQuestions = useMemo(() => Object.values(grouped).flat(), [grouped]);
-  if (!candidateName || !meetLink) {
+  if (!candidateName) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 gap-4 text-center px-6">
         <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
@@ -204,12 +204,14 @@ export default function InterviewSession() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: "background.default" }}>
-      <FloatingMeetingWindow
-        candidateName={candidateName}
-        jobTitle={position || "Interview"}
-        meetLink={meetLink}
-        stopped={timerStopped}
-      />
+      {mode === "google_meet" && (
+        <FloatingMeetingWindow
+          candidateName={candidateName}
+          jobTitle={position || "Interview"}
+          meetLink={meetLink}
+          stopped={timerStopped}
+        />
+      )}
 
       {/* Header */}
       <AppBar position="sticky" elevation={0} sx={{ bgcolor: "background.paper", borderBottom: 1, borderColor: "divider" }}>

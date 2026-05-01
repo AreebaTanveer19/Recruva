@@ -45,7 +45,7 @@ const SidebarLayout = () => {
       icon: <MdDashboard size={20} />,
     },
     { name: "Job Openings", path: "/dept/dashboard/jobs", icon: <MdWork size={20} /> },
-    { name: "Closed Jobs", path: "/dept/dashboard/closed-jobs", icon: <Archive size={20} /> },
+   
     {
       name: "Scheduled Interviews",
       path: "/dept/dashboard/interviews",
@@ -61,6 +61,7 @@ const SidebarLayout = () => {
       path: "/dept/dashboard/waiting-candidates",
       icon: <Hourglass size={20} />,
     },
+     { name: "Archived Jobs", path: "/dept/dashboard/archived-jobs", icon: <Archive size={20} /> },
   ];
   return (
     <div>

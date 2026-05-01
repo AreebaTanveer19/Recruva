@@ -117,8 +117,14 @@ export default function InterviewsCalendar() {
     loadInterviews();
   }, []);
 
-  const isInterviewPassed = (interview) => {
-    return new Date(interview.date) < new Date();
+  const getButtonState = (interview) => {
+    if (interview.status === "missed")
+      return { label: "Candidate Missed", disabled: true };
+    if (interview.status === "expired")
+      return { label: "Interview Missed", disabled: true };
+    if (interview.status !== "scheduled")
+      return { label: "Interview Done", disabled: true };
+    return { label: "Conduct Interview", disabled: false };
   };
 
   const filteredInterviews = interviewsData.filter(
@@ -308,19 +314,20 @@ export default function InterviewsCalendar() {
                               </div>
                             </div>
 
-                            {interview.mode !== "on_site" &&
-                              interview.meetingLink && (
+                            {(() => {
+                              const btn = getButtonState(interview);
+                              return (
                                 <button
                                   onClick={() => {
-                                    if (!isInterviewPassed(interview)) {
+                                    if (!btn.disabled) {
                                       navigate(
                                         "/dept/dashboard/interview-session",
                                         {
                                           state: {
-                                            candidateName:
-                                              interview.candidateName,
+                                            candidateName: interview.candidateName,
                                             candidateEmail: interview.candidateEmail,
                                             meetLink: interview.meetingLink,
+                                            mode: interview.mode,
                                             jobId: interview.jobId,
                                             interviewId: interview.id,
                                             position: interview.position,
@@ -330,16 +337,17 @@ export default function InterviewsCalendar() {
                                       );
                                     }
                                   }}
-                                  disabled={isInterviewPassed(interview)}
+                                  disabled={btn.disabled}
                                   className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                                    isInterviewPassed(interview)
+                                    btn.disabled
                                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                                       : "bg-black text-white hover:bg-gray-800"
                                   }`}
                                 >
-                                  {isInterviewPassed(interview) ? "Interview Passed" : "Conduct Interview"}
+                                  {btn.label}
                                 </button>
-                              )}
+                              );
+                            })()}
                           </div>
                         </div>
                       </div>
