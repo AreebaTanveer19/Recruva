@@ -172,27 +172,39 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
                 }`}
               >
                 {index < currentStep ? (
-                  <div className="group flex w-full items-center">
+                  <div 
+                    className="group flex w-full items-center cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setCurrentStep(index)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && setCurrentStep(index)}
+                  >
                     <span className="flex h-9 items-center">
-                      <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 group-hover:bg-blue-800">
+                      <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 group-hover:bg-blue-700 shadow-sm">
                         <CheckIcon className="h-5 w-5 text-white" />
                       </span>
                     </span>
-                    <span className="ml-4 text-sm font-medium text-gray-900">{step.label}</span>
+                    <span className="ml-4 text-sm font-medium text-gray-900 group-hover:text-blue-600">{step.label}</span>
                   </div>
                 ) : index === currentStep ? (
                   <div className="flex items-center" aria-current="step">
                     <span className="flex h-9 items-center" aria-hidden="true">
-                      <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-blue-600 bg-white">
+                      <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-blue-600 bg-white shadow-sm">
                         <span className="h-2.5 w-2.5 rounded-full bg-blue-600" />
                       </span>
                     </span>
-                    <span className="ml-4 text-sm font-medium text-blue-600">{step.label}</span>
+                    <span className="ml-4 text-sm font-bold text-blue-600">{step.label}</span>
                   </div>
                 ) : (
-                  <div className="group flex items-center">
+                  <div 
+                    className="group flex items-center cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => setCurrentStep(index)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === 'Enter' && setCurrentStep(index)}
+                  >
                     <span className="flex h-9 items-center" aria-hidden="true">
-                      <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-white group-hover:border-gray-400">
+                      <span className="relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-white group-hover:border-gray-400 shadow-sm">
                         <span className="h-2.5 w-2.5 rounded-full bg-transparent group-hover:bg-gray-300" />
                       </span>
                     </span>
@@ -204,7 +216,7 @@ const ProfileForm = ({ onSuccess = () => {}, onCancel }) => {
                 
                 {index !== FORM_SECTIONS.length - 1 && (
                   <div
-                    className={`absolute top-4 right-0 left-0 -z-10 h-0.5 ${
+                    className={`absolute top-4 right-0 left-0 -z-10 h-0.5 transition-colors ${
                       index < currentStep ? 'bg-blue-600' : 'bg-gray-200'
                     }`}
                     aria-hidden="true"

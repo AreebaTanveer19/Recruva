@@ -20,7 +20,7 @@ const CandidateInterviews = () => {
   const navigate = useNavigate();
   const [interviews, setInterviews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('scheduled'); // 'scheduled', 'missed', or 'completed'
+  const [activeTab, setActiveTab] = useState('scheduled'); // 'scheduled' or 'completed'
 
   useEffect(() => {
     fetchInterviews();
@@ -60,16 +60,32 @@ const CandidateInterviews = () => {
     });
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status, type = 'interview') => {
+    // For application status
+    if (type === 'application') {
+      const appColors = {
+        pending: 'bg-blue-50 text-blue-700 ring-blue-600/20',
+        shortlisted: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+        accepted: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+        rejected: 'bg-red-50 text-red-700 ring-red-600/20',
+      };
+      return appColors[status] || appColors.pending;
+    }
+    // For interview status
     const colors = {
       scheduled: 'bg-blue-50 text-blue-700 ring-blue-600/20',
       completed: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+      expired: 'bg-red-50 text-red-700 ring-red-600/20',
       cancelled: 'bg-red-50 text-red-700 ring-red-600/20',
     };
     return colors[status] || colors.scheduled;
   };
 
-  const getStatusIcon = (status) => {
+  const getStatusIcon = (status, type = 'interview') => {
+    if (type === 'application') {
+      if (status === 'accepted' || status === 'shortlisted') return <CheckCircle2 size={16} />;
+      return <AlertCircle size={16} />;
+    }
     if (status === 'scheduled') return <AlertCircle size={16} />;
     if (status === 'completed') return <CheckCircle2 size={16} />;
     return <AlertCircle size={16} />;
@@ -79,18 +95,18 @@ const CandidateInterviews = () => {
     return new Date(dateString) > new Date();
   };
 
-  const isMissed = (interview) => {
-    return interview.status === 'scheduled' && !isUpcoming(interview.startTime);
-  };
-
   const filteredInterviews = interviews.filter((interview) => {
     if (activeTab === 'scheduled') {
-      return interview.status === 'scheduled' && isUpcoming(interview.startTime);
-    } else if (activeTab === 'missed') {
-      return isMissed(interview);
+      return interview.status === 'scheduled';
     } else {
-      return interview.status === 'completed' || (!isUpcoming(interview.startTime) && interview.status !== 'scheduled');
+      return interview.status !== 'scheduled';
     }
+  }).sort((a, b) => {
+    if (activeTab === 'completed') {
+      // Sort completed interviews by date descending (latest first)
+      return new Date(b.startTime) - new Date(a.startTime);
+    }
+    return 0;
   });
 
   return (
@@ -130,17 +146,7 @@ const CandidateInterviews = () => {
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
-            Upcoming ({interviews.filter((i) => i.status === 'scheduled' && isUpcoming(i.startTime)).length})
-          </button>
-          <button
-            onClick={() => setActiveTab('missed')}
-            className={`px-4 py-3 font-medium border-b-2 transition-colors ${
-              activeTab === 'missed'
-                ? 'border-red-600 text-red-600'
-                : 'border-transparent text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Missed ({interviews.filter((i) => isMissed(i)).length})
+            Scheduled ({interviews.filter((i) => i.status === 'scheduled').length})
           </button>
           <button
             onClick={() => setActiveTab('completed')}
@@ -150,7 +156,7 @@ const CandidateInterviews = () => {
                 : 'border-transparent text-slate-600 hover:text-slate-900'
             }`}
           >
-            Completed ({interviews.filter((i) => i.status === 'completed' || (!isUpcoming(i.startTime) && i.status !== 'scheduled')).length})
+            History ({interviews.filter((i) => i.status !== 'scheduled').length})
           </button>
         </div>
 
@@ -165,13 +171,11 @@ const CandidateInterviews = () => {
               <Calendar size={32} className="text-slate-400" />
             </div>
             <h3 className="text-lg font-semibold text-slate-900">
-              {activeTab === 'scheduled' ? 'No upcoming interviews' : activeTab === 'missed' ? 'No missed interviews' : 'No completed interviews'}
+              {activeTab === 'scheduled' ? 'No scheduled interviews' : 'No completed interviews'}
             </h3>
             <p className="mt-2 text-sm text-slate-600">
               {activeTab === 'scheduled'
                 ? "When the HR team schedules an interview for you, it will appear here."
-                : activeTab === 'missed'
-                ? "You haven't missed any interviews."
                 : "Your completed interviews will be shown here."}
             </p>
           </div>
@@ -184,15 +188,27 @@ const CandidateInterviews = () => {
               >
                 {/* Status Badge */}
                 <div className="mb-4 flex items-start justify-between">
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-inset ${getStatusColor(
-                      interview.status
-                    )}`}
-                  >
-                    {getStatusIcon(interview.status)}
-                    {isMissed(interview) ? 'Missed' : interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
-                  </span>
-                  {interview.mode === 'google_meet' && interview.meetLink && interview.status !== 'completed' && (
+                  {activeTab === 'completed' && interview.applicationStatus ? (
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-inset ${getStatusColor(
+                        interview.applicationStatus,
+                        'application'
+                      )}`}
+                    >
+                      {getStatusIcon(interview.applicationStatus, 'application')}
+                      {interview.applicationStatus.charAt(0).toUpperCase() + interview.applicationStatus.slice(1)}
+                    </span>
+                  ) : (
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-inset ${getStatusColor(
+                        interview.status
+                      )}`}
+                    >
+                      {getStatusIcon(interview.status)}
+                      {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
+                    </span>
+                  )}
+                  {interview.mode === 'google_meet' && interview.meetLink && interview.status === 'scheduled' && (
                     <a
                       href={interview.meetLink}
                       target="_blank"
@@ -270,7 +286,7 @@ const CandidateInterviews = () => {
                         <div>
                           <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Interviewer</p>
                           <p className="text-sm font-semibold text-slate-900 mt-0.5">
-                            {interview.assignedToId?.email || 'HR Team'}
+                            {interview.interviewer?.email ?? 'HR Team'}
                           </p>
                         </div>
                       </div>
@@ -285,7 +301,7 @@ const CandidateInterviews = () => {
                         <div>
                           <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Scheduled By</p>
                           <p className="text-sm font-semibold text-slate-900 mt-0.5">
-                            {interview.scheduledBy?.email || 'HR Team'}
+                            {interview.scheduledBy?.email ?? 'HR Team'}
                           </p>
                         </div>
                       </div>
@@ -316,11 +332,6 @@ const CandidateInterviews = () => {
                       ⏰ Arriving soon? Mark your calendar!
                     </p>
                   )}
-                  {activeTab === 'missed' && (
-                    <p className="text-xs font-medium text-red-600">
-                      ⚠️ This interview was missed on {formatDate(interview.startTime)}
-                    </p>
-                  )}
                 </div>
               </div>
             ))}
@@ -339,24 +350,6 @@ const CandidateInterviews = () => {
               <li>✓ Check your internet connection if it's a Google Meet</li>
               <li>✓ Have your resume ready for reference</li>
               <li>✓ Find a quiet, professional space for the interview</li>
-            </ul>
-          </div>
-        )}
-
-        {/* Missed Interviews Alert */}
-        {filteredInterviews.length > 0 && activeTab === 'missed' && (
-          <div className="mt-8 rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-orange-50 p-6">
-            <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-3">
-              <AlertCircle size={18} className="text-red-600" />
-              Missed Interviews
-            </h3>
-            <p className="text-sm text-slate-700 mb-3">
-              These are interviews you missed. Contact the HR team to reschedule if possible.
-            </p>
-            <ul className="space-y-2 text-sm text-slate-700">
-              <li>• Reach out to the hiring manager to explain your absence</li>
-              <li>• Request to reschedule at your earliest convenience</li>
-              <li>• Provide a valid reason for missing the interview</li>
             </ul>
           </div>
         )}

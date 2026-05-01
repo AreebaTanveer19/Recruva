@@ -588,6 +588,7 @@ const getAllInterviews = async (req, res) => {
       mode: interview.mode,
       meetLink: interview.meetLink,
       status: interview.status,
+      applicationStatus: interview.application.status,
       notes: interview.notes,
       applicationId: interview.applicationId,
       scheduledBy: interview.scheduler,
