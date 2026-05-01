@@ -127,7 +127,7 @@ function PostedJobs() {
               postingJobId={null}
               postToLinkedIn={() => {}}
               variant="dept"
-              detailRoute="hr/posted-jobs"
+              detailRoute="/hr/posted-jobs"
             />
           </>
         )}
