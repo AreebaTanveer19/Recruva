@@ -23,4 +23,42 @@ const getDashboardJobs = async (req, res) => {
   }
 };
 
-module.exports={getDashboardJobs}
+// GET /api/interview/upcoming
+const getUpcomingInterviews = async (req, res) => {
+  try {
+    const interviews = await prisma.interview.findMany({
+      where: {
+        status: "scheduled",
+        startTime: { gte: new Date() },
+      },
+      include: {
+        application: {
+          include: {
+            candidate: true,
+            job: true,
+          },
+        },
+      },
+      orderBy: { startTime: "asc" },
+      take: 4,
+    });
+
+    const formatted = interviews.map((i) => ({
+  id: i.id,
+  startTime: i.startTime,
+  endTime: i.endTime,
+  candidateName: i.application.candidate.name,
+  candidateEmail: i.application.candidate.email,
+  position: i.application.job.title,
+  mode: i.mode,
+  meetLink: i.meetLink,
+  status: i.status,
+}));
+
+res.json({ success: true, data: formatted });
+  } catch (err) {
+    res.status(500).json({ success: false });
+  }
+};
+
+module.exports={getDashboardJobs, getUpcomingInterviews}

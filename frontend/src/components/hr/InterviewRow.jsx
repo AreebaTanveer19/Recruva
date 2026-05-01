@@ -16,7 +16,7 @@ function InterviewRow({ interview }) {
           {interview.candidateName}
         </p>
         <p className="text-xs text-gray-400 truncate">
-          {interview.job?.title ?? "—"}
+          {interview.position ?? "—"}
         </p>
       </div>
       <div className="text-right flex-shrink-0">

@@ -23,12 +23,13 @@ function HRDashboard() {
       try {
         const [appRes, jobRes, intRes] = await Promise.all([
           api.get("/application/"),   // adjust endpoint as needed
-          api.get("/dashboard-jobs/"),           // adjust endpoint as needed
+          api.get("/dashboard-jobs/"), 
+          api.get("/upcoming/"),          // adjust endpoint as needed
           // api.get("/interview/"),     // adjust endpoint as needed
         ]);
         setApplications(appRes.data.applications ?? []);
         setJobs(jobRes.data.jobs ?? []);
-        setInterviews(intRes.data.interviews ?? []);
+        setInterviews(intRes.data.data ?? []);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
       } finally {
@@ -185,7 +186,7 @@ function HRDashboard() {
           )}
         </SectionCard>
 
-        <SectionCard title="Upcoming interviews" action="View all">
+        <SectionCard title="Scheduled interviews" action="View all">
           {upcomingInterviews.length === 0 ? (
             <p className="text-xs text-gray-400 italic py-4 text-center">
               No upcoming interviews.
