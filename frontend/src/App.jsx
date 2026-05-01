@@ -128,8 +128,8 @@ function App() {
         >
           <Route index element={<HiringManagerDashboard />} />
           <Route path="jobs" element={<JobsPage />} />
-          <Route path="closed-jobs" element={<ClosedJobsPage />} />
-          <Route path="closed-jobs/:id" element={<ClosedJobDetails />} />
+          <Route path="archived-jobs" element={<ClosedJobsPage />} />
+          <Route path="archived-jobs/:id" element={<ClosedJobDetails />} />
           <Route path="jobs/createjob" element={<JobCreationForm />} />
           <Route path="open-jobs/:id" element={<JobDetails />} />
           <Route path="edit-job/:id" element={<EditJob />} />

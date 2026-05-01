@@ -50,7 +50,7 @@ export default function ClosedJobsPage() {
         <JobCardGrid
           jobs={jobs}
           variant="dept"
-          detailRoute="/dept/dashboard/closed-jobs"
+          detailRoute="/dept/dashboard/archived-jobs"
         />
       )}
     </div>
