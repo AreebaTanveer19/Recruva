@@ -19,7 +19,7 @@ import { ACCESS_TOKEN } from "../../constants";
 export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, interviewId, onFinish }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState("");
-  const [decision, setDecision] = useState("interviewed");
+  const [decision, setDecision] = useState("waiting");
 
   const formatTime = (s) => {
     const h = Math.floor(s / 3600);
@@ -104,7 +104,9 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
                 label="Decision"
                 onChange={(e) => setDecision(e.target.value)}
               >
-                <MenuItem value="interviewed">Pending Decision</MenuItem>
+                <MenuItem value="waiting">
+                  <span style={{ color: "#d97706", fontWeight: 500 }}>Waiting</span>
+                </MenuItem>
                 <MenuItem value="accepted">
                   <span style={{ color: "#16a34a", fontWeight: 500 }}>Accepted</span>
                 </MenuItem>

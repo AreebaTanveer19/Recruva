@@ -26,6 +26,7 @@ import HiringManagerDashboard from "./pages/DEPT/HiringManagerDashboard";
 import ClosedJobsPage from "./pages/DEPT/ClosedJobsPage";
 import ClosedJobDetails from "./pages/DEPT/ClosedJobDetails";
 import InterviewResultsPage from "./pages/HR/InterviewResults";
+import WaitingCandidates from "./pages/DEPT/WaitingCandidates";
 
 function App() {
   return (
@@ -129,6 +130,7 @@ function App() {
           <Route path="edit-job/:id" element={<EditJob />} />
           <Route path="interviews" element={<InterviewsCalendar />} />
           <Route path="interview-session" element={<InterviewSession />} />
+          <Route path="waiting-candidates" element={<WaitingCandidates />} />
         </Route>
       </Routes>
     </Router>
