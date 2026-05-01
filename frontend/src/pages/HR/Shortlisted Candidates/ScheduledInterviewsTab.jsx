@@ -9,10 +9,52 @@ export default function ScheduledInterviewsTab() {
   const [filteredInterviews, setFilteredInterviews] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPosition, setSelectedPosition] = useState("");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [positions, setPositions] = useState([]);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState(null);
+
+  // Helper function to derive display status from DB status and startTime
+  const getDisplayStatus = (dbStatus, startTime) => {
+    const now = new Date();
+    const interviewTime = new Date(startTime);
+    const isFuture = interviewTime > now;
+
+    if (dbStatus === "accepted") {
+      return {
+        label: "Accepted",
+        colorClasses: "bg-emerald-100 text-emerald-800",
+      };
+    }
+
+    if (dbStatus === "rejected") {
+      return {
+        label: "Rejected",
+        colorClasses: "bg-red-100 text-red-800",
+      };
+    }
+
+    if (dbStatus === "scheduled") {
+      if (isFuture) {
+        return {
+          label: "Upcoming",
+          colorClasses: "bg-amber-100 text-amber-800",
+        };
+      } else {
+        return {
+          label: "Awaiting Feedback",
+          colorClasses: "bg-orange-100 text-orange-800",
+        };
+      }
+    }
+
+    // Fallback
+    return {
+      label: dbStatus,
+      colorClasses: "bg-gray-100 text-gray-800",
+    };
+  };
 
   // Fetch scheduled interviews
   useEffect(() => {
@@ -44,13 +86,21 @@ export default function ScheduledInterviewsTab() {
     fetchScheduledInterviews();
   }, []);
 
-  // Filter interviews based on search and position
+  // Filter interviews based on search, position, and derived status
   useEffect(() => {
     let filtered = [...interviews];
 
     // Filter by position
     if (selectedPosition) {
       filtered = filtered.filter((i) => i.position === selectedPosition);
+    }
+
+    // Filter by derived status
+    if (selectedStatusFilter) {
+      filtered = filtered.filter((i) => {
+        const displayStatus = getDisplayStatus(i.status, i.startTime);
+        return displayStatus.label === selectedStatusFilter;
+      });
     }
 
     // Filter by search term (candidate name)
@@ -61,25 +111,9 @@ export default function ScheduledInterviewsTab() {
     }
 
     setFilteredInterviews(filtered);
-  }, [interviews, selectedPosition, searchTerm]);
+  }, [interviews, selectedPosition, searchTerm, selectedStatusFilter]);
 
-  const getStatusColor = (status) => {
-    const statusMap = {
-      scheduled: "bg-blue-100 text-blue-800",
-      accepted: "bg-emerald-100 text-emerald-800",
-      rejected: "bg-red-100 text-red-800",
-    };
-    return statusMap[status] || "bg-gray-100 text-gray-800";
-  };
 
-  const getStatusLabel = (status) => {
-    const labelMap = {
-      scheduled: "Scheduled",
-      accepted: "Accepted",
-      rejected: "Rejected",
-    };
-    return labelMap[status] || status;
-  };
 
   const formatDateTime = (dateString) => {
     const date = new Date(dateString);
@@ -103,9 +137,9 @@ export default function ScheduledInterviewsTab() {
   return (
     <div className="w-full">
       {/* Toolbar */}
-      <div className="flex flex-col md:flex-row justify-between gap-4 mb-6 items-center">
-        {/* Search */}
-        <div className="relative flex-1 w-full">
+      <div className="flex flex-col gap-4 mb-6">
+        {/* Row 1: Search */}
+        <div className="relative w-full">
           <input
             type="text"
             placeholder="Search candidates..."
@@ -128,12 +162,12 @@ export default function ScheduledInterviewsTab() {
           </svg>
         </div>
 
-        {/* Position Dropdown */}
-        <div className="flex gap-3 mt-3 md:mt-0">
+        {/* Row 2: Filters (Position + Status) */}
+        <div className="flex flex-col md:flex-row gap-3">
           <select
             value={selectedPosition}
             onChange={(e) => setSelectedPosition(e.target.value)}
-            className="px-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+            className="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
           >
             <option value="">All Positions</option>
             {positions.map((position) => (
@@ -141,6 +175,18 @@ export default function ScheduledInterviewsTab() {
                 {position}
               </option>
             ))}
+          </select>
+
+          <select
+            value={selectedStatusFilter}
+            onChange={(e) => setSelectedStatusFilter(e.target.value)}
+            className="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+          >
+            <option value="">All Statuses</option>
+            <option value="Upcoming">Upcoming</option>
+            <option value="Awaiting Feedback">Awaiting Feedback</option>
+            <option value="Accepted">Accepted</option>
+            <option value="Rejected">Rejected</option>
           </select>
         </div>
       </div>
@@ -155,67 +201,70 @@ export default function ScheduledInterviewsTab() {
           <>
             {/* ── Mobile / tablet card layout (hidden on lg+) ── */}
             <div className="lg:hidden divide-y divide-gray-200">
-              {filteredInterviews.map((interview) => (
-                <div key={interview.id} className="p-2 space-y-3">
-                  {/* Row 1: avatar + name + status */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-sm font-semibold text-gray-900 truncate">
-                        {interview.candidateName}
+              {filteredInterviews.map((interview) => {
+                const displayStatus = getDisplayStatus(interview.status, interview.startTime);
+                return (
+                  <div key={interview.id} className="p-4 space-y-3">
+                    {/* Row 1: avatar + name + status */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-semibold text-gray-900 truncate">
+                          {interview.candidateName}
+                        </span>
+                      </div>
+                      <span
+                        className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${displayStatus.colorClasses} flex-shrink-0`}
+                      >
+                        {displayStatus.label}
                       </span>
                     </div>
-                    <span
-                      className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${getStatusColor(interview.status)}`}
-                    >
-                      {getStatusLabel(interview.status)}
-                    </span>
-                  </div>
 
-                  {/* Row 2: details grid */}
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
-                    <div>
-                      <span className="font-medium text-gray-500 uppercase tracking-wide text-[10px]">Email</span>
-                      <p className="truncate">{interview.candidateEmail}</p>
+                    {/* Row 2: details grid */}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
+                      <div>
+                        <span className="font-medium text-gray-500 uppercase tracking-wide text-[10px]">Email</span>
+                        <p className="truncate">{interview.candidateEmail}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-500 uppercase tracking-wide text-[10px]">Position</span>
+                        <p className="truncate">{interview.position}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-500 uppercase tracking-wide text-[10px]">Interviewer</span>
+                        <p className="truncate">{interview.interviewer?.email ?? "—"}</p>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-500 uppercase tracking-wide text-[10px]">Date & Time</span>
+                        <p>{formatDateTime(interview.startTime)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-medium text-gray-500 uppercase tracking-wide text-[10px]">Position</span>
-                      <p className="truncate">{interview.position}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-500 uppercase tracking-wide text-[10px]">Interviewer</span>
-                      <p className="truncate">{interview.interviewer?.email ?? "—"}</p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-500 uppercase tracking-wide text-[10px]">Date & Time</span>
-                      <p>{formatDateTime(interview.startTime)}</p>
-                    </div>
-                  </div>
 
-                  {/* Row 3: mode badge + feedback button */}
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
-                        interview.mode === "google_meet"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-purple-100 text-purple-800"
-                      }`}
-                    >
-                      {interview.mode === "google_meet" ? "Google Meet" : "On-site"}
-                    </span>
-                    {["accepted", "rejected"].includes(interview.status) ? (
-                      <button
-                        onClick={() => { setSelectedInterview(interview); setFeedbackModalOpen(true); }}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded-md transition"
+                    {/* Row 3: mode badge + feedback button */}
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
+                          interview.mode === "google_meet"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-purple-100 text-purple-800"
+                        }`}
                       >
-                        <MessageSquare className="w-3 h-3" />
-                        View Feedback
-                      </button>
-                    ) : (
-                      <span className="text-xs text-gray-400">—</span>
-                    )}
+                        {interview.mode === "google_meet" ? "Google Meet" : "On-site"}
+                      </span>
+                      {["accepted", "rejected"].includes(interview.status) ? (
+                        <button
+                          onClick={() => { setSelectedInterview(interview); setFeedbackModalOpen(true); }}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded-md transition"
+                        >
+                          <MessageSquare className="w-3 h-3" />
+                          View Feedback
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* ── Desktop table (hidden below lg) ── */}
@@ -234,54 +283,57 @@ export default function ScheduledInterviewsTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredInterviews.map((interview) => (
-                    <tr key={interview.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3">
-                        <span className="text-sm font-medium text-gray-900">{interview.candidateName}</span>
-                      </td>
-                      <td className="px-4 py-3 max-w-[160px]">
-                        <span className="text-sm text-gray-600 block truncate">{interview.candidateEmail}</span>
-                      </td>
-                      <td className="px-4 py-3 max-w-[160px]">
-                        <span className="text-sm text-gray-700 block truncate">{interview.position}</span>
-                      </td>
-                      <td className="px-4 py-3 max-w-[160px]">
-                        <span className="text-sm text-gray-600 block truncate">
-                          {interview.interviewer?.email ?? "—"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-sm text-gray-600">{formatDateTime(interview.startTime)}</span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
-                            interview.mode === "google_meet" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
-                          }`}
-                        >
-                          {interview.mode === "google_meet" ? "Google Meet" : "On-site"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(interview.status)}`}>
-                          {getStatusLabel(interview.status)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {["accepted", "rejected"].includes(interview.status) ? (
-                          <button
-                            onClick={() => { setSelectedInterview(interview); setFeedbackModalOpen(true); }}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded-md transition"
+                  {filteredInterviews.map((interview) => {
+                    const displayStatus = getDisplayStatus(interview.status, interview.startTime);
+                    return (
+                      <tr key={interview.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <span className="text-sm font-medium text-gray-900">{interview.candidateName}</span>
+                        </td>
+                        <td className="px-4 py-3 max-w-[160px]">
+                          <span className="text-sm text-gray-600 block truncate">{interview.candidateEmail}</span>
+                        </td>
+                        <td className="px-4 py-3 max-w-[160px]">
+                          <span className="text-sm text-gray-700 block truncate">{interview.position}</span>
+                        </td>
+                        <td className="px-4 py-3 max-w-[160px]">
+                          <span className="text-sm text-gray-600 block truncate">
+                            {interview.interviewer?.email ?? "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="text-sm text-gray-600">{formatDateTime(interview.startTime)}</span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${
+                              interview.mode === "google_meet" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
+                            }`}
                           >
-                            <MessageSquare className="w-3 h-3" />
-                            View
-                          </button>
-                        ) : (
-                          <span className="text-xs text-gray-400">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                            {interview.mode === "google_meet" ? "Google Meet" : "On-site"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center justify-center px-2 py-1 text-xs font-semibold rounded-full ${displayStatus.colorClasses} max-w-[120px] text-center`}>
+                            {displayStatus.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {["accepted", "rejected"].includes(interview.status) ? (
+                            <button
+                              onClick={() => { setSelectedInterview(interview); setFeedbackModalOpen(true); }}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-2 py-1 rounded-md transition"
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                              View
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

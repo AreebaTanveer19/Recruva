@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 import { ACCESS_TOKEN } from "../constants";
 import { jwtDecode } from "jwt-decode";
 import HRSidebar from "../components/HRSidebar";
-import { Home, Briefcase, FileText, Clock, Archive, ClipboardList  } from "lucide-react";
+import { Home, Briefcase, FileText, Clock, Archive, ClipboardList, Hourglass, Users} from "lucide-react";
 import { MdDashboard, MdWork, MdPeople, MdGroups } from "react-icons/md";
 
 const SidebarLayout = () => {
@@ -32,6 +32,10 @@ const SidebarLayout = () => {
   path: "/hr/interview-results",
   icon: <ClipboardList  size={20} />,
 },
+  { name: "Finalised Candidates", 
+  path: "/hr/candidates/final",       
+  icon: <Users size={20} /> 
+},
   ];
 
   const DeptNavLinks = [
@@ -51,6 +55,11 @@ const SidebarLayout = () => {
       name: "Conduct Interview",
       path: "/dept/dashboard/interview-session",
       icon: <MdGroups size={20} />,
+    },
+    {
+      name: "Waiting Candidates",
+      path: "/dept/dashboard/waiting-candidates",
+      icon: <Hourglass size={20} />,
     },
   ];
   return (

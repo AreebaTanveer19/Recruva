@@ -29,6 +29,9 @@ import HiringManagerDashboard from "./pages/DEPT/HiringManagerDashboard";
 import ClosedJobsPage from "./pages/DEPT/ClosedJobsPage";
 import ClosedJobDetails from "./pages/DEPT/ClosedJobDetails";
 import InterviewResultsPage from "./pages/HR/InterviewResults";
+import WaitingCandidates from "./pages/DEPT/WaitingCandidates";
+import FinalisedCandidatesPage from "./pages/HR/FinalisedCandidatesPage";
+import CandidateProfilePage from "./pages/HR/CandidateProfilePage";
 
 function App() {
   return (
@@ -111,11 +114,14 @@ function App() {
           <Route path="applications/:id" element={<CandidateDetailPage />} />
           <Route path="applications" element={<JobApplications />} />
           <Route path="interview-results" element={<InterviewResultsPage />} />
+          <Route path="candidates/final" element={<FinalisedCandidatesPage />} />
            <Route
             path="shortlisted-candidates"
             element={<ShortlistedCandidates />}
           />
+          <Route path="candidates/profile/:resumeId" element={<CandidateProfilePage />} />
         </Route>
+        
 
         {/* Department */}
         <Route
@@ -135,6 +141,7 @@ function App() {
           <Route path="edit-job/:id" element={<EditJob />} />
           <Route path="interviews" element={<InterviewsCalendar />} />
           <Route path="interview-session" element={<InterviewSession />} />
+          <Route path="waiting-candidates" element={<WaitingCandidates />} />
         </Route>
       </Routes>
     </Router>

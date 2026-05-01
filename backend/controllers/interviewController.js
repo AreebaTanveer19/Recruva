@@ -794,7 +794,7 @@ const finishInterview = async (req, res) => {
       });
     }
 
-    const validStatuses = ["accepted", "rejected"];
+    const validStatuses = ["accepted", "rejected", "waiting"];
     if (!validStatuses.includes(interviewStatus)) {
       return res.status(400).json({
         success: false,
@@ -949,7 +949,43 @@ const getInterviewResults = async (req, res) => {
   }
 };
 
+const getWaitingInterviews = async (req, res) => {
+  try {
+    const interviews = await prisma.interview.findMany({
+      where: {
+        status: "waiting",
+        assignedToId: req.user.id,
+      },
+      include: {
+        application: {
+          include: {
+            candidate: true,
+            job: true,
+            resume: true,
+          },
+        },
+      },
+      orderBy: { startTime: "desc" },
+    });
 
+    const formatted = interviews.map((i) => ({
+      id: i.id,
+      applicationId: i.applicationId,
+      candidateName: i.application.candidate.name,
+      candidateEmail: i.application.candidate.email,
+      position: i.application.job.title,
+      department: i.application.job.department,
+      interviewFeedback: i.interviewFeedback,
+      scheduledAt: i.startTime,
+      resumeUrl: i.application.resume?.pdfUrl || null,
+    }));
+
+    res.status(200).json({ success: true, data: formatted });
+  } catch (error) {
+    console.error("Get Waiting Interviews Error:", error);
+    res.status(500).json({ success: false, message: "Error fetching waiting interviews" });
+  }
+};
 
 module.exports = {
   googleAuth,
@@ -966,4 +1002,5 @@ module.exports = {
   getInterviewResults,
   sendRejectionEmail,
   sendSelectionEmail,
+  getWaitingInterviews,
 };
