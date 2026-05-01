@@ -38,7 +38,7 @@ router.get('/my-applications', auth, getMyApplications);
 router.get('/job/:jobId', auth, roleCheck('HR'), getJobApplications);
 router.patch('/bulk-status', auth, roleCheck('HR'), bulkUpdateStatus);
 router.get("/finalised", auth, roleCheck('HR'), getFinalisedCandidates);
-router.get("/resume/:resumeId/profile", auth, roleCheck('HR'), getResumeProfile);
+router.get("/resume/:resumeId/profile", auth, roleCheck('HR', 'DEPARTMENT'), getResumeProfile);
 router.patch("/:id/decide", auth,roleCheck('HR'), decideApplication);
 router.patch('/:id/status', auth, roleCheck('HR'), updateApplicationStatus);
 router.get('/:id', auth, roleCheck('HR'), getApplicationById);

@@ -975,7 +975,9 @@ const getWaitingInterviews = async (req, res) => {
       include: {
         application: {
           include: {
-            candidate: true,
+            candidate: {
+              include: { cvData: true },
+            },
             job: true,
             resume: true,
           },
@@ -994,6 +996,8 @@ const getWaitingInterviews = async (req, res) => {
       interviewFeedback: i.interviewFeedback,
       scheduledAt: i.startTime,
       resumeUrl: i.application.resume?.pdfUrl || null,
+      resumeId: i.application.resume?.id || null,
+      hasCvProfile: !!i.application.candidate.cvData,
     }));
 
     res.status(200).json({ success: true, data: formatted });
