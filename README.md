@@ -79,7 +79,7 @@ Recruva integrates **Generative AI and Semantic Matching**:
 | Database | PostgreSQL, Prisma ORM | Qdrant
 | AI       | GROQ API, Semantic Matching |
 | Storage  | Supabase |
-| API      | LinkedIn | Google Meet | Gmail
+| API      | LinkedIn , Google Meet , Gmail |
 | Tools    | GitHub, REST APIs |
 
 ---
