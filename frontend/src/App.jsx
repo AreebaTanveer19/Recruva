@@ -31,6 +31,7 @@ import InterviewResultsPage from "./pages/HR/InterviewResults";
 import WaitingCandidates from "./pages/DEPT/WaitingCandidates";
 import FinalisedCandidatesPage from "./pages/HR/FinalisedCandidatesPage";
 import CandidateProfilePage from "./components/CandidateProfilePage";
+import ClosedJobs from "./pages/HR/ClosedJobs";
 
 function App() {
   return (
@@ -119,6 +120,8 @@ function App() {
             element={<ShortlistedCandidates />}
           />
           <Route path="candidates/profile/:resumeId" element={<CandidateProfilePage />} />
+          <Route path="archived-jobs" element={<ClosedJobs />} />
+          <Route path="archived-jobs/:id" element={<JobDetails isClosed />} />
         </Route>
         
 

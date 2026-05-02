@@ -36,6 +36,8 @@ const SidebarLayout = () => {
   path: "/hr/candidates/final",       
   icon: <Users size={20} /> 
 },
+
+{ name: "Archived Jobs", path: "/hr/archived-jobs", icon: <Archive size={20} /> },
   ];
 
   const DeptNavLinks = [

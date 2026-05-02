@@ -2,57 +2,56 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ConfirmDialog } from "./ConfirmDialog";
 import api from "../api";
+import UnarchiveJobModal from "./hr/UnarchiveJobModal";
 
-const JobCardGrid = ({ jobs = [], isLinkedInConnected, postingJobId, postToLinkedIn, variant, detailRoute, showLinkedInButton = true }) => {
+const JobCardGrid = ({ jobs = [], isLinkedInConnected, postingJobId, postToLinkedIn, variant, detailRoute, showLinkedInButton = true, showUnarchiveButton = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [confirmDialog, setConfirmDialog] = useState({
-    open: false,
-    jobId: null,
-    loading: false,
-  });
   const [jobsList, setJobsList] = useState(jobs);
 
   React.useEffect(() => {
     setJobsList(jobs);
   }, [jobs]);
 
-  const handleCloseJobClick = (jobId) => {
-    setConfirmDialog({
-      open: true,
-      jobId,
-      loading: false,
-    });
-  };
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, jobId: null, loading: false });
+
+  const handleCloseJobClick = (jobId) => setConfirmDialog({ open: true, jobId, loading: false });
 
   const handleConfirmClose = async () => {
     try {
       setConfirmDialog((prev) => ({ ...prev, loading: true }));
-      
       await api.patch(`/close-job/${confirmDialog.jobId}`);
-      
-      // Remove the job from the list
       setJobsList((prev) => prev.filter((job) => job.id !== confirmDialog.jobId));
-      
-      setConfirmDialog({
-        open: false,
-        jobId: null,
-        loading: false,
-      });
+      setConfirmDialog({ open: false, jobId: null, loading: false });
     } catch (error) {
-      console.error("Error closing job:", error);
       alert(error.response?.data?.error || "Failed to close job");
       setConfirmDialog((prev) => ({ ...prev, loading: false }));
     }
   };
 
-  const handleCancelClose = () => {
-    setConfirmDialog({
-      open: false,
-      jobId: null,
-      loading: false,
-    });
+  // --- Unarchive state ---
+  const [unarchiveDialog, setUnarchiveDialog] = useState({ open: false, jobId: null, deadline: "", loading: false, error: "" });
+
+  const handleUnarchiveClick = (jobId) => setUnarchiveDialog({ open: true, jobId, deadline: "", loading: false, error: "" });
+
+  const handleConfirmUnarchive = async () => {
+    if (!unarchiveDialog.deadline) {
+      setUnarchiveDialog((prev) => ({ ...prev, error: "Please select a deadline" }));
+      return;
+    }
+    try {
+      setUnarchiveDialog((prev) => ({ ...prev, loading: true, error: "" }));
+      await api.patch(`/unarchive-job/${unarchiveDialog.jobId}`, { deadline: unarchiveDialog.deadline });
+      setJobsList((prev) => prev.filter((job) => job.id !== unarchiveDialog.jobId));
+      setUnarchiveDialog({ open: false, jobId: null, deadline: "", loading: false, error: "" });
+    } catch (error) {
+      setUnarchiveDialog((prev) => ({ ...prev, loading: false, error: error.response?.data?.error || "Failed to reopen job" }));
+    }
   };
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minDate = tomorrow.toISOString().split("T")[0];
 
   return (
     <>
@@ -66,23 +65,20 @@ const JobCardGrid = ({ jobs = [], isLinkedInConnected, postingJobId, postToLinke
               <h3 className="text-xl font-bold text-gray-900 flex-1">{job.title}</h3>
               {variant === "hr" && (
                 <button
-                  onClick={() => handleCloseJobClick(job.id)}
-                  title="Close/Archive Job"
-                  className="ml-2 p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                  onClick={() => showUnarchiveButton ? handleUnarchiveClick(job.id) : handleCloseJobClick(job.id)}
+                  title={showUnarchiveButton ? "Reopen Job" : "Close/Archive Job"}
+                  className={`ml-2 p-1 rounded-lg transition ${showUnarchiveButton ? "text-gray-500 hover:text-green-600 hover:bg-green-50" : "text-gray-500 hover:text-red-600 hover:bg-red-50"}`}
                 >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
+                  {showUnarchiveButton ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+    d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M10 12l2-2m0 0l2 2m-2-2v6" />
+</svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  )}
                 </button>
               )}
             </div>
@@ -146,18 +142,27 @@ const JobCardGrid = ({ jobs = [], isLinkedInConnected, postingJobId, postToLinke
         ))}
       </div>
 
-      {/* Confirm Dialog */}
       <ConfirmDialog
         open={confirmDialog.open}
         title="Close Job Position"
-        message="Are you sure you want to close this job position? This action will archive the job and it will no longer be visible to candidates."
+        message="Are you sure you want to close this job position? It will no longer be visible to candidates."
         confirmText="Close Job"
         cancelText="Cancel"
         confirmColor="error"
         loading={confirmDialog.loading}
         onConfirm={handleConfirmClose}
-        onCancel={handleCancelClose}
+        onCancel={() => setConfirmDialog({ open: false, jobId: null, loading: false })}
       />
+
+        <UnarchiveJobModal
+  open={unarchiveDialog.open}
+  deadline={unarchiveDialog.deadline}
+  error={unarchiveDialog.error}
+  loading={unarchiveDialog.loading}
+  onChange={(value) => setUnarchiveDialog((prev) => ({ ...prev, deadline: value }))}
+  onConfirm={handleConfirmUnarchive}
+  onCancel={() => setUnarchiveDialog({ open: false, jobId: null, deadline: "", loading: false, error: "" })}
+/>
     </>
   );
 };

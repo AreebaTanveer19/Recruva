@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../api";
 import JobCardGrid from "./JobCardGrid";
 
-export default function ClosedJobsPage({ variant, detailRoute }) {
+export default function ClosedJobsPage({ variant, detailRoute, showUnarchiveButton = false }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +49,8 @@ export default function ClosedJobsPage({ variant, detailRoute }) {
           jobs={jobs}
           variant={variant}
           detailRoute={detailRoute}
+          showLinkedInButton={false}
+          showUnarchiveButton={showUnarchiveButton}
         />
       )}
     </div>
