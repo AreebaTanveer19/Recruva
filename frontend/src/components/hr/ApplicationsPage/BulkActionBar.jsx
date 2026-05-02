@@ -11,13 +11,6 @@ function BulkActionBar({ selectedCount, bulkLoading, bulkUpdate, clearSelection 
           Shortlist
         </button>
         <button
-          onClick={() => bulkUpdate("reviewed")}
-          disabled={bulkLoading}
-          className="px-3 py-1.5 sm:py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition disabled:opacity-50 whitespace-nowrap"
-        >
-          Mark Reviewed
-        </button>
-        <button
           onClick={() => bulkUpdate("rejected")}
           disabled={bulkLoading}
           className="px-3 py-1.5 sm:py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-semibold transition disabled:opacity-50 whitespace-nowrap"

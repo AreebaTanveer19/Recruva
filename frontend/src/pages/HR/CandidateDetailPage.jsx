@@ -9,13 +9,12 @@ const isProfileData = (r) => r.resume?.originalName === "Profile Data";
 
 const STATUS_COLORS = {
   pending:     "bg-yellow-100 text-yellow-800 border border-yellow-300",
-  reviewed:    "bg-blue-100 text-blue-800 border border-blue-300",
   shortlisted: "bg-green-100 text-green-800 border border-green-300",
   rejected:    "bg-red-100 text-red-800 border border-red-300",
   accepted:    "bg-purple-100 text-purple-800 border border-purple-300",
 };
 
-const STATUSES = ["pending", "reviewed", "shortlisted", "rejected", "accepted"];
+const STATUSES = ["pending", "shortlisted", "rejected", "accepted"];
 
 const scoreColor = (s) => {
   if (s >= 80) return { bar: "bg-green-500", text: "text-green-700", ring: "ring-green-200" };
@@ -56,7 +55,7 @@ function ScoreBreakdown({ scoreBreakdown, totalScore }) {
           <div>
             <p className="text-sm font-semibold text-red-900">Does not meet minimum criteria</p>
             <p className="text-xs text-red-700 mt-1 leading-relaxed">
-              This candidate does not meet the minimum CGPA requirements for the job.
+              This candidate does not meet the minimum requirements for the job.
             </p>
           </div>
         </div>
