@@ -79,7 +79,7 @@ async function scoreCandidate(job, parsedData, applicationId, resumeId) {
   }
 
   // ── Degree Level Gate ──────────────────────────────────────────────────────
-if (job.details?.minDegreeLevel) {
+if (job.details?.minDegreeLevel && job.details.minDegreeLevel !== "Other") {
   const DEGREE_RANK = { Bachelors: 1, Masters: 2, PhD: 3 };
 
   const requiredRank    = DEGREE_RANK[job.details.minDegreeLevel];
