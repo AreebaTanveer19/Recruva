@@ -164,9 +164,24 @@ const getJobsPostedByHR = async (req, res) => {
 const getJobsPendingForHR = async (req, res) => {
   try {
     const hrId = req.user.id;
+    const now = new Date();
+
+    // Auto-close jobs with passed deadlines
+    await prisma.job.updateMany({
+      where: {
+        status: "Open",
+        deadline: {
+          lt: now,
+        },
+      },
+      data: {
+        status: "Closed",
+      },
+    });
 
     const jobs = await prisma.job.findMany({
       where: {
+        status: "Open",
         posters: {
           none: { id: hrId },
         },
@@ -438,4 +453,46 @@ const getDegrees = async (req, res) => {
   }
 };
 
-module.exports =  { createJob, getOpenJobs, getJobsPostedByHR, getJobsPendingForHR, addJobPoster, editJob, getJobById, getClosedJobs, getDegrees };
+const closeJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    const existingJob = await prisma.job.findUnique({
+      where: { id: Number(jobId) },
+      include: { details: true }
+    });
+
+    if (!existingJob) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+
+    const closedJob = await prisma.job.update({
+      where: { id: Number(jobId) },
+      data: { status: "Closed" },
+      include: { details: true }
+    });
+
+    const flattenedJob = {
+      ...closedJob,
+      description: closedJob.details?.description,
+      requirements: closedJob.details?.requirements,
+      responsibilities: closedJob.details?.responsibilities,
+      experienceLevel: closedJob.details?.experienceLevel,
+      salaryMin: closedJob.details?.salaryMin,
+      salaryMax: closedJob.details?.salaryMax,
+      minDegreeLevel: closedJob.details?.minDegreeLevel,
+      requiredDegrees: closedJob.details?.requiredDegrees,
+      details: undefined,
+    };
+
+    res.status(200).json({
+      message: "Job closed successfully",
+      job: flattenedJob,
+    });
+  } catch (error) {
+    console.error("Error closing job:", error);
+    res.status(500).json({ error: "Failed to close job" });
+  }
+};
+
+module.exports =  { createJob, getOpenJobs, getJobsPostedByHR, getJobsPendingForHR, addJobPoster, editJob, getJobById, getClosedJobs, getDegrees, closeJob };
