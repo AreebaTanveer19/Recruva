@@ -176,18 +176,6 @@ function JobDetails({ isClosed = false }) {
                 {new Date(job.deadline).toLocaleDateString()}
               </p>
             )}
-
-            {/* Edit button — only for open jobs, DEPARTMENT role */}
-            {!isClosed && role === "DEPARTMENT" && (
-              <div className="flex flex-wrap gap-3 mt-5">
-                <button
-                  onClick={() => navigate(`/dept/dashboard/edit-job/${job.id}`)}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 rounded-lg text-white font-semibold hover:bg-black transition"
-                >
-                  Edit Job
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
