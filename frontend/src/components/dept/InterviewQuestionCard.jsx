@@ -14,11 +14,10 @@ export function InterviewQuestionCard({
   question,
   innerRef,
   onDelete,
-  onRegenerate,
-  isRegenerating,
   isDeleting,
   isNew = false,
 }) {
+
   return (
     <motion.div
       ref={innerRef}
@@ -27,17 +26,6 @@ export function InterviewQuestionCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.15 }}
     >
-      {/* <Box
-        sx={{
-          display: "flex",
-          gap: 1.25,
-          px: 1.25,
-          py: 1.25,
-          borderRadius: 1.5,
-          transition: "background-color 0.15s",
-          "&:hover": { bgcolor: "action.hover" },
-        }}
-      > */}
 
       <Box
         sx={{
@@ -142,27 +130,8 @@ export function InterviewQuestionCard({
 >
           <IconButton
             size="small"
-            onClick={() => onRegenerate?.(question)}
-            disabled={isRegenerating || isDeleting}
-            sx={{
-              color: isRegenerating ? "primary.main" : "text.disabled",
-              transition: "all 0.15s",
-              "@keyframes spin": { from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } },
-              "&:hover": { color: "primary.main", bgcolor: "action.hover" },
-            }}
-          >
-            <RefreshIcon
-              sx={{
-                fontSize: 18,
-                animation: isRegenerating ? "spin 1s linear infinite" : "none",
-              }}
-            />
-          </IconButton>
-
-          <IconButton
-            size="small"
             onClick={() => onDelete?.(question)}
-            disabled={isDeleting || isRegenerating}
+            disabled={isDeleting}
             sx={{
               color: isDeleting ? "error.main" : "text.disabled",
               transition: "all 0.15s",
@@ -171,7 +140,7 @@ export function InterviewQuestionCard({
           >
             <DeleteOutlineIcon sx={{ fontSize: 18 }} />
           </IconButton>
-</Box>
+          </Box>
       </Box>
     </motion.div>
   );

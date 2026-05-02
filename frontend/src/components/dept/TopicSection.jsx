@@ -9,17 +9,16 @@ const difficultyConfig = {
   medium: { color: "#f59e0b" },
   hard: { color: "#ef4444" },
 };
-
 export function TopicSection({
   topic,
   questions,
   questionRefs,
   onDelete,
-  onRegenerate,
-  regeneratingId,
+
   deletingId,
   newQuestionIds = new Set(),
 }) {
+
   const [expanded, setExpanded] = useState(true);
 
   const sorted = [...questions].sort((a, b) => {
@@ -156,8 +155,7 @@ export function TopicSection({
                 questionRefs.current[q.id] = el;
               }}
               onDelete={onDelete}
-              onRegenerate={onRegenerate}
-              isRegenerating={regeneratingId === q.id}
+             
               isDeleting={deletingId === q.id}
               isNew={newQuestionIds.has(q.id)}
             />
