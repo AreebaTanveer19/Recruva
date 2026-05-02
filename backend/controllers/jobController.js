@@ -495,4 +495,65 @@ const closeJob = async (req, res) => {
   }
 };
 
-module.exports =  { createJob, getOpenJobs, getJobsPostedByHR, getJobsPendingForHR, addJobPoster, editJob, getJobById, getClosedJobs, getDegrees, closeJob };
+const unarchiveJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    const { deadline } = req.body;
+
+    if (!deadline) {
+      return res.status(400).json({ error: "A new deadline is required to reopen the job" });
+    }
+
+    const newDeadline = new Date(deadline);
+    if (newDeadline <= new Date()) {
+      return res.status(400).json({ error: "Deadline must be a future date" });
+    }
+
+    const existingJob = await prisma.job.findUnique({
+      where: { id: Number(jobId) },
+    });
+
+    if (!existingJob) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+
+    if (existingJob.status !== "Closed") {
+      return res.status(400).json({ error: "Only closed jobs can be reopened" });
+    }
+
+    const reopenedJob = await prisma.job.update({
+      where: { id: Number(jobId) },
+      data: {
+        status: "Open",
+        deadline: newDeadline,
+      },
+      include: { details: true },
+    });
+
+    const flattenedJob = {
+      ...reopenedJob,
+      description: reopenedJob.details?.description,
+      requirements: reopenedJob.details?.requirements,
+      responsibilities: reopenedJob.details?.responsibilities,
+      experienceLevel: reopenedJob.details?.experienceLevel,
+      salaryMin: reopenedJob.details?.salaryMin,
+      salaryMax: reopenedJob.details?.salaryMax,
+      minDegreeLevel: reopenedJob.details?.minDegreeLevel,
+      requiredDegrees: reopenedJob.details?.requiredDegrees,
+      details: undefined,
+    };
+
+    res.status(200).json({
+      message: "Job reopened successfully",
+      job: flattenedJob,
+    });
+  } catch (error) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Job not found" });
+    }
+    console.error("Error reopening job:", error);
+    res.status(500).json({ error: "Failed to reopen job" });
+  }
+};
+
+module.exports =  { createJob, getOpenJobs, getJobsPostedByHR, getJobsPendingForHR, addJobPoster, editJob, getJobById, getClosedJobs, getDegrees, closeJob, unarchiveJob };
