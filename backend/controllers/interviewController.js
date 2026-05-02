@@ -920,7 +920,7 @@ const getInterviewResults = async (req, res) => {
   try {
     const interviews = await prisma.interview.findMany({
       where: {
-        status: { in: ["accepted", "rejected", "missed"] },
+        status: { in: ["accepted", "rejected"] },
         application: { status: "shortlisted" },
       },
       include: {
