@@ -79,7 +79,7 @@ export default function HiringManagerDashboard() {
         return {
           ...job,
           inboxCount: jobApps.filter((a) => a.status === "pending").length,
-          interviewedCount: jobApps.filter((a) => a.status === "reviewed").length,
+          interviewedCount: jobApps.filter((a) => a.status === "shortlisted").length,
           rejectedCount: jobApps.filter((a) => a.status === "rejected").length,
           hiredCount: jobApps.filter((a) => a.status === "accepted").length,
         };
