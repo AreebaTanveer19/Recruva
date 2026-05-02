@@ -11,13 +11,11 @@
  */
 
 const prisma = require("../../config/db");
-const Groq   = require("groq-sdk");
+const groq   = require("../../config/groq");
 
 const { getSignificantWords, isQuestionDuplicate }                           = require("./helperFunctions");
 const { extractSeniority, getSeniorityPromptContext }                        = require("../../utils/seniority");
 const { filterByTechnologyFit }                                              = require("../../utils/technologyConflicts");
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 async function regenerateQuestion(jobId, oldQuestionId, jobDescription, requirements = []) {
 

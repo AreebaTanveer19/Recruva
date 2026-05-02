@@ -1,6 +1,5 @@
 const prisma = require("../../config/db");
 
-const TARGET_PER_TAG = 4;
 const difficultyOrder = { easy: 0, medium: 1, hard: 2 };
 
 const sortByDifficulty = (arr) =>
@@ -26,7 +25,7 @@ async function getJobQuestions(jobId) {
       jobQuestionId: q.id,
     };
 
-    const jobKeywordsLower = job.keywords.map((k) => k.toLowerCase());
+    const jobKeywordsLower = (job.keywords || []).map((k) => k.toLowerCase());
     const questionTagsLower = q.question.tags.map((t) => t.toLowerCase());
 
     // Prioritize first tag if it's a job keyword (respects LLM targeting)

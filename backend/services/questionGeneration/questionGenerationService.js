@@ -16,14 +16,16 @@
  */
 
 const prisma = require("../../config/db");
-const Groq   = require("groq-sdk");
+const groq   = require("../../config/groq");
 
 const { extractKeywords }                                                       = require("./extractKeywordsService");
 const { dedupeKeywords, convertToWeightedKeywords, deduplicateQuestions }       = require("./helperFunctions");
 const { extractSeniority, getDifficultyDistribution, getSeniorityPromptContext }= require("../../utils/seniority");
 const { filterByTechnologyFit }                                                 = require("../../utils/technologyConflicts");
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const BANK_SEARCH_LIMIT = 200; // well above 15-question target after conflict filtering
+const VALID_DIFFICULTIES = ["easy", "medium", "hard"];
+const inFlight = new Map(); // per-process lock to prevent duplicate generation runs
 
 // ─── STEP 1: Search existing question bank ────────────────────────────────────
 //
@@ -47,7 +49,7 @@ async function searchQuestionBank(keywords, jobId, distribution) {
       tags: { hasSome: keywords },
       id:   { notIn: safeExclude },
     },
-    take: 200,
+    take: BANK_SEARCH_LIMIT,
   });
 
   // Local conflict filter — zero LLM calls, runs in microseconds
@@ -182,9 +184,20 @@ No markdown, no explanation, no preamble.`;
     return [];
   }
 
+  // Validate LLM output before writing to DB
+  const validated = generated.filter(q =>
+    typeof q.question === "string" &&
+    q.question.trim().length > 10 &&
+    VALID_DIFFICULTIES.includes(q.difficulty?.toLowerCase())
+  ).map(q => ({ ...q, difficulty: q.difficulty.toLowerCase() }));
+
+  if (validated.length < generated.length) {
+    console.warn(`LLM output: ${generated.length - validated.length} questions rejected by validator`);
+  }
+
   // Upsert to bank — prevents duplicates if generation is retried
   const saved = await Promise.all(
-    generated.map(q =>
+    validated.map(q =>
       prisma.questionBank.upsert({
         where:  { question: q.question },
         update: {},
@@ -218,6 +231,19 @@ No markdown, no explanation, no preamble.`;
 // generation calls may still run. This is acceptable for now — the upsert on
 // the bank prevents duplicate bank entries.
 async function populateJobQuestions(jobId, jobTitle, jobDescription, requirements = []) {
+  if (inFlight.has(jobId)) {
+    console.log(`Job ${jobId}: generation already in flight — skipping duplicate request`);
+    return [];
+  }
+  inFlight.set(jobId, true);
+  try {
+    return await _populateJobQuestions(jobId, jobTitle, jobDescription, requirements);
+  } finally {
+    inFlight.delete(jobId);
+  }
+}
+
+async function _populateJobQuestions(jobId, jobTitle, jobDescription, requirements = []) {
   console.log(`\nPopulating questions for job ${jobId} — "${jobTitle}"`);
 
   // Fix #6: extract seniority from title to drive distribution + prompt depth
@@ -271,6 +297,11 @@ async function populateJobQuestions(jobId, jobTitle, jobDescription, requirement
   const finalHard   = [...found.hard,   ...slotGenerated("hard",   distribution.hard   - found.hard.length)];
 
   const allQuestions = [...finalEasy, ...finalMedium, ...finalHard];
+
+  const expectedTotal = distribution.easy + distribution.medium + distribution.hard;
+  if (allQuestions.length < expectedTotal) {
+    console.warn(`Job ${jobId}: expected ${expectedTotal} questions, got ${allQuestions.length}`);
+  }
 
   if (allQuestions.length === 0) {
     throw new Error("No questions could be generated or found for this job");

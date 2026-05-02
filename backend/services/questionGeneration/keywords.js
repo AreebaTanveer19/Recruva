@@ -1,4 +1,4 @@
-export const SKILL_META = {
+const SKILL_META = {
   "React": { weight: 5, type: "core" },
   "Node.js": { weight: 5, type: "core" },
   "Python": { weight: 5, type: "core" },
@@ -13,7 +13,7 @@ export const SKILL_META = {
 
 // TITLE → KEYWORD MAP
 
-export const TITLE_KEYWORD_MAP = {
+const TITLE_KEYWORD_MAP = {
   // ─── Frontend ────────────────────────────────────────────────
   "react": [
     { name: "React", weight: 1.0 },
@@ -184,9 +184,11 @@ export const TITLE_KEYWORD_MAP = {
   ],
 };
 
-export const IGNORE_WORDS = [
+const IGNORE_WORDS = [
   "experience", "years", "knowledge", "understanding",
   "skills", "strong", "good", "excellent", "proficiency",
   "must", "required", "preferred", "degree",
   "with", "the", "and", "or", "in", "of",
 ];
+
+module.exports = { SKILL_META, TITLE_KEYWORD_MAP, IGNORE_WORDS };

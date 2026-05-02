@@ -1,8 +1,8 @@
 const prisma = require("../../config/db");
-const Groq   = require("groq-sdk");
+const groq   = require("../../config/groq");
 const { extractSeniority, getSeniorityPromptContext } = require("../../utils/seniority");
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const VALID_DIFFICULTIES = ["easy", "medium", "hard"];
 
 function buildDistribution(count, difficulty) {
   if (difficulty !== "any") {
@@ -27,7 +27,6 @@ async function generateAdditionalQuestions(jobId, count, difficulty, extraKeywor
 
   const jobKeywords = job.keywords?.length > 0 ? job.keywords : [];
 
-  // Merge job keywords with user-provided extra keywords, deduplicated
   const allKeywords = [
     ...new Set([
       ...jobKeywords,
@@ -43,6 +42,8 @@ async function generateAdditionalQuestions(jobId, count, difficulty, extraKeywor
     where:   { jobId },
     include: { question: { select: { question: true, id: true } } },
   });
+
+  const existingIds = new Set(existingLinks.map(l => l.questionId));
 
   const existingQuestionsText = existingLinks
     .map(l => `- ${l.question.question}`)
@@ -104,14 +105,25 @@ No markdown, no explanation, no preamble.`;
   const raw = result.choices[0].message.content.trim()
     .replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
 
-  let generated = [];
+  let rawGenerated = [];
   try {
     const match = raw.match(/\[\s*\{[\s\S]*\}\s*\]/);
     if (!match) throw new Error("No JSON array found in LLM response");
-    generated = JSON.parse(match[0]);
+    rawGenerated = JSON.parse(match[0]);
   } catch (err) {
     console.error("Failed to parse generated questions:", err.message);
     throw new Error("Failed to parse generated questions from LLM");
+  }
+
+  // Validate LLM output before writing to DB
+  const validated = rawGenerated.filter(q =>
+    typeof q.question === "string" &&
+    q.question.trim().length > 10 &&
+    VALID_DIFFICULTIES.includes(q.difficulty?.toLowerCase())
+  ).map(q => ({ ...q, difficulty: q.difficulty.toLowerCase() }));
+
+  if (validated.length < rawGenerated.length) {
+    console.warn(`generateMore: ${rawGenerated.length - validated.length} questions rejected by validator for job ${jobId}`);
   }
 
   // Persist merged keywords back to the job so getJobQuestions groups correctly
@@ -122,10 +134,8 @@ No markdown, no explanation, no preamble.`;
     });
   }
 
-  const existingIds = new Set(existingLinks.map(l => l.questionId));
-
   const saved = await Promise.all(
-    generated.map(q =>
+    validated.map(q =>
       prisma.questionBank.upsert({
         where:  { question: q.question },
         update: {},

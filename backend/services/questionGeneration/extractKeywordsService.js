@@ -1,5 +1,4 @@
-const Groq = require("groq-sdk");
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = require("../../config/groq");
 const { SKILL_META, TITLE_KEYWORD_MAP, IGNORE_WORDS } = require("./keywords.js");
 
 // SMART MATCHING FUNCTION
