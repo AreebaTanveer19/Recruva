@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../../../api";
 
-const degreeLevels = ["BSC", "MSC", "PhD"];
+const degreeLevels = ["Bachelors", "Masters", "PhD", "Other"];
 const FALLBACK_DEGREES = [
   "Computer Science",
   "Software Engineering",
@@ -80,6 +80,7 @@ const JobDetailsSection = ({ register, errors }) => {
             {...register("minDegreeLevel")}
             className="w-full border border-gray-300 rounded-md px-4 py-2.5 text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
           >
+            <option value="" disabled>Select degree level</option>
             {degreeLevels.map(level => (
               <option key={level} value={level}>{level}</option>
             ))}

@@ -21,7 +21,7 @@ const initialValues = {
   salaryMin: 0,
   salaryMax: 0,
   deadline: "",
-  minDegreeLevel: "BSC",
+  minDegreeLevel: "",
   requiredDegrees: [],
   skillsWeight: 0.4,
   experienceWeight: 0.4,

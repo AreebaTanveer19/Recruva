@@ -9,8 +9,8 @@ function JobDetails({ isClosed = false }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
+  const [scoring, setScoring] = useState(null);
   const [loading, setLoading] = useState(true);
-  const showLinkedInButton = /^\/hr\/open-jobs\/\d+$/.test(location.pathname);
   const token = localStorage.getItem(ACCESS_TOKEN);
   const decoded = token ? jwtDecode(token) : null;
   const role = decoded?.role;
@@ -18,8 +18,13 @@ function JobDetails({ isClosed = false }) {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const res = await api.get(`/openJob/${id}`);
-        setJob(res.data.job);
+        const [jobRes, scoringRes] = await Promise.allSettled([
+          api.get(`/openJob/${id}`),
+          api.get(`/job-scoring/${id}/scoring-config`),
+        ]);
+
+        if (jobRes.status === "fulfilled") setJob(jobRes.value.data.job);
+        if (scoringRes.status === "fulfilled") setScoring(scoringRes.value.data.config);
       } catch (error) {
         console.error("Error fetching job details:", error);
       } finally {
@@ -89,6 +94,11 @@ function JobDetails({ isClosed = false }) {
                 <strong>Salary:</strong> PKR {job.salaryMin.toLocaleString()} -{" "}
                 {job.salaryMax.toLocaleString()}
               </div>
+              {job.minDegreeLevel && (
+                <div className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg">
+                  <strong>Min Degree:</strong> {job.minDegreeLevel}
+                </div>
+              )}
             </div>
           </div>
 
@@ -140,6 +150,26 @@ function JobDetails({ isClosed = false }) {
               </section>
             )}
 
+            {(job.requiredDegrees?.length > 0 || scoring?.considerCGPA) && (
+              <section className="p-0">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  Education Requirements
+                </h2>
+                {job.requiredDegrees?.length > 0 && (
+                  <ul className="list-disc list-inside text-gray-700 space-y-1">
+                    {job.requiredDegrees.map((deg, idx) => (
+                      <li key={idx}>{deg}</li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
+                            {scoring?.considerCGPA && (
+                  <p className="text-gray-700 mt-2">
+                    Minimum CGPA: <strong>{scoring.minCGPA}</strong>
+                  </p>
+                )}
+
             {job.deadline && (
               <p className="text-sm text-gray-500 mt-2 italic">
                 {isClosed ? "Closure Date:" : "Application Deadline:"}{" "}
@@ -147,22 +177,15 @@ function JobDetails({ isClosed = false }) {
               </p>
             )}
 
-            {/* Action buttons — hidden for closed jobs */}
-            {!isClosed && (
+            {/* Edit button — only for open jobs, DEPARTMENT role */}
+            {!isClosed && role === "DEPARTMENT" && (
               <div className="flex flex-wrap gap-3 mt-5">
-                {role === "HR" && showLinkedInButton && (
-                  <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 rounded-lg text-white font-semibold hover:bg-black transition">
-                    Share to LinkedIn
-                  </button>
-                )}
-                {role === "DEPARTMENT" && (
-                  <button
-                    onClick={() => navigate(`/dept/dashboard/edit-job/${job.id}`)}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 rounded-lg text-white font-semibold hover:bg-black transition"
-                  >
-                    Edit Job
-                  </button>
-                )}
+                <button
+                  onClick={() => navigate(`/dept/dashboard/edit-job/${job.id}`)}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 rounded-lg text-white font-semibold hover:bg-black transition"
+                >
+                  Edit Job
+                </button>
               </div>
             )}
           </div>
