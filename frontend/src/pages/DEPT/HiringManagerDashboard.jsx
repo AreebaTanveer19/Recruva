@@ -57,6 +57,15 @@ export default function HiringManagerDashboard() {
     [interviews, now]
   );
 
+  const passRate = useMemo(() => {
+    const decided = interviews.filter(iv =>
+      ["accepted", "rejected"].includes(iv.status) &&
+      sameMonthYear(dayjs(iv.startTime), now)
+    );
+    const passed = decided.filter(iv => iv.status === "accepted").length;
+    return { pct: decided.length ? Math.round((passed / decided.length) * 100) : null, passed, total: decided.length };
+  }, [interviews, now]);
+
   const outcomesData = useMemo(() =>
     OUTCOME_LABELS.map(label => ({
       name:  label,
@@ -83,8 +92,8 @@ export default function HiringManagerDashboard() {
       <div className="flex min-h-screen bg-white">
         <main className="flex-1 p-8 space-y-8 animate-pulse">
           <div className="h-8 w-64 bg-gray-200 rounded" />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => <StatCardSkeleton key={i} />)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => <StatCardSkeleton key={i} />)}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
@@ -110,10 +119,15 @@ export default function HiringManagerDashboard() {
           <p className="text-[15px] text-neutral-500 mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Upcoming Interviews"    value={upcoming.length} />
           <StatCard label="Interviewed This Month" value={conductedThisMonth.length} />
           <StatCard label="Active Job Postings"    value={jobs.length} />
+          <StatCard
+            label="Pass Rate This Month"
+            value={passRate.pct !== null ? `${passRate.pct}%` : "—"}
+            sub={passRate.total > 0 ? `${passRate.passed} of ${passRate.total} advanced` : "No decisions yet"}
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

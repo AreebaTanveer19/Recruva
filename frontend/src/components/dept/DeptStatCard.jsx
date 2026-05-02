@@ -1,8 +1,9 @@
-export function StatCard({ label, value }) {
+export function StatCard({ label, value, sub }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">{label}</p>
       <p className="text-4xl font-bold text-gray-900">{value}</p>
+      {sub && <p className="text-xs text-gray-400 mt-2">{sub}</p>}
     </div>
   );
 }
