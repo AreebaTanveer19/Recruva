@@ -96,7 +96,7 @@ function JobDetails({ isClosed = false }) {
               </div>
               {job.minDegreeLevel && job.minDegreeLevel !== "Other" && (
                 <div className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg">
-                  <strong>Min Degree:</strong> {job.minDegreeLevel}
+                  <strong>Qualification: </strong> {job.minDegreeLevel}
                 </div>
               )}
             </div>
