@@ -20,7 +20,7 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [decision, setDecision] = useState("waiting");
-  const [attended, setAttended] = useState(null); // null = not answered (optional)
+  const [attended, setAttended] = useState(null);
 
   const formatTime = (s) => {
     const h = Math.floor(s / 3600);
@@ -34,7 +34,6 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
       setIsSubmitting(true);
       const token = localStorage.getItem(ACCESS_TOKEN);
 
-      // Call the finishInterview endpoint with feedback and decision
       const response = await api.post(
         "/interview/finish-interview",
         {
@@ -43,21 +42,14 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
           interviewStatus: attended === false ? "missed" : decision,
           ...(attended !== null && { attended }),
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data.success) {
-        // Close the modal and reset
         setFeedback("");
-        setDecision("interviewed");
+        setDecision("waiting");
         onOpenChange(false);
-        if (onFinish) {
-          onFinish();
-        }
+        if (onFinish) onFinish();
       }
     } catch (error) {
       console.error("Error finishing interview:", error);
@@ -75,18 +67,23 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
       maxWidth="sm"
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          border: "1px solid",
-          borderColor: "divider",
-          boxShadow: "none",
+          borderRadius: "16px",
+          border: "1px solid #f3f4f6",
+          boxShadow: "0 4px 24px 0 rgba(0,0,0,0.08)",
         },
       }}
     >
-      <DialogTitle sx={{ pb: 0, pt: 3, px: 3 }}>
-        <Typography variant="h6" fontWeight={700} color="text.primary">
+      <DialogTitle sx={{ pb: 0, pt: 3, px: 3, borderBottom: "1px solid #f3f4f6" }}>
+        <Typography
+          variant="h6"
+          sx={{ fontWeight: 600, color: "#171717", letterSpacing: "-0.01em" }}
+        >
           Interview Complete
         </Typography>
-        <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: "block" }}>
+        <Typography
+          variant="caption"
+          sx={{ mt: 0.5, display: "block", color: "#9ca3af", pb: 2 }}
+        >
           Duration: {formatTime(elapsed)} · {questions.length} questions
         </Typography>
       </DialogTitle>
@@ -96,8 +93,14 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
 
           {/* Attendance */}
           <Box>
-            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
-              Did the candidate attend? <Typography component="span" variant="caption" color="text.disabled">(optional)</Typography>
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", mb: 1.5 }}
+            >
+              Did the candidate attend?{" "}
+              <Typography component="span" variant="caption" sx={{ fontWeight: 400, color: "#9ca3af", textTransform: "none" }}>
+                (optional)
+              </Typography>
             </Typography>
             <Box sx={{ display: "flex", gap: 1.5 }}>
               <Button
@@ -105,11 +108,13 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
                 size="small"
                 onClick={() => setAttended(attended === true ? null : true)}
                 sx={{
-                  borderRadius: 1.5,
-                  fontWeight: 600,
+                  borderRadius: "8px",
+                  fontWeight: 500,
+                  textTransform: "none",
+                  fontSize: "0.8125rem",
                   ...(attended === true
-                    ? { bgcolor: "#16a34a", "&:hover": { bgcolor: "#15803d" } }
-                    : { borderColor: "#d1d5db", color: "#374151" }),
+                    ? { bgcolor: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0", "&:hover": { bgcolor: "#dcfce7" } }
+                    : { borderColor: "#e5e7eb", color: "#6b7280", "&:hover": { borderColor: "#d1d5db", bgcolor: "#f9fafb" } }),
                 }}
               >
                 Yes
@@ -119,43 +124,52 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
                 size="small"
                 onClick={() => setAttended(attended === false ? null : false)}
                 sx={{
-                  borderRadius: 1.5,
-                  fontWeight: 600,
+                  borderRadius: "8px",
+                  fontWeight: 500,
+                  textTransform: "none",
+                  fontSize: "0.8125rem",
                   ...(attended === false
-                    ? { bgcolor: "#dc2626", "&:hover": { bgcolor: "#b91c1c" } }
-                    : { borderColor: "#d1d5db", color: "#374151" }),
+                    ? { bgcolor: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", "&:hover": { bgcolor: "#fee2e2" } }
+                    : { borderColor: "#e5e7eb", color: "#6b7280", "&:hover": { borderColor: "#d1d5db", bgcolor: "#f9fafb" } }),
                 }}
               >
                 No
               </Button>
             </Box>
             {attended === false && (
-              <Typography variant="caption" sx={{ mt: 1, display: "block", color: "#b45309", bgcolor: "#fffbeb", px: 1.5, py: 0.75, borderRadius: 1, border: "1px solid #fde68a" }}>
+              <Typography
+                variant="caption"
+                sx={{ mt: 1.5, display: "block", color: "#92400e", bgcolor: "#fffbeb", px: 1.5, py: 0.75, borderRadius: "6px", border: "1px solid #fde68a" }}
+              >
                 Status will be set to <strong>Candidate Missed</strong>
               </Typography>
             )}
           </Box>
 
-          <Divider />
+          <Divider sx={{ borderColor: "#f3f4f6" }} />
 
-          {/* Interview Decision — hidden when no-show */}
+          {/* Decision */}
           {attended !== false && (
             <Box>
-              <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", mb: 1.5 }}
+              >
                 Interview Decision
               </Typography>
               <FormControl fullWidth size="small">
-                <InputLabel>Decision</InputLabel>
+                <InputLabel sx={{ fontSize: "0.875rem" }}>Decision</InputLabel>
                 <Select
                   value={decision}
                   label="Decision"
                   onChange={(e) => setDecision(e.target.value)}
+                  sx={{ borderRadius: "8px", bgcolor: "#f9fafb", fontSize: "0.875rem" }}
                 >
                   <MenuItem value="waiting">
                     <span style={{ color: "#d97706", fontWeight: 500 }}>Waiting</span>
                   </MenuItem>
                   <MenuItem value="accepted">
-                    <span style={{ color: "#16a34a", fontWeight: 500 }}>Accepted</span>
+                    <span style={{ color: "#15803d", fontWeight: 500 }}>Accepted</span>
                   </MenuItem>
                   <MenuItem value="rejected">
                     <span style={{ color: "#dc2626", fontWeight: 500 }}>Rejected</span>
@@ -167,27 +181,32 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
 
           {attended !== false && (
             <>
-              <Divider />
+              <Divider sx={{ borderColor: "#f3f4f6" }} />
 
-              {/* Feedback Input */}
+              {/* Feedback */}
               <Box>
-                <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", mb: 0.5 }}
+                >
                   Interview Feedback
                 </Typography>
-                <Typography variant="caption" color="text.disabled" sx={{ display: "block", mb: 1.5 }}>
+                <Typography variant="caption" sx={{ color: "#9ca3af", display: "block", mb: 1.5 }}>
                   Add detailed feedback about the interview for the hiring manager
                 </Typography>
                 <TextField
                   fullWidth
                   multiline
                   rows={6}
-                  placeholder="Add your interview feedback here... (e.g., candidate's technical skills, communication, problem-solving approach, strengths, areas for improvement)"
+                  placeholder="e.g., candidate's technical skills, communication, problem-solving approach, strengths, areas for improvement"
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
                   variant="outlined"
                   sx={{
                     "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
+                      borderRadius: "8px",
+                      bgcolor: "#f9fafb",
+                      fontSize: "0.875rem",
                     },
                   }}
                 />
@@ -195,19 +214,23 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
             </>
           )}
 
+          {/* Submit */}
           <Button
             variant="contained"
             fullWidth
             onClick={handleFinishInterview}
             disabled={isSubmitting || (attended !== false && !feedback.trim())}
             sx={{
-              bgcolor: "#000",
+              bgcolor: "#111827",
               color: "#fff",
-              "&:hover": { bgcolor: "#222" },
-              "&:disabled": { bgcolor: "#ccc", color: "#999" },
-              borderRadius: 1.5,
+              "&:hover": { bgcolor: "#1f2937", boxShadow: "none" },
+              "&:disabled": { bgcolor: "#e5e7eb", color: "#9ca3af" },
+              borderRadius: "8px",
               py: 1.25,
-              fontWeight: 600,
+              fontWeight: 500,
+              textTransform: "none",
+              fontSize: "0.875rem",
+              boxShadow: "none",
             }}
           >
             {isSubmitting ? "Submitting..." : "Submit"}
@@ -219,13 +242,19 @@ export function FinishInterviewModal({ open, onOpenChange, questions, elapsed, i
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
             sx={{
-              borderRadius: 1.5,
+              borderRadius: "8px",
               py: 1.25,
-              fontWeight: 600,
+              fontWeight: 500,
+              textTransform: "none",
+              fontSize: "0.875rem",
+              borderColor: "#e5e7eb",
+              color: "#6b7280",
+              "&:hover": { borderColor: "#d1d5db", bgcolor: "#f9fafb" },
             }}
           >
             Cancel
           </Button>
+
         </Box>
       </DialogContent>
     </Dialog>

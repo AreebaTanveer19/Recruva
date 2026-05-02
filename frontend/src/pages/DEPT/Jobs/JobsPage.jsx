@@ -35,10 +35,10 @@ const JobsPage = () => {
       <div className="flex-1 p-8 ">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
           <div>
-            <h1 className="text-5xl font-bold text-foreground mb-3 tracking-tight">
+            <h1 className="text-4xl font-semibold text-neutral-900 tracking-tight">
               Job Openings
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
+            <p className="text-[15px] text-neutral-500 mt-1">
               Manage and review all active postings for your department •{" "}
               {jobs.length} open positions
             </p>

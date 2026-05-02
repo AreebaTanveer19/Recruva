@@ -36,8 +36,8 @@ export default function ClosedJobsPage({ variant, detailRoute, showUnarchiveButt
   return (
     <div className="flex-1 py-8 px-6 md:px-10 overflow-y-auto bg-gray-50 min-h-screen">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Closed Job Postings</h1>
-        <p className="text-gray-600 mt-2">View completed and closed positions</p>
+        <h1 className="text-4xl font-semibold text-neutral-900 tracking-tight">Closed Job Postings</h1>
+        <p className="text-[15px] text-neutral-500 mt-1">View completed and closed positions</p>
       </div>
 
       {jobs.length === 0 ? (

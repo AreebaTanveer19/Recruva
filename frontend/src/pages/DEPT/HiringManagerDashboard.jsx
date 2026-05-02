@@ -106,8 +106,8 @@ export default function HiringManagerDashboard() {
       <main className="flex-1 p-8 space-y-8 overflow-auto">
 
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h2>
-          <p className="text-sm text-gray-500 mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
+          <h1 className="text-4xl font-semibold text-neutral-900 tracking-tight">Dashboard</h1>
+          <p className="text-[15px] text-neutral-500 mt-1">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -94,7 +94,7 @@ function JobDetails({ isClosed = false }) {
                 <strong>Salary:</strong> PKR {job.salaryMin.toLocaleString()} -{" "}
                 {job.salaryMax.toLocaleString()}
               </div>
-              {job.minDegreeLevel && (
+              {job.minDegreeLevel && job.minDegreeLevel !== "Other" && (
                 <div className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg">
                   <strong>Min Degree:</strong> {job.minDegreeLevel}
                 </div>

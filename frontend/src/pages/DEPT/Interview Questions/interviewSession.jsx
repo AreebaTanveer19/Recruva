@@ -307,16 +307,16 @@ export default function InterviewSession() {
       <Dialog
         open={showGenerateMore}
         onClose={() => !generatingMore && setShowGenerateMore(false)}
-        PaperProps={{ sx: { borderRadius: 2, width: 420 } }}
+        PaperProps={{ elevation: 0, sx: { borderRadius: "16px", border: "1px solid #f3f4f6", boxShadow: "0 4px 24px 0 rgba(0,0,0,0.08)", width: 420 } }}
       >
-        <DialogTitle sx={{ fontWeight: 700, fontSize: 16, pb: 1 }}>
+        <DialogTitle sx={{ fontWeight: 600, fontSize: "1rem", color: "#171717", letterSpacing: "-0.01em", pb: 0.5 }}>
           Generate More Questions
         </DialogTitle>
 
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 1 }}>
           {/* Target Keyword */}
           <Box>
-            <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", mb: 0.75 }}>
               Add Questions Under Keyword
             </Typography>
             <Select
@@ -324,20 +324,21 @@ export default function InterviewSession() {
               fullWidth
               value={targetKeyword}
               onChange={e => setTargetKeyword(e.target.value)}
+              sx={{ borderRadius: "8px", bgcolor: "#f9fafb", fontSize: "0.875rem" }}
             >
               <MenuItem value="">Auto-group by tags (recommended)</MenuItem>
               {Object.keys(grouped).map(keyword => (
                 <MenuItem key={keyword} value={keyword}>{keyword}</MenuItem>
               ))}
             </Select>
-            <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: "block" }}>
+            <Typography variant="caption" sx={{ color: "#9ca3af", mt: 0.5, display: "block" }}>
               Select a keyword to ensure new questions are grouped under it.
             </Typography>
           </Box>
 
           {/* Count */}
           <Box>
-            <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", mb: 0.75 }}>
               Number of Questions (1–10)
             </Typography>
             <TextField
@@ -347,12 +348,13 @@ export default function InterviewSession() {
               value={moreCount}
               onChange={e => setMoreCount(Math.min(10, Math.max(1, parseInt(e.target.value) || 1)))}
               inputProps={{ min: 1, max: 10 }}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "#f9fafb", fontSize: "0.875rem" } }}
             />
           </Box>
 
           {/* Difficulty */}
           <Box>
-            <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", mb: 0.75 }}>
               Difficulty
             </Typography>
             <Select
@@ -360,6 +362,7 @@ export default function InterviewSession() {
               fullWidth
               value={moreDifficulty}
               onChange={e => setMoreDifficulty(e.target.value)}
+              sx={{ borderRadius: "8px", bgcolor: "#f9fafb", fontSize: "0.875rem" }}
             >
               <MenuItem value="any">Any (mixed)</MenuItem>
               <MenuItem value="easy">Easy</MenuItem>
@@ -370,8 +373,9 @@ export default function InterviewSession() {
 
           {/* Keywords */}
           <Box>
-            <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
-              Focus Keywords <Box component="span" sx={{ fontWeight: 400, color: "text.disabled" }}>(optional, comma-separated)</Box>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", display: "block", mb: 0.75 }}>
+              Focus Keywords{" "}
+              <Box component="span" sx={{ fontWeight: 400, color: "#9ca3af", textTransform: "none" }}>(optional, comma-separated)</Box>
             </Typography>
             <TextField
               size="small"
@@ -379,18 +383,27 @@ export default function InterviewSession() {
               placeholder="e.g. React hooks, async/await, system design"
               value={moreKeywords}
               onChange={e => setMoreKeywords(e.target.value)}
+              sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px", bgcolor: "#f9fafb", fontSize: "0.875rem" } }}
             />
-            <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: "block" }}>
+            <Typography variant="caption" sx={{ color: "#9ca3af", mt: 0.5, display: "block" }}>
               Leave blank to use the job's existing tech stack keywords.
             </Typography>
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
           <Button
             onClick={() => setShowGenerateMore(false)}
             disabled={generatingMore}
-            sx={{ color: "#6b7280" }}
+            sx={{
+              textTransform: "none",
+              borderRadius: "8px",
+              borderColor: "#e5e7eb",
+              color: "#6b7280",
+              fontWeight: 500,
+              fontSize: "0.875rem",
+              "&:hover": { bgcolor: "#f9fafb" },
+            }}
           >
             Cancel
           </Button>
@@ -398,7 +411,18 @@ export default function InterviewSession() {
             variant="contained"
             onClick={handleGenerateMore}
             disabled={generatingMore}
-            sx={{ bgcolor: "#000", "&:hover": { bgcolor: "#222" }, borderRadius: 1.5, px: 3 }}
+            sx={{
+              bgcolor: "#111827",
+              color: "#fff",
+              "&:hover": { bgcolor: "#1f2937", boxShadow: "none" },
+              "&:disabled": { bgcolor: "#e5e7eb", color: "#9ca3af" },
+              borderRadius: "8px",
+              px: 3,
+              fontWeight: 500,
+              textTransform: "none",
+              fontSize: "0.875rem",
+              boxShadow: "none",
+            }}
           >
             {generatingMore ? "Generating..." : "Generate"}
           </Button>
