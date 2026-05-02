@@ -27,7 +27,6 @@ import EditJob from "./pages/DEPT/Jobs/EditJob";
 import CandidateDetailPage from "./pages/HR/CandidateDetailPage";
 import HiringManagerDashboard from "./pages/DEPT/HiringManagerDashboard";
 import ClosedJobsPage from "./pages/DEPT/ClosedJobsPage";
-import ClosedJobDetails from "./pages/DEPT/ClosedJobDetails";
 import InterviewResultsPage from "./pages/HR/InterviewResults";
 import WaitingCandidates from "./pages/DEPT/WaitingCandidates";
 import FinalisedCandidatesPage from "./pages/HR/FinalisedCandidatesPage";
@@ -135,7 +134,7 @@ function App() {
           <Route index element={<HiringManagerDashboard />} />
           <Route path="jobs" element={<JobsPage />} />
           <Route path="archived-jobs" element={<ClosedJobsPage />} />
-          <Route path="archived-jobs/:id" element={<ClosedJobDetails />} />
+          <Route path="archived-jobs/:id" element={<JobDetails isClosed />} />
           <Route path="jobs/createjob" element={<JobCreationForm />} />
           <Route path="open-jobs/:id" element={<JobDetails />} />
           <Route path="edit-job/:id" element={<EditJob />} />

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import api from "./../api";
 import { ACCESS_TOKEN } from "../constants";
 import { jwtDecode } from "jwt-decode";
 
-function JobDetails() {
+function JobDetails({ isClosed = false }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
@@ -63,7 +63,14 @@ function JobDetails() {
 
           {/* Job Header */}
           <div className="bg-gray-900 p-6 sm:p-7 rounded-xl shadow-lg text-white">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-1">{job.title}</h1>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl sm:text-3xl font-bold">{job.title}</h1>
+              {isClosed && (
+                <span className="px-3 py-1 bg-gray-700 text-sm rounded-full font-medium">
+                  Closed
+                </span>
+              )}
+            </div>
             <p className="text-gray-300 mb-3">
               {job.department} • {job.location}
             </p>
@@ -135,27 +142,29 @@ function JobDetails() {
 
             {job.deadline && (
               <p className="text-sm text-gray-500 mt-2 italic">
-                Application Deadline:{" "}
+                {isClosed ? "Closure Date:" : "Application Deadline:"}{" "}
                 {new Date(job.deadline).toLocaleDateString()}
               </p>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3 mt-5">
-              {role === "HR" && showLinkedInButton && (
-                <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 rounded-lg text-white font-semibold hover:bg-black transition">
-                  Share to LinkedIn
-                </button>
-              )}
-              {role === "DEPARTMENT" && (
-                <button
-                  onClick={() => navigate(`/dept/dashboard/edit-job/${job.id}`)}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 rounded-lg text-white font-semibold hover:bg-black transition"
-                >
-                  Edit Job
-                </button>
-              )}
-            </div>
+            {/* Action buttons — hidden for closed jobs */}
+            {!isClosed && (
+              <div className="flex flex-wrap gap-3 mt-5">
+                {role === "HR" && showLinkedInButton && (
+                  <button className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 rounded-lg text-white font-semibold hover:bg-black transition">
+                    Share to LinkedIn
+                  </button>
+                )}
+                {role === "DEPARTMENT" && (
+                  <button
+                    onClick={() => navigate(`/dept/dashboard/edit-job/${job.id}`)}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 rounded-lg text-white font-semibold hover:bg-black transition"
+                  >
+                    Edit Job
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
