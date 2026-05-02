@@ -42,7 +42,7 @@ async function computeEducationScore(requiredDegrees, candidateDegreeField) {
     candidateEmb = await getEmbedding(enriched);
   } catch (err) {
     console.error(`❌ Failed to embed candidate degree field "${candidateDegreeField}":`, err);
-    return 0; // degrade gracefully
+    throw new Error('EMBEDDING_FAILED');
   }
 
   // Compare against each required degree, take max
@@ -109,13 +109,35 @@ if (job.details?.minDegreeLevel && job.details.minDegreeLevel !== "Other") {
 
   const candidateText = prepareCandidateText(parsedData);
 
-   const [
+  //  const [
+  //   { requirementsEmb, experienceEmb },
+  //   { skillsCandEmb, experienceCandEmb },
+  // ] = await Promise.all([
+  //   getJobEmbeddings(job),
+  //   getCandidateEmbeddings(resumeId, candidateText), // ✅ pass resumeId
+  // ]);
+  let requirementsEmb, experienceEmb;
+let skillsCandEmb, experienceCandEmb;
+
+try {
+  [
     { requirementsEmb, experienceEmb },
     { skillsCandEmb, experienceCandEmb },
   ] = await Promise.all([
     getJobEmbeddings(job),
-    getCandidateEmbeddings(resumeId, candidateText), // ✅ pass resumeId
+    getCandidateEmbeddings(resumeId, candidateText),
   ]);
+} catch (err) {
+  if (err.message === 'EMBEDDING_FAILED') {
+    return {
+      applicationId,
+      finalScore: -2,
+      breakdown: { reason: 'Embedding generation failed' },
+    };
+  }
+
+  throw err; // unknown error
+}
 
   const skillsScore = toScore(cosineSimilarity(requirementsEmb, skillsCandEmb), 'skills');
 
@@ -129,8 +151,19 @@ if (job.details?.minDegreeLevel && job.details.minDegreeLevel !== "Other") {
 
   if (weights.education > 0 && requiredDegrees.length > 0) {
     const candidateDegreeField = parsedData.education?.[0]?.degreeField;
+      try {
     educationScore = await computeEducationScore(requiredDegrees, candidateDegreeField);
     educationScore = Math.round(educationScore * 100);
+    } catch (err) {
+    if (err.message === 'EMBEDDING_FAILED') {
+      return {
+        applicationId,
+        finalScore: -2,
+        breakdown: { reason: 'Education embedding generation failed' },
+      };
+    }
+    throw err;
+  }
     console.log(`📚 Education score: ${educationScore.toFixed(4)} (weight: ${weights.education})`);
   }
 

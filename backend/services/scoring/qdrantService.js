@@ -31,11 +31,24 @@ async function initQdrantCollection() {
 async function storeJobEmbeddings(job) {
   const jobText = prepareJobText(job);
 
-  const [skillsVec, experienceVec] = await Promise.all([
-    getEmbedding(jobText.requirementsText),
-    getEmbedding(jobText.experienceMatchText),
-  ]);
+  // const [skillsVec, experienceVec] = await Promise.all([
+  //   getEmbedding(jobText.requirementsText),
+  //   getEmbedding(jobText.experienceMatchText),
+  // ]);
 
+  let skillsVec, experienceVec;
+
+  try {
+    [skillsVec, experienceVec] = await Promise.all([
+      getEmbedding(jobText.requirementsText),
+      getEmbedding(jobText.experienceMatchText),
+    ]);
+  } catch (err) {
+    console.error(`❌ Job embedding generation failed for job ${job.id}:`, err.message);
+    throw new Error('EMBEDDING_FAILED'); // 🚨 same signal
+  }
+
+try {
   await qdrant.upsert(JOB_COLLECTION, {
     points: [{
       id:      job.id,
@@ -43,8 +56,11 @@ async function storeJobEmbeddings(job) {
       vector:  { skills: skillsVec, experience: experienceVec },
     }],
   });
+  } catch (err) {
+    console.error(`⚠️ Qdrant upsert failed for job ${job.id}:`, err.message);
+  }
 
-  console.log(`✅ Job ${job.id} embeddings stored in Qdrant`);
+  console.log(`✅ Job ${job.id} embeddings ready`);
   return { requirementsEmb: skillsVec, experienceEmb: experienceVec };
 }
 
@@ -74,10 +90,21 @@ async function getJobEmbeddings(job) {
 async function storeCandidateEmbeddings(resumeId, candidateText) {
     console.log('skillsText length:', candidateText.skillsText?.length);
   console.log('experienceText length:', candidateText.experienceText?.length);
-  const [skillsVec, experienceVec] = await Promise.all([
-    getEmbedding(candidateText.skillsText),
-    getEmbedding(candidateText.experienceText),
-  ]);
+  // const [skillsVec, experienceVec] = await Promise.all([
+  //   getEmbedding(candidateText.skillsText),
+  //   getEmbedding(candidateText.experienceText),
+  // ]);
+   let skillsVec, experienceVec;
+
+  try {
+    [skillsVec, experienceVec] = await Promise.all([
+      getEmbedding(candidateText.skillsText),
+      getEmbedding(candidateText.experienceText),
+    ]);
+  } catch (err) {
+    console.error('❌ Embedding generation failed:', err.message);
+    throw new Error('EMBEDDING_FAILED'); // 🚨 important
+  }
 
   console.log('skillsVec size:', skillsVec?.length);
   console.log('experienceVec size:', experienceVec?.length);
@@ -92,7 +119,6 @@ async function storeCandidateEmbeddings(resumeId, candidateText) {
   });
   } catch (err) {
      console.error('Qdrant upsert error:', JSON.stringify(err?.data || err?.message));
-    throw err;
   }
 
   console.log(`✅ Candidate embeddings stored for resume ${resumeId}`);

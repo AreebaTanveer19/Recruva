@@ -389,6 +389,39 @@ const applyWithNewResume = async (req, res) => {
   }
 };
 
+async function retryApplicationScoring(applicationId) {
+  const application = await prisma.application.findUnique({
+    where: { id: applicationId },
+    include: {
+      job: { include: { details: true, scoringConfig: true } },
+      resume: true, // parsedData lives here
+    },
+  });
+
+  if (!application?.job?.details) {
+    console.warn(`Scoring skipped — job details missing for application ${applicationId}`);
+    return;
+  }
+
+  const result = await scoreCandidate(
+    application.job,
+    application.resume.parsedData,
+    applicationId,
+    application.resumeId,
+  );
+
+  await prisma.application.update({
+    where: { id: applicationId },
+    data: {
+      score: result.finalScore,
+      scoreBreakdown: result.breakdown,
+    },
+  });
+
+  console.log(`✅ Application ${applicationId} rescored: ${result.finalScore}`);
+  return result;
+}
+
 /**
  * Check if candidate has previous resumes
  * GET /api/application/has-previous-resume
