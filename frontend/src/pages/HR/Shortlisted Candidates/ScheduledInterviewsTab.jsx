@@ -4,6 +4,15 @@ import api from "../../../api";
 import { ACCESS_TOKEN } from "../../../constants";
 import { FeedbackViewerModal } from "../../../components/hr/FeedbackViewerModal";
 
+const STATUS_COLORS = {
+  scheduled: "bg-amber-100 text-amber-800",
+  accepted: "bg-emerald-100 text-emerald-800",
+  rejected: "bg-red-100 text-red-800",
+  missed: "bg-gray-100 text-gray-800",
+  waiting: "bg-blue-100 text-blue-800",
+  expired: "bg-orange-100 text-orange-800",
+};
+
 export default function ScheduledInterviewsTab() {
   const [interviews, setInterviews] = useState([]);
   const [filteredInterviews, setFilteredInterviews] = useState([]);
@@ -14,47 +23,6 @@ export default function ScheduledInterviewsTab() {
   const [positions, setPositions] = useState([]);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [selectedInterview, setSelectedInterview] = useState(null);
-
-  // Helper function to derive display status from DB status and startTime
-  const getDisplayStatus = (dbStatus, startTime) => {
-    const now = new Date();
-    const interviewTime = new Date(startTime);
-    const isFuture = interviewTime > now;
-
-    if (dbStatus === "accepted") {
-      return {
-        label: "Accepted",
-        colorClasses: "bg-emerald-100 text-emerald-800",
-      };
-    }
-
-    if (dbStatus === "rejected") {
-      return {
-        label: "Rejected",
-        colorClasses: "bg-red-100 text-red-800",
-      };
-    }
-
-    if (dbStatus === "scheduled") {
-      if (isFuture) {
-        return {
-          label: "Upcoming",
-          colorClasses: "bg-amber-100 text-amber-800",
-        };
-      } else {
-        return {
-          label: "Awaiting Feedback",
-          colorClasses: "bg-orange-100 text-orange-800",
-        };
-      }
-    }
-
-    // Fallback
-    return {
-      label: dbStatus,
-      colorClasses: "bg-gray-100 text-gray-800",
-    };
-  };
 
   // Fetch scheduled interviews
   useEffect(() => {
@@ -86,7 +54,7 @@ export default function ScheduledInterviewsTab() {
     fetchScheduledInterviews();
   }, []);
 
-  // Filter interviews based on search, position, and derived status
+  // Filter interviews based on search, position, and status
   useEffect(() => {
     let filtered = [...interviews];
 
@@ -95,12 +63,9 @@ export default function ScheduledInterviewsTab() {
       filtered = filtered.filter((i) => i.position === selectedPosition);
     }
 
-    // Filter by derived status
+    // Filter by status
     if (selectedStatusFilter) {
-      filtered = filtered.filter((i) => {
-        const displayStatus = getDisplayStatus(i.status, i.startTime);
-        return displayStatus.label === selectedStatusFilter;
-      });
+      filtered = filtered.filter((i) => i.status === selectedStatusFilter);
     }
 
     // Filter by search term (candidate name)
@@ -183,10 +148,12 @@ export default function ScheduledInterviewsTab() {
             className="flex-1 px-4 py-3 rounded-xl border border-gray-300 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
           >
             <option value="">All Statuses</option>
-            <option value="Upcoming">Upcoming</option>
-            <option value="Awaiting Feedback">Awaiting Feedback</option>
-            <option value="Accepted">Accepted</option>
-            <option value="Rejected">Rejected</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+            <option value="missed">Missed</option>
+            <option value="waiting">Waiting</option>
+            <option value="expired">Expired</option>
           </select>
         </div>
       </div>
@@ -201,9 +168,7 @@ export default function ScheduledInterviewsTab() {
           <>
             {/* ── Mobile / tablet card layout (hidden on lg+) ── */}
             <div className="lg:hidden divide-y divide-gray-200">
-              {filteredInterviews.map((interview) => {
-                const displayStatus = getDisplayStatus(interview.status, interview.startTime);
-                return (
+              {filteredInterviews.map((interview) => (
                   <div key={interview.id} className="p-4 space-y-3">
                     {/* Row 1: avatar + name + status */}
                     <div className="flex items-center justify-between gap-2">
@@ -213,9 +178,9 @@ export default function ScheduledInterviewsTab() {
                         </span>
                       </div>
                       <span
-                        className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${displayStatus.colorClasses} flex-shrink-0`}
+                        className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${STATUS_COLORS[interview.status] || "bg-gray-100 text-gray-800"} flex-shrink-0`}
                       >
-                        {displayStatus.label}
+                        {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
                       </span>
                     </div>
 
@@ -263,8 +228,7 @@ export default function ScheduledInterviewsTab() {
                       )}
                     </div>
                   </div>
-                );
-              })}
+                ))}
             </div>
 
             {/* ── Desktop table (hidden below lg) ── */}
@@ -283,9 +247,7 @@ export default function ScheduledInterviewsTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredInterviews.map((interview) => {
-                    const displayStatus = getDisplayStatus(interview.status, interview.startTime);
-                    return (
+                  {filteredInterviews.map((interview) => (
                       <tr key={interview.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3">
                           <span className="text-sm font-medium text-gray-900">{interview.candidateName}</span>
@@ -314,8 +276,8 @@ export default function ScheduledInterviewsTab() {
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center justify-center px-2 py-1 text-xs font-semibold rounded-full ${displayStatus.colorClasses} max-w-[120px] text-center`}>
-                            {displayStatus.label}
+                          <span className={`inline-flex items-center justify-center px-2 py-1 text-xs font-semibold rounded-full ${STATUS_COLORS[interview.status] || "bg-gray-100 text-gray-800"} max-w-[120px] text-center`}>
+                            {interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
                           </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
@@ -332,8 +294,7 @@ export default function ScheduledInterviewsTab() {
                           )}
                         </td>
                       </tr>
-                    );
-                  })}
+                    ))}
                 </tbody>
               </table>
             </div>

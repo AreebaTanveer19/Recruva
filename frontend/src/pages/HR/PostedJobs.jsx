@@ -14,15 +14,14 @@ function PostedJobs() {
   const [filterLocation, setFilterLocation] = useState("");
 
   const filteredJobs = jobs.filter((job) => {
-    const matchesSearch =
-      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.location.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase().trim();
+    const matchesSearch = searchLower === "" || 
+      job.title.toLowerCase().includes(searchLower) ||
+      job.department.toLowerCase().includes(searchLower) ||
+      job.location.toLowerCase().includes(searchLower);
 
-    const matchesDept = filterDept ? job.department === filterDept : true;
-    const matchesLocation = filterLocation
-      ? job.location === filterLocation
-      : true;
+    const matchesDept = filterDept === "" || job.department === filterDept;
+    const matchesLocation = filterLocation === "" || job.location === filterLocation;
 
     return matchesSearch && matchesDept && matchesLocation;
   });
@@ -122,12 +121,13 @@ function PostedJobs() {
             </div>
 
             <JobCardGrid
-              jobs={jobs}
+              jobs={filteredJobs}
               isLinkedInConnected={false}
               postingJobId={null}
               postToLinkedIn={() => {}}
-              variant="dept"
+              variant="hr"
               detailRoute="/hr/posted-jobs"
+              showLinkedInButton={false}
             />
           </>
         )}

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { ConfirmDialog } from "./ConfirmDialog";
 import api from "../api";
 
-const JobCardGrid = ({ jobs = [], isLinkedInConnected, postingJobId, postToLinkedIn,variant, detailRoute }) => {
+const JobCardGrid = ({ jobs = [], isLinkedInConnected, postingJobId, postToLinkedIn, variant, detailRoute, showLinkedInButton = true }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [confirmDialog, setConfirmDialog] = useState({
@@ -127,17 +127,19 @@ const JobCardGrid = ({ jobs = [], isLinkedInConnected, postingJobId, postToLinke
                 >
                   View Details
                 </button>
-                <button
-                  onClick={() => postToLinkedIn(job.id)}
-                  disabled={!isLinkedInConnected || postingJobId === job.id}
-                  className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-semibold transition ${
-                    isLinkedInConnected
-                      ? "bg-gray-800 hover:bg-black text-white"
-                      : "bg-gray-300 cursor-not-allowed text-gray-500"
-                  }`}
-                >
-                  {postingJobId === job.id ? "Posting..." : "Post to LinkedIn"}
-                </button>
+                {showLinkedInButton && (
+                  <button
+                    onClick={() => postToLinkedIn(job.id)}
+                    disabled={!isLinkedInConnected || postingJobId === job.id}
+                    className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-semibold transition ${
+                      isLinkedInConnected
+                        ? "bg-gray-800 hover:bg-black text-white"
+                        : "bg-gray-300 cursor-not-allowed text-gray-500"
+                    }`}
+                  >
+                    {postingJobId === job.id ? "Posting..." : "Post to LinkedIn"}
+                  </button>
+                )}
               </div>
             )}
           </div>
