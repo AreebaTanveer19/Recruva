@@ -275,27 +275,7 @@ export default function ScheduleInterviewModal({
                 </Alert>
               )}
             </Box>
-
-            {/* NOTES */}
-            <Box>
-              <Typography
-                variant="caption"
-                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
-              >
-                <DescriptionIcon fontSize="small" /> Additional Notes
-              </Typography>
-
-              <TextField
-                fullWidth
-                multiline
-                rows={4}
-                size="small"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Anything additional for the candidate..."
-                sx={{ borderRadius: 2 }}
-              />
-            </Box>
+         
           </Box>
         </DialogContent>
 
