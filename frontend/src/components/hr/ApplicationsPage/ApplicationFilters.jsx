@@ -5,6 +5,7 @@ const SCORE_FILTERS = [
   { value: "good", label: "Good (60-75%)", color: "bg-amber-100 text-amber-700" },
   { value: "weak", label: "Weak (<60%)", color: "bg-rose-100 text-rose-700" },
   { value: "unmet", label: "Unmet Criteria (-1)", color: "bg-red-100 text-red-700" },
+  { value: "error", label: "Error (-2)", color: "bg-violet-100 text-violet-700" },
 ];
 
 function ApplicationFilters({

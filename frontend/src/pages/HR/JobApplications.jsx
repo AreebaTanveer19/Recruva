@@ -64,8 +64,9 @@ function AllJobApplications() {
         const score = app.score;
         if (filterScore === "strong") matchesScore = score >= 75;
         else if (filterScore === "good") matchesScore = score >= 60 && score < 75;
-        else if (filterScore === "weak") matchesScore = score < 60 && score !== -1;
+        else if (filterScore === "weak") matchesScore = score < 60 && score !== -1 && score !== -2;
         else if (filterScore === "unmet") matchesScore = score === -1;
+        else if (filterScore === "error") matchesScore = score === -2;
       }
       
       return matchesSearch && matchesStatus && matchesJobId && matchesDept && matchesDateFrom && matchesDateTo && matchesScore;

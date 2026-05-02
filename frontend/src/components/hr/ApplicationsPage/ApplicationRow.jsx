@@ -1,5 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import { FileText, User } from "lucide-react";
+import { FileText, User, AlertTriangle } from "lucide-react";
+import { useState } from "react";
+import api from "../../../api";
 
 const STATUS_COLORS = {
   pending:     "bg-yellow-100 text-yellow-800 border border-yellow-300",
@@ -10,6 +12,7 @@ const STATUS_COLORS = {
 };
 
 const scoreColor = (s) => {
+  if (s === -2) return "bg-violet-500";
   if (s === -1) return "bg-red-500";
   if (s >= 80) return "bg-green-500";
   if (s >= 60) return "bg-yellow-400";
@@ -17,6 +20,7 @@ const scoreColor = (s) => {
 };
 
 const scoreTextColor = (s) => {
+  if (s === -2) return "text-violet-700";
   if (s === -1) return "text-red-700";
   if (s >= 80) return "text-green-700";
   if (s >= 60) return "text-yellow-700";
@@ -27,6 +31,21 @@ function ApplicationRow({ app, idx, isChecked, toggleOne }) {
   const navigate = useNavigate();
   const score = app.score != null ? Math.round(app.score) : null;
   const isProfileData = app.resume?.originalName === "Profile Data";
+  const [rescoring, setRescoring] = useState(false);
+
+  const handleRescore = async (e) => {
+    e.stopPropagation();
+    setRescoring(true);
+    try {
+      await api.post(`/application/${app.id}/rescore`);
+      // Optionally refresh or show success message
+      window.location.reload();
+    } catch (error) {
+      console.error("Rescore failed:", error);
+    } finally {
+      setRescoring(false);
+    }
+  };
 
   return (
     <tr
@@ -51,7 +70,16 @@ function ApplicationRow({ app, idx, isChecked, toggleOne }) {
       <td className="px-3 py-4 text-gray-500 truncate">{app.job.department}</td>
       <td className="px-3 py-4">
         {score != null ? (
-          score === -1 ? (
+          score === -2 ? (
+            <button
+              onClick={handleRescore}
+              disabled={rescoring}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-violet-100 text-violet-700 border border-violet-200 hover:bg-violet-200 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              <AlertTriangle className="w-3 h-3" />
+              {rescoring ? "Rescoring..." : "Error"}
+            </button>
+          ) : score === -1 ? (
             <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-200 whitespace-nowrap inline-block">
               Unmet
             </span>

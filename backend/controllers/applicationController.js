@@ -9,6 +9,7 @@ const {
 } = require('../services/resumeIngestionService');
 const { deleteResumeObject } = require('../services/supabaseStorageService');
 const { triggerApplicationScoring } = require('../services/scoring/triggerScoring');
+const { scoreCandidate } = require('../services/scoring/scoringService');
 const { sendRejectionEmail, sendSelectionEmail } = require("./interviewController");
 
 async function cleanupLocalUpload(file) {
@@ -1180,6 +1181,33 @@ const getResumeProfile = async (req, res) => {
 };
 
 
+/**
+ * Rescore an application
+ * POST /api/application/:id/rescore
+ */
+const rescoreApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const applicationId = parseInt(id);
+
+    const result = await retryApplicationScoring(applicationId);
+
+    res.json({
+      success: true,
+      message: 'Application rescored successfully',
+      score: result.finalScore,
+      breakdown: result.breakdown,
+    });
+  } catch (error) {
+    console.error('Error rescoring application:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to rescore application',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   checkApplicationStatus,
   getCandidateResumes,
@@ -1198,4 +1226,6 @@ module.exports = {
   decideApplication,
   getFinalisedCandidates,
   getResumeProfile,
+  retryApplicationScoring,
+  rescoreApplication,
 };

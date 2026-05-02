@@ -1,13 +1,33 @@
 import { useNavigate } from "react-router-dom";
-import { FileText, User } from "lucide-react";
+import { FileText, User, AlertTriangle } from "lucide-react";
+import { useState } from "react";
 import ApplicationRow from "./ApplicationRow";
+import api from "../../../api";
 
 function ApplicationsTable({ filteredApplications, selected, toggleOne, allSelected, toggleAll }) {
   const navigate = useNavigate();
+  const [rescoring, setRescoring] = useState(new Set());
 
   const handleCardClick = (appId) => {
     // Programmatically navigate to the application detail page
     navigate(`/hr/applications/${appId}`);
+  };
+
+  const handleRescore = async (e, appId) => {
+    e.stopPropagation();
+    setRescoring((prev) => new Set([...prev, appId]));
+    try {
+      await api.post(`/application/${appId}/rescore`);
+      // Optionally refresh or show success message
+      window.location.reload();
+    } catch (error) {
+      console.error("Rescore failed:", error);
+      setRescoring((prev) => {
+        const next = new Set(prev);
+        next.delete(appId);
+        return next;
+      });
+    }
   };
 
   const isProfileData = (app) => app.resume?.originalName === "Profile Data";
@@ -21,6 +41,7 @@ function ApplicationsTable({ filteredApplications, selected, toggleOne, allSelec
   };
 
   const scoreColor = (s) => {
+    if (s === -2) return "bg-violet-500";
     if (s === -1) return "bg-red-500";
     if (s >= 80) return "bg-green-500";
     if (s >= 60) return "bg-yellow-400";
@@ -28,6 +49,7 @@ function ApplicationsTable({ filteredApplications, selected, toggleOne, allSelec
   };
 
   const scoreTextColor = (s) => {
+    if (s === -2) return "text-violet-700";
     if (s === -1) return "text-red-700";
     if (s >= 80) return "text-green-700";
     if (s >= 60) return "text-yellow-700";
@@ -150,7 +172,16 @@ function ApplicationsTable({ filteredApplications, selected, toggleOne, allSelec
               <div className="mb-3 pb-3 border-b border-gray-100">
                 <p className="text-xs text-gray-500 font-medium mb-2">Scoring</p>
                 {score != null ? (
-                  score === -1 ? (
+                  score === -2 ? (
+                    <button
+                      onClick={(e) => handleRescore(e, app.id)}
+                      disabled={rescoring.has(app.id)}
+                      className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      {rescoring.has(app.id) ? "Rescoring..." : "Scoring Error"}
+                    </button>
+                  ) : score === -1 ? (
                     <div className="px-3 py-2 rounded-lg bg-red-50 border border-red-200">
                       <span className="text-xs font-semibold text-red-700">Did not meet minimum criteria</span>
                     </div>
