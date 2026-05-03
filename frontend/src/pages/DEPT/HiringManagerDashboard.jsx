@@ -42,12 +42,17 @@ export default function HiringManagerDashboard() {
     load();
   }, []);
 
-  const upcoming = useMemo(() =>
-    interviews
-      .filter(iv => iv.status === "scheduled" && dayjs(iv.startTime).isAfter(now))
-      .sort((a, b) => dayjs(a.startTime).diff(dayjs(b.startTime))),
-    [interviews, now]
-  );
+  const upcoming = useMemo(() => {
+    const startOfToday = now.startOf("day");
+    const endOfToday = now.endOf("day");
+    return interviews
+      .filter(iv =>
+        iv.status === "scheduled" &&
+        dayjs(iv.startTime).isAfter(startOfToday) &&
+        dayjs(iv.startTime).isBefore(endOfToday)
+      )
+      .sort((a, b) => dayjs(a.startTime).diff(dayjs(b.startTime)));
+  }, [interviews, now]);
 
   const conductedThisMonth = useMemo(() =>
     interviews.filter(iv =>
