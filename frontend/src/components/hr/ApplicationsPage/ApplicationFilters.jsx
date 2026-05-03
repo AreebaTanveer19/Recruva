@@ -1,4 +1,4 @@
-const STATUSES = ["pending", "reviewed", "shortlisted", "rejected", "accepted"];
+const STATUSES = ["pending", "shortlisted", "rejected", "accepted"];
 
 const SCORE_FILTERS = [
   { value: "strong", label: "Strong (75-100%)", color: "bg-emerald-100 text-emerald-700" },

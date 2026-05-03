@@ -21,8 +21,8 @@ import { FloatingMeetingWindow } from "../../../components/dept/FloatingMeetingW
 import { TopicSection } from "../../../components/dept/TopicSection";
 import { FinishInterviewModal } from "../../../components/dept/FinishInterviewModal";
 import AlertDisplay from "../../../components/AlertDisplay";
-import { fetchOpenJobs, deleteQuestion, regenerateQuestion, generateMoreQuestions } from "../../../helper";
-
+// import { fetchOpenJobs, deleteQuestion, regenerateQuestion, generateMoreQuestions } from "../../../helper";
+import { fetchOpenJobs, generateMoreQuestions, deleteQuestion } from "../../../helper";
 export default function InterviewSession() {
   const [jobs, setJobs]               = useState([]);
   const [selectedJob, setSelectedJob] = useState("");
@@ -30,8 +30,8 @@ export default function InterviewSession() {
   const [showSummary, setShowSummary] = useState(false);
   const [elapsed, setElapsed]         = useState(0);
   const [alert, setAlert]             = useState({ type: "", title: "", message: "" });
-  const [regeneratingId, setRegeneratingId] = useState(null);
-  const [deletingId, setDeletingId]         = useState(null);
+  // const [regeneratingId, setRegeneratingId] = useState(null);
+   const [deletingId, setDeletingId]         = useState(null);
   const [timerStopped, setTimerStopped]     = useState(false);
   const [showGenerateMore, setShowGenerateMore] = useState(false);
   const [moreCount, setMoreCount]               = useState(5);
@@ -125,38 +125,7 @@ export default function InterviewSession() {
     }
   };
 
-  /* ---------------- Regenerate Question ---------------- */
-
-  const handleRegenerateQuestion = async (question) => {
-    try {
-      setRegeneratingId(question.id);
-      showAlert("info", "Regenerating", "Generating a new question, please wait...");
-
-      const res = await regenerateQuestion(selectedJob, question.id);
-      const newQuestion = res.question;
-
-      setGrouped((prev) => {
-        const updated = { ...prev };
-        for (const topic in updated) {
-          const idx = updated[topic].findIndex((q) => q.id === question.id);
-          if (idx !== -1) {
-            updated[topic] = updated[topic].map((q) =>
-              q.id === question.id ? newQuestion : q
-            );
-            break;
-          }
-        }
-        return updated;
-      });
-
-      showAlert("success", "Question Regenerated", "A new question has been generated successfully.");
-    } catch (err) {
-      console.error("Error regenerating question:", err);
-      showAlert("error", "Regeneration Failed", "Failed to regenerate the question. Please try again.");
-    } finally {
-      setRegeneratingId(null);
-    }
-  };
+ 
   /* ---------------- Generate More Questions ---------------- */
 
   const handleGenerateMore = async () => {
@@ -292,9 +261,9 @@ export default function InterviewSession() {
                 questions={questions}
                 questionRefs={questionRefs}
                 onDelete={handleDeleteQuestion}
-                onRegenerate={handleRegenerateQuestion}
-                regeneratingId={regeneratingId}
-                deletingId={deletingId}
+             
+               
+                 deletingId={deletingId}
                 newQuestionIds={newQuestionIds}
               />
             ))

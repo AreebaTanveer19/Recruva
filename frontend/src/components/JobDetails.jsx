@@ -96,7 +96,7 @@ function JobDetails({ isClosed = false }) {
               </div>
               {job.minDegreeLevel && job.minDegreeLevel !== "Other" && (
                 <div className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg">
-                  <strong>Min Degree:</strong> {job.minDegreeLevel}
+                  <strong>Qualification: </strong> {job.minDegreeLevel}
                 </div>
               )}
             </div>
@@ -175,18 +175,6 @@ function JobDetails({ isClosed = false }) {
                 {isClosed ? "Closure Date:" : "Application Deadline:"}{" "}
                 {new Date(job.deadline).toLocaleDateString()}
               </p>
-            )}
-
-            {/* Edit button — only for open jobs, DEPARTMENT role */}
-            {!isClosed && role === "DEPARTMENT" && (
-              <div className="flex flex-wrap gap-3 mt-5">
-                <button
-                  onClick={() => navigate(`/dept/dashboard/edit-job/${job.id}`)}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 rounded-lg text-white font-semibold hover:bg-black transition"
-                >
-                  Edit Job
-                </button>
-              </div>
             )}
           </div>
         </div>

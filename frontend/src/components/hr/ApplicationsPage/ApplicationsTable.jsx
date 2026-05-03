@@ -34,7 +34,6 @@ function ApplicationsTable({ filteredApplications, selected, toggleOne, allSelec
 
   const STATUS_COLORS = {
     pending:     "bg-yellow-100 text-yellow-800 border border-yellow-300",
-    reviewed:    "bg-blue-100 text-blue-800 border border-blue-300",
     shortlisted: "bg-green-100 text-green-800 border border-green-300",
     rejected:    "bg-red-100 text-red-800 border border-red-300",
     accepted:    "bg-purple-100 text-purple-800 border border-purple-300",

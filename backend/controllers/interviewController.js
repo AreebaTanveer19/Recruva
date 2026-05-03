@@ -41,7 +41,6 @@ html: `
     <b>Interview Mode:</b> ${mode === "google_meet" ? "Online (Google Meet)" : "In-Person (On-Site)"}<br/>
     ${mode === "google_meet" && meetLink ? `<b>Google Meet Link:</b> <a href="${meetLink}">${meetLink}</a><br/>` : ""}
     ${mode === "on_site" ? `<b>Location:</b> Please report to our office at the scheduled time. Our team will guide you upon arrival.<br/>` : ""}
-    ${notes ? `<b>Additional Notes:</b> ${notes}<br/>` : ""}
   </p>
 
   <p>${mode === "google_meet" ? "Please ensure you have a stable internet connection and join 5 minutes before the scheduled time." : "Please arrive 10 minutes early and bring a copy of your resume. Kindly confirm your attendance by replying to this email."}</p>
@@ -949,7 +948,7 @@ const getInterviewResults = async (req, res) => {
   try {
     const interviews = await prisma.interview.findMany({
       where: {
-        status: { in: ["accepted", "rejected", "missed"] },
+        status: { in: ["accepted", "rejected"] },
         application: { status: "shortlisted" },
       },
       include: {

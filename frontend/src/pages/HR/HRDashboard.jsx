@@ -41,7 +41,7 @@ function HRDashboard() {
 
   // pipeline counts
   const pipelineCounts = useMemo(() => {
-    const c = { pending: 0, reviewed: 0, shortlisted: 0, rejected: 0, accepted: 0 };
+    const c = { pending: 0, shortlisted: 0, rejected: 0, accepted: 0 };
     applications.forEach((a) => {
       if (c[a.status] !== undefined) c[a.status]++;
     });
