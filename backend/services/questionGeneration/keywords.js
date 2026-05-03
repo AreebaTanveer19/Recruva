@@ -1,14 +1,130 @@
 const SKILL_META = {
-  "React": { weight: 5, type: "core" },
-  "Node.js": { weight: 5, type: "core" },
-  "Python": { weight: 5, type: "core" },
+  // ─── Core: Languages ──────────────────────────────────────────
+  "JavaScript":       { weight: 5, type: "core" },
+  "TypeScript":       { weight: 5, type: "core" },
+  "Python":           { weight: 5, type: "core" },
+  "Java":             { weight: 5, type: "core" },
+  "Go":               { weight: 5, type: "core" },
+  "C#":               { weight: 5, type: "core" },
+  "PHP":              { weight: 4, type: "core" },
+  "Ruby":             { weight: 4, type: "core" },
+  "Swift":            { weight: 5, type: "core" },
+  "Kotlin":           { weight: 5, type: "core" },
+  "Dart":             { weight: 4, type: "core" },
 
-  "MongoDB": { weight: 3, type: "support" },
-  "REST API": { weight: 3, type: "support" },
-  "Databases": { weight: 3, type: "support" },
+  // ─── Core: Frontend ───────────────────────────────────────────
+  "React":            { weight: 5, type: "core" },
+  "Angular":          { weight: 5, type: "core" },
+  "Vue":              { weight: 5, type: "core" },
+  "Next.js":          { weight: 5, type: "core" },
+  "Nuxt.js":          { weight: 4, type: "core" },
+  "Svelte":           { weight: 4, type: "core" },
 
-  "HTML": { weight: 2, type: "basic" },
-  "CSS": { weight: 2, type: "basic" },
+  // ─── Core: Backend ────────────────────────────────────────────
+  "Node.js":          { weight: 5, type: "core" },
+  "Express":          { weight: 4, type: "core" },
+  "Django":           { weight: 5, type: "core" },
+  "FastAPI":          { weight: 4, type: "core" },
+  "Spring Boot":      { weight: 5, type: "core" },
+  "Laravel":          { weight: 4, type: "core" },
+  "Ruby on Rails":    { weight: 4, type: "core" },
+  "ASP.NET":          { weight: 4, type: "core" },
+
+  // ─── Core: Mobile ─────────────────────────────────────────────
+  "Flutter":          { weight: 5, type: "core" },
+  "React Native":     { weight: 5, type: "core" },
+  "Android":          { weight: 4, type: "core" },
+  "iOS":              { weight: 4, type: "core" },
+  "SwiftUI":          { weight: 4, type: "core" },
+
+  // ─── Core: Infrastructure ─────────────────────────────────────
+  "Docker":           { weight: 5, type: "core" },
+  "Kubernetes":       { weight: 5, type: "core" },
+  "AWS":              { weight: 5, type: "core" },
+  "Azure":            { weight: 5, type: "core" },
+  "GCP":              { weight: 5, type: "core" },
+  "Terraform":        { weight: 4, type: "core" },
+  "Ansible":          { weight: 4, type: "core" },
+
+  // ─── Core: AI / ML ────────────────────────────────────────────
+  "TensorFlow":       { weight: 5, type: "core" },
+  "PyTorch":          { weight: 5, type: "core" },
+  "Machine Learning": { weight: 5, type: "core" },
+  "Deep Learning":    { weight: 5, type: "core" },
+  "LLMs":             { weight: 5, type: "core" },
+  "Keras":            { weight: 4, type: "core" },
+  "scikit-learn":     { weight: 4, type: "core" },
+  "XGBoost":          { weight: 3, type: "support" },
+
+  // ─── Support: Databases ───────────────────────────────────────
+  "MongoDB":          { weight: 3, type: "support" },
+  "PostgreSQL":       { weight: 3, type: "support" },
+  "MySQL":            { weight: 3, type: "support" },
+  "SQLite":           { weight: 2, type: "support" },
+  "Redis":            { weight: 3, type: "support" },
+  "DynamoDB":         { weight: 3, type: "support" },
+  "Cassandra":        { weight: 3, type: "support" },
+  "Firebase":         { weight: 3, type: "support" },
+  "Databases":        { weight: 2, type: "support" },
+  "SQL":              { weight: 2, type: "support" },
+  "NoSQL":            { weight: 2, type: "support" },
+
+  // ─── Support: APIs & Communication ────────────────────────────
+  "REST API":         { weight: 3, type: "support" },
+  "GraphQL":          { weight: 3, type: "support" },
+  "gRPC":             { weight: 3, type: "support" },
+  "WebSockets":       { weight: 3, type: "support" },
+  "Microservices":    { weight: 4, type: "support" },
+
+  // ─── Support: DevOps / CI ─────────────────────────────────────
+  "CI/CD":            { weight: 3, type: "support" },
+  "Jenkins":          { weight: 3, type: "support" },
+  "Linux":            { weight: 3, type: "support" },
+  "Nginx":            { weight: 3, type: "support" },
+  "Serverless":       { weight: 3, type: "support" },
+  "Monitoring":       { weight: 2, type: "support" },
+  "Kafka":            { weight: 3, type: "support" },
+  "RabbitMQ":         { weight: 3, type: "support" },
+
+  // ─── Support: Auth & Security ─────────────────────────────────
+  "Authentication":   { weight: 3, type: "support" },
+  "OAuth":            { weight: 3, type: "support" },
+  "JWT":              { weight: 3, type: "support" },
+  "Cybersecurity":    { weight: 4, type: "support" },
+
+  // ─── Support: Testing ─────────────────────────────────────────
+  "Jest":             { weight: 3, type: "support" },
+  "Cypress":          { weight: 3, type: "support" },
+  "Selenium":         { weight: 3, type: "support" },
+  "PyTest":           { weight: 3, type: "support" },
+  "Testing":          { weight: 2, type: "support" },
+
+  // ─── Support: ORM / Data ──────────────────────────────────────
+  "Prisma":           { weight: 3, type: "support" },
+  "Sequelize":        { weight: 3, type: "support" },
+  "TypeORM":          { weight: 3, type: "support" },
+  "SQLAlchemy":       { weight: 3, type: "support" },
+  "Pandas":           { weight: 3, type: "support" },
+  "NumPy":            { weight: 3, type: "support" },
+
+  // ─── Support: Version Control ─────────────────────────────────
+  "Git":              { weight: 2, type: "support" },
+  "GitHub":           { weight: 2, type: "support" },
+  "GitLab":           { weight: 2, type: "support" },
+
+  // ─── Basic: Concepts ──────────────────────────────────────────
+  "HTML":             { weight: 1, type: "basic" },
+  "CSS":              { weight: 1, type: "basic" },
+  "OOP":              { weight: 3, type: "basic" },
+  "Data Structures":  { weight: 3, type: "basic" },
+  "Algorithms":       { weight: 3, type: "basic" },
+  "System Design":    { weight: 3, type: "basic" },
+  "Scalability":      { weight: 3, type: "basic" },
+  "Caching":          { weight: 2, type: "basic" },
+  "Agile":            { weight: 2, type: "basic" },
+  "RxJS":             { weight: 2, type: "basic" },
+  "SSR":              { weight: 2, type: "basic" },
+  "Statistics":       { weight: 2, type: "basic" },
 };
 
 // TITLE → KEYWORD MAP

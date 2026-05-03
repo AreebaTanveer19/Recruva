@@ -1,6 +1,6 @@
 
 // ─── Helper: extract significant words for similarity comparison ──
-export function getSignificantWords(text) {
+function getSignificantWords(text) {
   const stopWords = new Set([
     "what", "is", "the", "a", "an", "of", "in", "and", "or", "how",
     "do", "does", "can", "you", "for", "to", "are", "with", "this",
@@ -15,7 +15,7 @@ export function getSignificantWords(text) {
 }
 
 // ─── Helper: deduplicate weighted keywords by name ────────────────
-export function dedupeKeywords(weightedKeywords) {
+function dedupeKeywords(weightedKeywords) {
   const map = new Map();
   weightedKeywords.forEach(k => {
     if (!map.has(k.name) || map.get(k.name).weight < k.weight) {
@@ -26,7 +26,7 @@ export function dedupeKeywords(weightedKeywords) {
 }
 
 // ─── Helper: convert keyword names to weighted format ─────────────
-export function convertToWeightedKeywords(keywords) {
+function convertToWeightedKeywords(keywords) {
   return keywords.map((k, index) => ({
     name:   k,
     weight: keywords.length - index,
@@ -34,7 +34,7 @@ export function convertToWeightedKeywords(keywords) {
 }
 
 // ─── Helper: check if two questions are too similar ───────────────
-export function isTooSimilar(q1, q2, threshold = 0.6) {
+function isTooSimilar(q1, q2, threshold = 0.6) {
   const words1  = getSignificantWords(q1);
   const words2  = getSignificantWords(q2);
   const smaller = Math.min(words1.size, words2.size);
@@ -45,7 +45,7 @@ export function isTooSimilar(q1, q2, threshold = 0.6) {
 }
 
 // ─── Helper: filter out similar questions, keeping first unique ───
-export function deduplicateQuestions(questions, limit) {
+function deduplicateQuestions(questions, limit) {
   const picked = [];
   for (const q of questions) {
     if (picked.length >= limit) break;
@@ -56,7 +56,7 @@ export function deduplicateQuestions(questions, limit) {
 }
 
 // ─── Helper: check candidate against existing for similarity ──────
-export function isQuestionDuplicate(newQuestion, existingSignificantWords) {
+function isQuestionDuplicate(newQuestion, existingSignificantWords) {
   const newWords = getSignificantWords(newQuestion);
   return existingSignificantWords.some(({ words }) => {
     const smaller = Math.min(words.size, newWords.size);
@@ -67,3 +67,52 @@ export function isQuestionDuplicate(newQuestion, existingSignificantWords) {
   });
 }
 
+// ─── Map: remove generic labels when specific skills are present ─────
+const SPECIFIC_OVERRIDES = {
+  // Web
+  Frontend:             ["React", "Angular", "Vue", "Next.js", "Svelte", "Nuxt.js"],
+  Backend:              ["Node.js", "Express", "Django", "Spring Boot", "FastAPI", "Laravel", "Ruby on Rails", "ASP.NET"],
+
+  // Data storage
+  Databases:            ["MongoDB", "PostgreSQL", "MySQL", "Redis", "SQLite", "DynamoDB", "Cassandra", "MariaDB"],
+  NoSQL:                ["MongoDB", "DynamoDB", "Cassandra", "Firebase", "CouchDB"],
+  Caching:              ["Redis", "Memcached"],
+  ORM:                  ["Prisma", "Sequelize", "TypeORM", "Hibernate", "SQLAlchemy"],
+
+  // Infrastructure
+  DevOps:               ["Docker", "Kubernetes", "CI/CD", "Jenkins", "Ansible", "Terraform"],
+  "Cloud Architecture": ["AWS", "Azure", "GCP", "Google Cloud", "Serverless"],
+  Monitoring:           ["Grafana", "Prometheus", "Datadog", "New Relic", "ELK Stack"],
+  Networking:           ["Nginx", "Apache", "Load Balancer", "TCP/IP", "DNS"],
+
+  // Mobile
+  Mobile:               ["React Native", "Flutter", "Android", "iOS", "Swift", "Kotlin", "Xamarin"],
+
+  // Testing
+  Testing:              ["Jest", "Mocha", "Cypress", "Selenium", "JUnit", "PyTest", "Vitest", "Playwright"],
+
+  // AI / ML
+  "Machine Learning":   ["TensorFlow", "PyTorch", "Keras", "scikit-learn", "XGBoost"],
+  "Deep Learning":      ["TensorFlow", "PyTorch", "Keras"],
+  "Data Science":       ["Pandas", "NumPy", "Matplotlib", "Jupyter", "scikit-learn"],
+
+  // Messaging / async
+  "Message Queue":      ["Kafka", "RabbitMQ", "AWS SQS", "Azure Service Bus"],
+
+  // Security
+  Authentication:       ["OAuth", "JWT", "SAML", "Keycloak", "Auth0"],
+  Security:             ["OAuth", "JWT", "SSL/TLS", "OWASP", "Penetration Testing"],
+
+  // Version control
+  "Version Control":    ["Git", "GitHub", "GitLab", "Bitbucket"],
+};
+
+module.exports = {
+  getSignificantWords,
+  dedupeKeywords,
+  convertToWeightedKeywords,
+  isTooSimilar,
+  deduplicateQuestions,
+  isQuestionDuplicate,
+  SPECIFIC_OVERRIDES,
+};
