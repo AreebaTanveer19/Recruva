@@ -531,6 +531,7 @@ const disconnectCalendar = async (req, res) => {
 const getAllInterviews = async (req, res) => {
   try {
     const isDept = req.user.role === "DEPARTMENT";
+    const isCandidate = req.user.role === "candidate";
 
     // Auto-expire any scheduled interviews whose end time has passed
     await prisma.interview.updateMany({
@@ -541,8 +542,36 @@ const getAllInterviews = async (req, res) => {
       data: { status: "expired" },
     });
 
+    let whereClause = undefined;
+
+    // Build the where clause based on user role
+    if (isDept) {
+      // Department users see interviews assigned to them
+      whereClause = { assignedToId: req.user.id };
+    } else if (isCandidate) {
+      // Candidates see only interviews for their applications
+      // First, get all applications for this candidate
+      const applications = await prisma.application.findMany({
+        where: { candidateId: req.user.id },
+        select: { id: true },
+      });
+
+      const applicationIds = applications.map((app) => app.id);
+
+      // Build where clause to fetch interviews for these applications
+      if (applicationIds.length === 0) {
+        // No applications, return empty list
+        return res.status(200).json({
+          success: true,
+          data: [],
+        });
+      }
+
+      whereClause = { applicationId: { in: applicationIds } };
+    }
+
     const interviews = await prisma.interview.findMany({
-      where: isDept ? { assignedToId: req.user.id } : undefined,
+      where: whereClause,
       include: {
         application: {
           include: {
