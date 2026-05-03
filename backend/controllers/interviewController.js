@@ -1026,7 +1026,8 @@ const getWaitingInterviews = async (req, res) => {
       scheduledAt: i.startTime,
       resumeUrl: i.application.resume?.pdfUrl || null,
       resumeId: i.application.resume?.id || null,
-      hasCvProfile: !!i.application.candidate.cvData,
+      resumeName: i.application.resume?.originalName || null,
+      hasCvProfile: i.application.resume?.originalName === "Profile Data",
     }));
 
     res.status(200).json({ success: true, data: formatted });
