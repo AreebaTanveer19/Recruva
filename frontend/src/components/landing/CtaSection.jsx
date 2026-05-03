@@ -23,13 +23,13 @@ const CtaSection = () => {
           >
             Get Started Free
           </Button>
-          <Button
+          {/* <Button
             variant="outline"
             size="lg"
             onClick={() => console.log('Demo clicked')}
           >
             Request a Demo
-          </Button>
+          </Button> */}
         </div>
       </div>
     </section>

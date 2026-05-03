@@ -79,13 +79,13 @@ const HeroSection = () => {
               >
                 Get Started Free
               </Button>
-              <Button
+              {/* <Button
                 variant="outline"
                 size="lg"
                 onClick={() => console.log('Demo clicked')}
               >
                 Watch Demo
-              </Button>
+              </Button> */}
             </motion.div>
 
             {/* Trust Indicators */}
