@@ -1,5 +1,6 @@
 const groq = require("../../config/groq");
 const { SKILL_META, TITLE_KEYWORD_MAP, IGNORE_WORDS } = require("./keywords.js");
+const { SPECIFIC_OVERRIDES } = require("./helperFunctions.js");
 
 // SMART MATCHING FUNCTION
 
@@ -81,8 +82,11 @@ function enrichKeywords(keywords) {
 function cleanKeywords(keywords) {
   const set = new Set(keywords);
 
-  if (set.has("React")) set.delete("Frontend");
-  if (set.has("Node.js")) set.delete("Backend");
+  for (const [generic, specifics] of Object.entries(SPECIFIC_OVERRIDES)) {
+    if (specifics.some(s => set.has(s))) {
+      set.delete(generic);
+    }
+  }
 
   return [...set];
 }

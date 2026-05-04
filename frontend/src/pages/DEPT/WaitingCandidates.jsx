@@ -150,6 +150,7 @@ const WaitingCandidates = () => {
                       year: "numeric",
                     })}
                   </span>
+            
                 </div>
 
                 {/* Editable Feedback */}

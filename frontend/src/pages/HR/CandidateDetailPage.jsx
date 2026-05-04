@@ -44,6 +44,7 @@ function ScoreBreakdown({ scoreBreakdown, totalScore }) {
   const isUnmet = totalScore === -1;
   
   if (isUnmet) {
+    const reason = scoreBreakdown?.reason || "Does not meet minimum criteria";
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
@@ -53,10 +54,7 @@ function ScoreBreakdown({ scoreBreakdown, totalScore }) {
             </svg>
           </div>
           <div>
-            <p className="text-sm font-semibold text-red-900">Does not meet minimum criteria</p>
-            <p className="text-xs text-red-700 mt-1 leading-relaxed">
-              This candidate does not meet the minimum requirements for the job.
-            </p>
+            <p className="text-sm font-semibold text-red-900">{reason}</p>
           </div>
         </div>
       </div>
@@ -323,6 +321,20 @@ function CandidateDetailPage() {
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-semibold text-gray-900">{candidate?.name}</h2>
             <p className="text-sm text-gray-500">{candidate?.email}</p>
+            {(parsed?.basicInfo?.phone || parsed?.basicInfo?.location) && (
+              <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                {parsed?.basicInfo?.phone && (
+                  <span className="text-xs bg-gray-100 text-gray-600 border border-gray-200 px-2.5 py-1 rounded-full">
+                    <span className="font-medium">Phone:</span> {parsed.basicInfo.phone}
+                  </span>
+                )}
+                {parsed?.basicInfo?.location && (
+                  <span className="text-xs bg-gray-100 text-gray-600 border border-gray-200 px-2.5 py-1 rounded-full">
+                    <span className="font-medium">Location:</span> {parsed.basicInfo.location}
+                  </span>
+                )}
+              </div>
+            )}
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <span className="text-xs bg-gray-100 text-gray-600 border border-gray-200 px-2.5 py-1 rounded-full">
                 {job?.title}
